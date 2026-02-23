@@ -66,5 +66,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define("Client", function (Client $user) {
             return $user->hasRole("Client");
         });
+
+        // ensure unauthenticated users are redirected to the named login route
+        \Illuminate\Auth\Middleware\Authenticate::redirectUsing(function ($request) {
+            // keep the default "login" name used in web.php
+            return route('login');
+        });
     }
 }
