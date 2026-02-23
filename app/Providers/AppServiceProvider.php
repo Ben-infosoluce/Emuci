@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
+
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Support\ServiceProvider;
@@ -22,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+
+        // 🔥 FORCE HTTPS EN PRODUCTION
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
         //
         //$this->registerPolicies();
         //********************Bureau*************************
