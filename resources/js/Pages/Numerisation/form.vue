@@ -83,8 +83,7 @@
 
                         <!-- Type de pièce * -->
                         <div class="space-y-2">
-                            <p>Type de pièce *</p>
-                            <!-- Remplace le select par les checkboxes -->
+                            <!-- <p>Type de pièce *</p>
                             <div>
                                 <div class="flex justify-start">
                                     <div class="flex flex-col items-start space-y-2">
@@ -104,6 +103,37 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div> -->
+                            <div class="space-y-2">
+                                <p>Type de pièce *</p>
+                                <Select v-model="form.type_document">
+                                    <SelectTrigger class="w-[260px]">
+                                        <SelectValue placeholder="Veuillez sélectionner une valeur" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Veuillez sélectionner une valeur</SelectLabel>
+                                            <SelectItem value="CI">Carte consulaire</SelectItem>
+                                            <SelectItem value="SI">Sans identifiant</SelectItem>
+                                            <SelectItem value="TI">Carte d'identité (non nationaux)</SelectItem>
+                                            <SelectItem value="CNI">Carte nationale d'identité</SelectItem>
+                                            <SelectItem value="AI">Attestation d'identité</SelectItem>
+                                            <SelectItem value="DFE">Déclaration fiscale d'existence</SelectItem>
+                                            <SelectItem value="PC">Permis de conduire</SelectItem>
+                                            <SelectItem value="NNI">Numéro national d'identité</SelectItem>
+                                            <SelectItem value="CIR">Carte d'identité du réfugié</SelectItem>
+                                            <SelectItem value="ACCS">ACCORD DE CRÉATION DE SIÈGE</SelectItem>
+                                            <SelectItem value="CR">Carte de résident</SelectItem>
+                                            <SelectItem value="CD">Lettre diplomatique</SelectItem>
+                                            <SelectItem value="CC">Compte contribuable</SelectItem>
+                                            <SelectItem value="ACO">ACCORD DE CRÉATION ONG</SelectItem>
+                                            <SelectItem value="RDC">Registre du commerce</SelectItem>
+                                            <SelectItem value="AT">Attestation d'Admission Temporaire</SelectItem>
+                                            <SelectItem value="PAS">Passeport</SelectItem>
+                                            <SelectItem value="AUT">Autre</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 
@@ -427,7 +457,7 @@ const form = useForm({
 const submitForm = async () => {
     console.log("Submitting form with data:", form);
 
-    form.type_document = selected.value;
+    //form.type_document = selected.value;
 
     try {
         const requiredFields = [
@@ -490,6 +520,15 @@ import CustomFileUpload from "@/components/CustomFileUpload.vue";
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import imageCompression from "browser-image-compression";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 export default {
     layout: Main,
 }

@@ -517,6 +517,7 @@
                                             propriétaire ---------------
                                         </h4>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <!-- <p>toto : {{ formDataSummary }}</p> -->
                                             <!-- Civilité -->
                                             <p>
                                                 <strong>
@@ -1648,7 +1649,49 @@ const { handleSubmit } = useValidationForm({
 
 // Modal & résumé
 const showSummary = ref(false);
-const formDataSummary = ref({});
+
+// Computed pour construire dynamiquement le résumé des données
+const formDataSummary = computed(() => ({
+    firstname: form.value.firstname,
+    lastname: form.value.lastname,
+    email: form.value.email,
+    adresse: form.value.adresse,
+    phone: form.value.phone,
+    typePersonne: form.value.typePersonne,
+    district: form.value.district,
+    villeNaissance: form.value.villeNaissance,
+    sex: form.value.civilite,
+    DateNaissance: form.value.DateNaissance,
+    vin: form.value.vin,
+    couleurVehicule: form.value.couleurVehicule,
+    carrosserie: form.value.carrosserie,
+    typeTechnique: form.value.typeTechnique,
+    genre: form.value.genre,
+    ptac: form.value.ptac,
+    pu: form.value.pu,
+    pv: form.value.pv,
+    puissance: form.value.puissance,
+    placesAssises: form.value.placesAssises,
+    sourcesEnergie: form.value.sourcesEnergie,
+    nombreEssieux: form.value.nombreEssieux,
+    type: form.value.type,
+    usage: form.value.usage,
+    codeRegion: form.value.codeRegion,
+    DateCirculation: form.value.DateCirculation,
+    AnneeProduction: form.value.AnneeProduction,
+    nomEntreprise: form.value.nomEntreprise,
+    registreCommerce: form.value.registreCommerce,
+    representantLegal: form.value.representantLegal,
+    numeroTelephone: form.value.numeroTelephone,
+    compteContribuable: form.value.compteContribuable,
+    DateNaissanceRepresantant: form.value.DateNaissanceRepresantant,
+    professionRepresantant: form.value.ProfessionRepresantant,
+    prefecture: form.value.prefecture,
+    sousPrefecture: form.value.sousPrefecture,
+    region: form.value.region,
+    marqueVehicule: selectedMarque.value,
+    modelVehicule: selectedModele.value,
+}));
 
 // Fonction de soumission
 const onSubmit = handleSubmit((values) => {
@@ -1703,33 +1746,7 @@ const onSubmit = handleSubmit((values) => {
         return;
     }
 
-    // Préparer les données pour le résumé
-    formDataSummary.value = {
-        ...values,
-        type: form.value.type,
-        nomEntreprise: form.value.nomEntreprise,
-        registreCommerce: form.value.registreCommerce,
-        representantLegal: form.value.representantLegal,
-        numeroTelephone: form.value.numeroTelephone,
-        compteContribuable: form.value.compteContribuable,
-        prefecture: form.value.prefecture,
-        sousPrefecture: form.value.sousPrefecture,
-        region: form.value.region,
-        email: form.value.email,
-        district: form.value.district,
-        typePersonne: form.value.typePersonne,
-        sex: form.value.civilite,
-        vin: form.value.vin,
-        dateCirculation: form.value.DateCirculation,
-        anneeProduction: form.value.AnneeProduction,
-        dateNaissanceRepresantant: form.value.DateNaissanceRepresantant,
-        professionRepresantant: form.value.ProfessionRepresantant,
-        usage: form.value.usage,
-        codeRegion: form.value.codeRegion,
-        marqueVehicule: selectedMarque.value,
-        modelVehicule: selectedModele.value,
-    };
-
+    // Afficher le résumé (formDataSummary est maintenant une computed property)
     showSummary.value = true;
 });
 

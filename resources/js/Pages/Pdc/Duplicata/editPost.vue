@@ -6,7 +6,7 @@
             Duplicata / Post-immatriculation
         </h4>
         <div class="flex items-center space-x-2">
-            <Link :href="route('show.new.pdc.duplicata.post')">
+            <Link :href="route('show.new.pdc.duplicata.post', { vin: form.vin })">
             <BoutonRetour />
             </Link>
         </div>
@@ -18,7 +18,7 @@
             <Card class="h-full flex flex-col ">
                 <ScrollArea class="h-full w-full rounded-md border">
                     <div class="p-8">
-                        <form @submit="onSubmit" novalidate>
+                        <form @submit.prevent="onSubmit" novalidate>
                             <!-- Informations du véhicule -->
                             <div class="gap-4 md:gap-6 mt-10" v-show="selected.length > 0">
                                 <h3 class="text-md font-semibold mt-8 mb-8">
@@ -343,8 +343,6 @@
                                 </div>
                             </div>
 
-
-
                             <!-- Informations de l'entreprise -->
                             <div v-show="form.typePersonne != 'Physique' && mutation" class="mt-10">
                                 <h3 class="text-md font-semibold mb-6 ">Informations de l'entreprise</h3>
@@ -405,9 +403,6 @@
                                     </div>
                                 </div>
                             </div>
-
-
-
                             <!-- show Summary -->
                             <div v-if="showSummary"
                                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-auto">
@@ -416,6 +411,7 @@
                                     <h3 class="text-2xl font-bold text-center mb-2">Résumé des informations de
                                         Post-Immatriculation</h3>
                                     <!-- Informations du propriétaire -->
+
                                     <div>
                                         <h4 class="text-lg font-semibold mb-8 text-center">
                                             --------------- Informations du propriétaire ---------------
@@ -635,11 +631,11 @@
 
                                             <p><strong>Genre :</strong> {{ formDataSummary.genre }}</p>
                                             <p><strong>Poids Total en charge (PTAC) :</strong> {{ formDataSummary.ptac
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Poids Utile (PU) :</strong> {{ formDataSummary.pu }}</p>
                                             <p><strong>Poids à Vide (PV) :</strong> {{ formDataSummary.pv }}</p>
                                             <p><strong>Puissance administrative :</strong> {{ formDataSummary.puissance
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Places Assises :</strong> {{ formDataSummary.placesAssises }}</p>
 
                                             <!-- Sources d’énergie -->
@@ -828,11 +824,9 @@
                                 </div>
                             </div>
                             <!-- Bouton continuer -->
-                            <div class="mt-8">
-                                <Button type="submit">
-                                    METTRE À JOUR
-                                </Button>
-                            </div>
+                            <Button @click="showSummary = true" class="mt-8">
+                                METTRE À JOUR
+                            </Button>
                         </form>
                     </div>
                 </ScrollArea>
@@ -1112,7 +1106,49 @@ const { handleSubmit } = useValidationForm({
 
 // Modal & résumé
 const showSummary = ref(false);
-const formDataSummary = ref({});
+
+// Computed pour construire dynamiquement le résumé des données
+const formDataSummary = computed(() => ({
+    firstname: form.value.firstname,
+    lastname: form.value.lastname,
+    email: form.value.email,
+    adresse: form.value.adresse,
+    phone: form.value.phone,
+    typePersonne: form.value.typePersonne,
+    district: form.value.district,
+    villeNaissance: form.value.villeNaissance,
+    sex: form.value.civilite,
+    DateNaissance: form.value.DateNaissance,
+    vin: form.value.vin,
+    couleurVehicule: form.value.couleurVehicule,
+    carrosserie: form.value.carrosserie,
+    typeTechnique: form.value.typeTechnique,
+    genre: form.value.genre,
+    ptac: form.value.ptac,
+    pu: form.value.pu,
+    pv: form.value.pv,
+    puissance: form.value.puissance,
+    placesAssises: form.value.placesAssises,
+    sourcesEnergie: form.value.sourcesEnergie,
+    nombreEssieux: form.value.nombreEssieux,
+    type: form.value.type,
+    usage: form.value.usage,
+    codeRegion: form.value.codeRegion,
+    DateCirculation: form.value.DateCirculation,
+    AnneeProduction: form.value.AnneeProduction,
+    nomEntreprise: form.value.nomEntreprise,
+    registreCommerce: form.value.registreCommerce,
+    representantLegal: form.value.representantLegal,
+    numeroTelephone: form.value.numeroTelephone,
+    compteContribuable: form.value.compteContribuable,
+    DateNaissanceRepresantant: form.value.DateNaissanceRepresantant,
+    professionRepresantant: form.value.ProfessionRepresantant,
+    prefecture: form.value.prefecture,
+    sousPrefecture: form.value.sousPrefecture,
+    region: form.value.region,
+    marqueVehicule: selectedMarque.value,
+    modelVehicule: selectedModele.value,
+}));
 
 const onSubmit = handleSubmit((values) => {
     // Reset des erreurs
@@ -1235,32 +1271,7 @@ const onSubmit = handleSubmit((values) => {
         return;
     }
 
-    // Préparer les données pour le résumé
-    formDataSummary.value = {
-        ...values,
-        type: form.value.type,
-        nomEntreprise: form.value.nomEntreprise,
-        registreCommerce: form.value.registreCommerce,
-        representantLegal: form.value.representantLegal,
-        numeroTelephone: form.value.numeroTelephone,
-        compteContribuable: form.value.compteContribuable,
-        prefecture: form.value.prefecture,
-        sousPrefecture: form.value.sousPrefecture,
-        region: form.value.region,
-        email: form.value.email,
-        district: form.value.district,
-        typePersonne: form.value.typePersonne,
-        sex: form.value.civilite,
-        vin: form.value.vin,
-        dateCirculation: form.value.DateCirculation,
-        anneeProduction: form.value.AnneeProduction,
-        dateNaissanceRepresantant: form.value.DateNaissanceRepresantant,
-        professionRepresantant: form.value.ProfessionRepresantant,
-        usage: form.value.usage,
-        codeRegion: form.value.codeRegion,
-        marqueVehicule: selectedMarque.value,
-        modelVehicule: selectedModele.value,
-    };
+    // Afficher le résumé (formDataSummary est maintenant une computed property)
     showSummary.value = true;
 });
 
@@ -1340,7 +1351,9 @@ onMounted(async () => {
 });
 
 
-
+const goBack = () => {
+    window.history.back()
+}
 
 
 const mutation = ref(null); // Crée la variable mutation

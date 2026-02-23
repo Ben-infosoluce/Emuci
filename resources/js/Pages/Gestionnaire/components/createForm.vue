@@ -88,7 +88,7 @@
                                                                         <Checkbox checked="true" class="mr-2"
                                                                             :id="'motif-' + motif.id" />
                                                                         <Label :for="'motif-' + motif.id">{{ motif.motif
-                                                                            }}</Label>
+                                                                        }}</Label>
                                                                     </div>
                                                                 </div>
                                                                 <p v-else class="text-gray-500 italic">
@@ -126,7 +126,7 @@
                                 <p>Type technique : {{ dossier.r_dossier_vehicule.type_technique }}</p>
                                 <p>Poids à Vide : {{ dossier.r_dossier_vehicule.poids_vide }}</p>
                                 <p>Puissance administrative : {{ dossier.r_dossier_vehicule.puissance_administrative
-                                }}
+                                    }}
                                 </p>
                                 <p>Places Assises : {{ dossier.r_dossier_vehicule.places_assises }}</p>
                                 <p>Nbre d’Essieux : {{ dossier.r_dossier_vehicule.nombre_essieux }}</p>
@@ -168,7 +168,7 @@
                                 <p>Profession représentant légal : {{ entreprise?.profession_representant_legal }}</p>
                                 <p>Date de naissance du représentant : {{
                                     entreprise.date_de_naissance_representant_legal
-                                }}</p>
+                                    }}</p>
 
                             </div>
                         </div>
@@ -242,7 +242,7 @@
                                                                         <Checkbox checked="true" class="mr-2"
                                                                             :id="'motif-' + motif.id" />
                                                                         <Label :for="'motif-' + motif.id">{{ motif.motif
-                                                                            }}</Label>
+                                                                        }}</Label>
                                                                     </div>
                                                                 </div>
                                                                 <p v-else class="text-gray-500 italic">
@@ -452,42 +452,42 @@
                                                                             </p>
                                                                             <p>Genre : {{
                                                                                 dossier?.r_dossier_vehicule?.genre_vehicule
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                             <p>Poids Total en charge : {{
                                                                                 dossier?.r_dossier_vehicule?.poids_total
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Poids Utile : {{
                                                                                 dossier?.r_dossier_vehicule?.poids_utile
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Sources d’énergie : {{
                                                                                 dossier?.r_dossier_vehicule?.source_energie
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                             <p>Couleur : {{
                                                                                 dossier?.r_dossier_vehicule?.couleur
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Carrosserie : {{
                                                                                 dossier?.r_dossier_vehicule?.carrosserie
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Type technique : {{
                                                                                 dossier?.r_dossier_vehicule?.type_technique
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                             <p>Poids à Vide : {{
                                                                                 dossier?.r_dossier_vehicule?.poids_vide
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Puissance administrative : {{
                                                                                 dossier?.r_dossier_vehicule?.puissance_administrative
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                             <p>Places Assises : {{
                                                                                 dossier?.r_dossier_vehicule?.places_assises
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                             <p>Nbre d’Essieux : {{
                                                                                 dossier?.r_dossier_vehicule?.nombre_essieux
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                         </div>
 
@@ -504,7 +504,7 @@
                                                                             class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6">
                                                                             <p>Adresse : {{
                                                                                 dossier?.r_dossier_client?.adresse
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Email : {{
                                                                                 dossier?.r_dossier_client?.email }}
                                                                             </p>
@@ -513,10 +513,10 @@
                                                                             </p>
                                                                             <p>Date de naissance : {{
                                                                                 dossier?.r_dossier_client?.date_naissance
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Ville de naissance : {{
                                                                                 dossier?.r_dossier_client?.ville_naissance
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                         </div>
                                                                         <hr />
@@ -534,21 +534,21 @@
                                                                                 entreprise?.compte_contribuale }}</p>
                                                                             <p>Registre de commerce : {{
                                                                                 entreprise?.registre_commerce
-                                                                                }}</p>
+                                                                            }}</p>
                                                                             <p>Nom du représentant légal : {{
                                                                                 entreprise?.nom_representant_legal }}
                                                                             </p>
                                                                             <p>Téléphone du représentant légal : {{
                                                                                 entreprise?.telephone_representant_legal
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                             <p>Profession représentant légal : {{
                                                                                 entreprise?.profession_representant_legal
-                                                                                }}
+                                                                            }}
                                                                             </p>
                                                                             <p>Date de naissance du représentant : {{
                                                                                 entreprise.date_de_naissance_representant_legal
-                                                                                }}</p>
+                                                                            }}</p>
                                                                         </div>
                                                                     </div>
 
@@ -557,7 +557,7 @@
                                                                             class=" flex flex-col space-y-4  py-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                                                                             <h2>Service : {{
                                                                                 dossier.r_dossier_services.nom_service
-                                                                            }}</h2>
+                                                                                }}</h2>
                                                                         </div>
                                                                         <ScrollArea
                                                                             class="h-[900px] w-full rounded-md border p-4">

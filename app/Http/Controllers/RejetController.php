@@ -6,15 +6,24 @@ use App\Models\Dossier;
 use Illuminate\Http\Request;
 use App\Models\Rejet;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class RejetController extends Controller
 {
     /**
      * Retourner tous les rejets (GET /api/rejets)
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Rejet::all());
+        $idService = $request->query('id_service');
+
+        $query = Rejet::query();
+
+        if ($idService) {
+            $query->where('service_id', $idService);
+        }
+
+        return response()->json($query->get());
     }
 
     /**
@@ -82,5 +91,56 @@ class RejetController extends Controller
             'motifs' => $motifsSelectionnes,
             'dossier_id' => $dossier->id,
         ]);
+    }
+
+
+    // Gestion admin rejets
+
+    // public function listRejets()
+    // {
+    //     return Inertia::render('Admin/Rejets/index', [
+    //         'rejets' => Rejet::orderBy('id', 'desc')->get()
+    //     ]);
+    // }
+    public function listRejets()
+    {
+        return Inertia::render('Admin/Rejets/index', [
+            'rejets' => Rejet::orderBy('id', 'desc')->get(),
+            'services' => \App\Models\Service::all(['id', 'nom_service']),
+            'typeServices' => \App\Models\TypeService::all(['id', 'nom_type_service'])
+        ]);
+    }
+
+    public function storeRejets(Request $request)
+    {
+        $validated = $request->validate([
+            'motif' => 'required|string|max:255',
+            'service_id' => 'required|integer',
+            'id_type_services' => 'required|integer',
+        ]);
+
+        Rejet::create($validated);
+
+        return back()->with('success', 'Rejet ajouté');
+    }
+
+    public function updateRejets(Request $request, Rejet $rejet)
+    {
+        $validated = $request->validate([
+            'motif' => 'required|string|max:255',
+            'service_id' => 'required|integer',
+            'id_type_services' => 'required|integer',
+        ]);
+
+        $rejet->update($validated);
+
+        return back()->with('success', 'Rejet modifié');
+    }
+
+    public function destroyRejets(Rejet $rejet)
+    {
+        $rejet->delete();
+
+        return back()->with('success', 'Rejet supprimé');
     }
 }

@@ -393,28 +393,7 @@ class NumerisationController extends Controller
             abort(404, 'Dossier non trouvé');
         }
 
-        // 🔵 2. Vérifier l'existence d'un dossier lié
-        if (!empty($dossierPrincipal->id_dossier_lier)) {
 
-            // Charger le dossier lié
-            $dossierLier = Dossier::with([
-                'r_dossier_vehicule',
-                'r_dossier_user',
-                'r_dossier_client',
-                'r_dossier_documents',
-                'r_dossier_services',
-                'r_dossier_services.r_service_types',
-                'r_dossier_transactions',
-            ])
-                ->where('id', $dossierPrincipal->id_dossier_lier)
-                ->first();
-
-            // 🔴 3. Si dossier lié → redirection vers selectDossier
-            // return inertia('Numerisation/selectDossier', [
-            //     'dossier' => $dossierPrincipal,
-            //     'dossier_lier' => $dossierLier,
-            // ]);
-        }
 
         // 🟢 4. Pas de dossier lié → afficher le formulaire normal
         return inertia('Numerisation/form', [

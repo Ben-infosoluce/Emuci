@@ -533,7 +533,7 @@
                                             <p><strong>Adresse :</strong> {{ formDataSummary.adresse }}</p>
                                             <p><strong>District :</strong> {{ formDataSummary.district }}</p>
                                             <p><strong>Ville de naissance :</strong> {{ formDataSummary.villeNaissance
-                                            }}</p>
+                                                }}</p>
                                             <!-- <p><strong>Nom :</strong> {{ formDataSummary.firstname }}</p>
                                             <p><strong>Prénom :</strong> {{ formDataSummary.lastname }}</p> -->
                                             <p><strong>Téléphone :</strong> {{ formDataSummary.phone }}</p>
@@ -555,14 +555,14 @@
                                             </p>
                                             <p><strong>Type technique :</strong> {{
                                                 formDataSummary.typeTechnique
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Genre :</strong> {{ formDataSummary.genre }}</p>
                                             <p><strong>Poids Total en charge (PTAC) :</strong> {{ formDataSummary.ptac
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Poids Utile (PU) :</strong> {{ formDataSummary.pu }}</p>
                                             <p><strong>Poids à Vide (PV) :</strong> {{ formDataSummary.pv }}</p>
                                             <p><strong>Puissance administrative :</strong> {{ formDataSummary.puissance
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Places Assises :</strong> {{ formDataSummary.placesAssises }}</p>
                                             <p><strong>Sources d’énergie :</strong> {{ formDataSummary.sourcesEnergie }}
                                             </p>
@@ -579,22 +579,22 @@
 
                                             <p><strong>Registre de commerce :</strong> {{
                                                 formDataSummary.registreCommerce
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Representant Legal :</strong> {{
                                                 formDataSummary.representantLegal }}
                                             </p>
                                             <p><strong>Numéro de Telephone :</strong> {{ formDataSummary.numeroTelephone
-                                                }}
+                                            }}
                                             </p>
                                             <p><strong>Compte Contribuable :</strong> {{
                                                 formDataSummary.compteContribuable
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Prefecture :</strong> {{ formDataSummary.prefecture
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Sous Prefecture :</strong> {{ formDataSummary.sousPrefecture
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Region :</strong> {{ formDataSummary.region
-                                                }}</p>
+                                            }}</p>
                                             <p><strong>Profession du représentant légal
                                                     :</strong> {{
                                                         formDataSummary.professionRepresantant }}
@@ -905,7 +905,49 @@ const { handleSubmit } = useValidationForm({
 
 // Modal & résumé
 const showSummary = ref(false);
-const formDataSummary = ref({});
+
+// Computed pour construire dynamiquement le résumé des données
+const formDataSummary = computed(() => ({
+    firstname: form.value.firstname,
+    lastname: form.value.lastname,
+    email: form.value.email,
+    adresse: form.value.adresse,
+    phone: form.value.phone,
+    typePersonne: form.value.typePersonne,
+    district: form.value.district,
+    villeNaissance: form.value.villeNaissance,
+    sex: form.value.civilite,
+    DateNaissance: form.value.DateNaissance,
+    vin: form.value.vin,
+    couleurVehicule: form.value.couleurVehicule,
+    carrosserie: form.value.carrosserie,
+    typeTechnique: form.value.typeTechnique,
+    genre: form.value.genre,
+    ptac: form.value.ptac,
+    pu: form.value.pu,
+    pv: form.value.pv,
+    puissance: form.value.puissance,
+    placesAssises: form.value.placesAssises,
+    sourcesEnergie: form.value.sourcesEnergie,
+    nombreEssieux: form.value.nombreEssieux,
+    type: form.value.type,
+    usage: form.value.usage,
+    codeRegion: form.value.codeRegion,
+    DateCirculation: form.value.DateCirculation,
+    AnneeProduction: form.value.AnneeProduction,
+    nomEntreprise: form.value.nomEntreprise,
+    registreCommerce: form.value.registreCommerce,
+    representantLegal: form.value.representantLegal,
+    numeroTelephone: form.value.numeroTelephone,
+    compteContribuable: form.value.compteContribuable,
+    DateNaissanceRepresantant: form.value.DateNaissanceRepresantant,
+    professionRepresantant: form.value.ProfessionRepresantant,
+    prefecture: form.value.prefecture,
+    sousPrefecture: form.value.sousPrefecture,
+    region: form.value.region,
+    marqueVehicule: selectedMarque.value,
+    modelVehicule: selectedModele.value,
+}));
 
 // Fonction de soumission
 const onSubmit = handleSubmit((values) => {
@@ -962,33 +1004,7 @@ const onSubmit = handleSubmit((values) => {
         return;
     }
 
-    // Préparer les données pour le résumé
-    formDataSummary.value = {
-        ...values,
-        type: form.value.type,
-        nomEntreprise: form.value.nomEntreprise,
-        registreCommerce: form.value.registreCommerce,
-        representantLegal: form.value.representantLegal,
-        numeroTelephone: form.value.numeroTelephone,
-        compteContribuable: form.value.compteContribuable,
-        prefecture: form.value.prefecture,
-        sousPrefecture: form.value.sousPrefecture,
-        region: form.value.region,
-        email: form.value.email,
-        district: form.value.district,
-        typePersonne: form.value.type,
-        sex: form.value.civilite,
-        vin: form.value.vin,
-        dateCirculation: form.value.DateCirculation,
-        anneeProduction: form.value.AnneeProduction,
-        dateNaissanceRepresantant: form.value.DateNaissanceRepresantant,
-        professionRepresantant: form.value.ProfessionRepresantant,
-        usage: form.value.usage,
-        codeRegion: form.value.codeRegion,
-        marqueVehicule: selectedMarque.value,
-        modelVehicule: selectedModele.value,
-    };
-
+    // Afficher le résumé (formDataSummary est maintenant une computed property)
     showSummary.value = true;
 });
 

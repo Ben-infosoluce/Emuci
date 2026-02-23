@@ -25,7 +25,7 @@
                                         informations du véhicule - VIN :
                                         <strong>{{
                                             dossier.r_dossier_vehicule.vin
-                                        }}</strong>
+                                            }}</strong>
                                     </h3>
                                     <h2>Statut du dossier : <Badge class="mx-2"
                                             :variant="dossier?.statut === 1 ? 'warning' : dossier?.statut === 2 ? 'success' : dossier?.statut === 3 ? 'error' : 'secondary'">
@@ -137,7 +137,7 @@
                                     informations du propriétaire :
                                     <strong>{{
                                         dossier.r_dossier_client.civilite
-                                    }}
+                                        }}
                                         , {{ dossier.r_dossier_client.nom }}
                                         {{ dossier.r_dossier_client.prenom }}
                                     </strong>
@@ -185,7 +185,7 @@
                                     </p>
                                     <p>Date de naissance du représentant : {{
                                         entreprise.date_de_naissance_representant_legal
-                                    }}</p>
+                                        }}</p>
                                 </div>
                             </div>
                         </ScrollArea>
@@ -413,13 +413,31 @@ const props = defineProps({
     detailTypeServices: Object,
     detailTypeServices_lier: Object,
     autre_facturation: Object,
+    nb_plaque: Number
 });
 
 const showSummary = ref(false);
 
-const tableauFusionne = [...props.detailTypeServices, ...(props.detailTypeServices_lier || [])];
+const tableauFusionne = [
+    ...props.detailTypeServices,
+    ...(props.detailTypeServices_lier || [])
+].map(item => {
+
+    const montant = props.nb_plaque == 1
+        ? Number(item.montant_1_plaque)
+        : Number(item.montant_2_plaques)
+
+    const { montant_1_plaque, montant_2_plaques, ...rest } = item
+
+    return {
+        ...rest,
+        montant: montant || 0
+    }
+})
 
 console.log('autre_facturation:', props.autre_facturation);
+console.log('nb_plaque:', props.nb_plaque);
+
 
 // Vérification des services déclencheurs
 const serviceTypes = [
@@ -490,18 +508,12 @@ const groupedDetailTypeServices = computed(() => {
     const groups = {}
 
     // Helper pour remplir les groupes sans répétition
-    const fillGroups = (items) => {
-        items?.forEach(item => {
-            if (!groups[item.id_type_services]) {
-                groups[item.id_type_services] = []
-            }
-            groups[item.id_type_services].push(item)
-        })
-    }
+    const fillGroups = (items) => { items?.forEach(item => { if (!groups[item.id_type_services]) { groups[item.id_type_services] = [] } groups[item.id_type_services].push(item) }) }
+
 
     // Remplissage avec les données existantes
-    fillGroups(props.detailTypeServices)
-    fillGroups(props.detailTypeServices_lier)
+    fillGroups(tableauFusionne)
+    // fillGroups(props.detailTypeServices_lier)
 
 
 
@@ -552,6 +564,30 @@ const getMontantTotal = () => {
     return FinalPrice() + getTVA();
 };
 
+const formatedMontant = (items = []) => {
+    return items.map(item => {
+        const montant = props.nb_plaque == 1
+            ? Number(item.montant_1_plaque)
+            : Number(item.montant_2_plaques)
+
+        const { montant_1_plaque, montant_2_plaques, ...rest } = item
+
+        return {
+            ...rest,
+            montant: montant || 0
+        }
+    })
+}
+
+const detailTypeServicesFormatted = computed(() =>
+    formatedMontant(props.detailTypeServices)
+)
+
+const detailTypeServicesLierFormatted = computed(() =>
+    formatedMontant(props.detailTypeServices_lier)
+)
+
+
 async function validerPaiement() {
     const nouveauStatut = 2;
     // Récupérer le token CSRF depuis le <meta>
@@ -576,8 +612,8 @@ async function validerPaiement() {
                 statut_paiement: nouveauStatut,
                 chrono: props.dossier.num_chrono,
                 chrono_lier: props.dossier_lier?.num_chrono,
-                detailTypeServices: props.detailTypeServices,
-                detailTypeServices_lier: props.detailTypeServices_lier,
+                detailTypeServices: detailTypeServicesFormatted.value,
+                detailTypeServices_lier: detailTypeServicesLierFormatted.value,
                 montant_total: getMontantTotal(),
                 caisse_ouverture_id: store.caisseOpened.caisse_id,
                 id_site: props.dossier.id_site,

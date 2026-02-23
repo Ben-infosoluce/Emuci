@@ -537,6 +537,7 @@
                                     class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-4xl shadow-2xl space-y-6">
                                     <h3 class="text-2xl font-bold text-center mb-2">Résumé des informations</h3>
                                     <!-- Informations du propriétaire -->
+
                                     <div>
                                         <h4 class="text-lg font-semibold mb-4">Informations du propriétaire :
                                             <samp class="text-[#ca7600]"> {{ formDataSummary.sex }} {{

@@ -50,10 +50,10 @@
 
                 <!-- Formulaire initial -->
                 <div v-if="vinStatus === 'initial'" class="space-y-8 p-8">
-                    <h6>Rechercher le numéro de châssis (VIN)</h6>
+                    <h6>Rechercher le numéro de châssis (VIN): {{ props.vin }}</h6>
                     <div>
                         <Input v-model="props.vin" placeholder="5771905005" class="w-full md:w-1/4" disabled />
-                        <p v-if="vinError" class="text-red-600 text-sm mt-1">{{ vinError }}</p>
+                        <!-- <p v-if="vinError" class="text-red-600 text-sm mt-1">{{ vinError }}</p> -->
                         <!-- Message d'erreur -->
                     </div>
 
@@ -84,7 +84,7 @@
                         <BoutonRetour @click="reset" size="sm">Retour</BoutonRetour>
 
                         <Link
-                            :href="route('show.new.pdc.duplicata.post.immatriculation.add.data', { vin: cleanVin(vin), selected: selected, mutation: mutation })">
+                            :href="route('show.new.pdc.duplicata.post.immatriculation.add.data', { vin: cleanVin(props.vin), selected: selected, mutation: mutation })">
                         <Button variant="outline" size="sm">
                             <MoveRight />
                             Continuer
@@ -108,7 +108,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeMount } from 'vue'
+import { ref, computed, onMounted, onBeforeMount, watch } from 'vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -117,11 +117,15 @@ import BoutonRetour from "/resources/js/components/BoutonRetour.vue";
 import { Toaster, toast } from 'vue-sonner'
 import { Search, MoveRight } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
+import axios from 'axios'
 
 const props = defineProps({
     typeServices: Array,
     vin: String,
 })
+
+console.log('Props reçues:', props)
+console.log('VIN reçu:', props.vin)
 
 const options = computed(() => props.typeServices)
 
@@ -131,15 +135,28 @@ const showRechercheVin = ref(false)
 const selected = ref([])
 const mutation = ref(null)
 
+// Créer une variable locale pour le VIN qui se synchronise avec la prop
+const vinLocal = ref(props.vin || '')
+
 const vin = computed({
-    get: () => props.vin,
+    get: () => vinLocal.value,
     set: (value) => {
-        props.vin = value
+        vinLocal.value = value
     }
 })
+
+// Synchroniser avec la prop quand elle change
+// watch(() => props.vin, (newVin) => {
+//     console.log('Watch - Nouveau VIN reçu:', newVin)
+//     if (newVin) {
+//         vinLocal.value = newVin
+//         console.log('vinLocal mise à jour:', vinLocal.value)
+//     }
+// }, { immediate: true })
+
 const vinStatus = ref('initial')
 const isLoading = ref(false)
-const vinError = ref('')
+// const vinError = ref('')
 
 // ---------------------------------------------
 //   FONCTIONS
@@ -179,9 +196,19 @@ function revenirArriere() {
 
 
 const reset = () => {
-    vin.value = ''
+    // Ne pas réinitialiser vin car il vient de la prop
     vinStatus.value = 'initial'
-    vinError.value = ''
+    // vinError.value = ''
+    // showTypeService.value = true
+    // showRechercheVin.value = false
+    selected.value = []
+    mutation.value = null
+}
+
+const resetForm = () => {
+    vinLocal.value = ''
+    vinStatus.value = 'initial'
+    // vinError.value = ''
     showTypeService.value = true
     showRechercheVin.value = false
     selected.value = []
@@ -189,14 +216,14 @@ const reset = () => {
 }
 
 const findVin = async () => {
-    vinError.value = ''
+    // vinError.value = ''
 
-    const cleanedVin = vin.value.trim()
+    const cleanedVin = props.vin.trim()
 
-    if (!cleanedVin) {
-        vinError.value = 'Entrez le numéro de châssis (VIN).'
-        return
-    }
+    // if (!cleanedVin) {
+    //     vinError.value = 'Entrez le numéro de châssis (VIN).'
+    //     return
+    // }
 
     isLoading.value = true
     try {
@@ -213,7 +240,7 @@ const findVin = async () => {
 //   RESET AUTOMATIQUE AU CHARGEMENT DE LA PAGE
 // ---------------------------------------------
 onBeforeMount(() => {
-    reset()
+    resetForm()
     // resetTypeService()
 })
 </script>

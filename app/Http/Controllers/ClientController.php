@@ -58,6 +58,7 @@ class ClientController extends Controller
         $client = Client::select('id', 'nom', 'prenom')
             ->where('telephone', $validated['telephone'])
             ->first();
+        // dd($client);
 
         if (!$client) {
             return response()->json([
@@ -73,9 +74,10 @@ class ClientController extends Controller
             'r_dossier_services.r_service_types',
             'r_dossier_transactions',
         ])
-            ->where('id_client', $client->id)
+            // ->where($client->id, exist)
             ->where('num_chrono', $validated['num_chrono'])
             ->first();
+        // dd($client, $dossier);
 
         if (!$dossier) {
             return response()->json([

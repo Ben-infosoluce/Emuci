@@ -329,6 +329,7 @@
                     <!-- </ScrollArea> -->
                 </Card>
             </div>
+
             <div v-if="dossier.statut_numerisation == 1 && dossier.statut == 1"
                 class="sticky top-[-20px] z-10 bg-[#f1f5f9] dark:bg-gray-900 flex flex-col space-y-4 px-8  py-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                 <div></div>
@@ -336,6 +337,7 @@
                     class="sticky top-[-20px] z-10 bg-[#f1f5f9] dark:bg-gray-900 flex flex-col space-y-4 px-8  py-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                     <div></div>
                     <div class="flex items-center space-x-2">
+                        <!-- <p>{{ props.dossier.r_dossier_services.nom_service }} okok</p> -->
 
                         <AlertDialog>
                             <Link
@@ -357,12 +359,13 @@
                                     <CreditCard class="w-4 h-4 mr-2" /> Ouvrir la numérisation
                                 </Button>
                                 </Link>
-                                <!-- <Link v-if="props.dossier.r_dossier_services.nom_service === 'Post-immatriculation'"
+                                <Link
+                                    v-if="props.dossier.r_dossier_services.nom_service != 'Immatriculation spéciale' && props.dossier.r_dossier_services.nom_service != 'Post-immatriculation'"
                                     :href="route('show.form.numerisation', { dossier: dossier.id, service: dossier.r_dossier_services.nom_service, detail: dossier.detail, physique_morale: dossier.r_dossier_vehicule.physique_morale })">
                                 <Button class="bg-[#068A06]">
                                     <CreditCard class="w-4 h-4 mr-2" /> Ouvrir la numérisation
                                 </Button>
-                                </Link> -->
+                                </Link>
 
 
 
@@ -572,7 +575,7 @@ function toggleField(fieldKey) {
 // Charger les motifs depuis l'API
 const fetchItems = async () => {
     try {
-        const res = await fetch("/minister/mt1/get/rejets/data");
+        const res = await fetch(`/minister/mt1/get/rejets/data?id_service=${props.dossier.id_service}`);
         const data = await res.json();
         items.value = data;
     } catch (err) {

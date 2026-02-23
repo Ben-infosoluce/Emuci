@@ -217,10 +217,21 @@ class PaiementController extends Controller
 
             if ($hasChangementPlaque) {
                 // Récupération depuis la table autre_facturation (ID 20 = Changement de plaque)
-                $changementPlaqueData = DB::table('autre_facturation')
-                    ->where('id', 1) // ID fixe pour "Changement de plaque"
-                    ->where('status', 1) // Actif
-                    ->first();
+                //récupéérer de nb_plaque 
+                $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
+                //si nb_plaque == 1 
+                $changementPlaqueData = null;
+                if ($nb_plaque == 1) {
+                    $changementPlaqueData = DB::table('autre_facturation')
+                        ->where('id', 2) // ID fixe pour "Changement de plaque"
+                        ->where('status', 1) // Actif
+                        ->first();
+                } else {
+                    $changementPlaqueData = DB::table('autre_facturation')
+                        ->where('id', 1) // ID fixe pour "Changement de plaque"
+                        ->where('status', 1) // Actif
+                        ->first();
+                }
 
                 if (!$changementPlaqueData) {
                     DB::rollBack();
@@ -236,6 +247,7 @@ class PaiementController extends Controller
         | CALCUL DES MONTANTS + TAXE 18%
         |--------------------------------------------------------------------------
         */
+            // dd($validated['detailTypeServices'], $changementPlaqueData);
 
             // Pour dossier principal
             $montant_dossier_ht = 0;
@@ -246,6 +258,8 @@ class PaiementController extends Controller
                     $montant_dossier_ht += $item['montant'];
                 }
             }
+
+            // dd($montant_dossier_ht, $detailServicesPrincipal);
 
             // Ajout du montant changement de plaque au total HT
             if ($changementPlaqueData) {
@@ -358,7 +372,7 @@ class PaiementController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Paiements enregistrés avec succès.' . ($changementPlaqueData ? ' (Changement de plaque inclus)' : ''),
+                'message' => 'Paiements enregistrés avec succès.',
                 'dossier' => $dossier,
                 'montant_dossier_ht' => $montant_dossier_ht,
                 'montant_dossier_ttc' => $montant_dossier_ttc,
@@ -484,6 +498,21 @@ class PaiementController extends Controller
             ->where('id', $dossier->paiement_validated_by)
             ->first();
 
+        //récupéérer de nb_plaque 
+        $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
+        //si nb_plaque == 1 
+        $autre_facturation = null;
+        if ($nb_plaque == 1) {
+            $autre_facturation = DB::table('autre_facturation')
+                ->where('id', 2) // ID fixe pour "Changement de plaque"
+                ->where('status', 1) // Actif
+                ->first();
+        } else {
+            $autre_facturation = DB::table('autre_facturation')
+                ->where('id', 1) // ID fixe pour "Changement de plaque"
+                ->where('status', 1) // Actif
+                ->first();
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -501,11 +530,7 @@ class PaiementController extends Controller
             'dossier_lier'               => $dossier_lier,
             'detailTypeServices_lier'    => $detailTypeServices_lier,
 
-            'autre_facturation' => DB::table('autre_facturation')
-                ->where('id', 1) // ID fixe pour "Changement de plaque"
-                ->where('status', 1) // Actif
-                ->first(),
-
+            'autre_facturation' => $autre_facturation
         ]);
     }
 

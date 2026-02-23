@@ -290,6 +290,39 @@
                         </a>
                     </Link>
                 </li>
+                <li :class="{
+                    'active-page': $page.component.startsWith('Admin/Marques/'),
+                }">
+                    <Link :href="route('show.marques.data')">
+                        <a
+                            class="flex items-center p-2 text-white hover:text-black rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <Car />
+                            <span class="flex-1 ms-3 whitespace-nowrap">Marques</span>
+                        </a>
+                    </Link>
+                </li>
+                <li :class="{
+                    'active-page': $page.component.startsWith('Admin/Models/'),
+                }">
+                    <Link :href="route('show.models.data')">
+                        <a
+                            class="flex items-center p-2 text-white hover:text-black rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <Columns />
+                            <span class="flex-1 ms-3 whitespace-nowrap">Modèles</span>
+                        </a>
+                    </Link>
+                </li>
+                <li :class="{
+                    'active-page': $page.component.startsWith('Admin/Rejets/'),
+                }">
+                    <Link :href="route('rejets.index')">
+                        <a
+                            class="flex items-center p-2 text-white hover:text-black rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <ChartColumnStacked />
+                            <span class="flex-1 ms-3 whitespace-nowrap">Rejets</span>
+                        </a>
+                    </Link>
+                </li>
             </ul>
         </template>
 
@@ -397,7 +430,7 @@ import { storeToRefs } from "pinia";
 import { useCaisseStore } from "@/stores/mainStore";
 import {
     User, UsersRound, SquareStack, Layers2, ArrowsUpFromLine, LayoutDashboard,
-    ChartColumnStacked, RectangleEllipsis, ChartSpline
+    ChartColumnStacked, RectangleEllipsis, ChartSpline, Car, Columns
 } from 'lucide-vue-next';
 
 

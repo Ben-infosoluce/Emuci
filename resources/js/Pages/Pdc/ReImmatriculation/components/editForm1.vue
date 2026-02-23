@@ -402,8 +402,9 @@
                                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-auto">
                                 <div
                                     class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-4xl shadow-2xl space-y-6">
-                                    <h3 class="text-2xl font-bold text-center mb-2">Résumé des informations</h3>
+                                    <h3 class="text-2xl font-bold text-center mb-2">Résumé des informationsa</h3>
                                     <!-- Informations du propriétaire -->
+
                                     <div>
                                         <h4 class="text-lg font-semibold mb-8 text-center">
                                             --------------- Informations du propriétaire ---------------

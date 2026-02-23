@@ -29,14 +29,14 @@
                                 <h2>
                                     Statut du dossier :
                                     <Badge :variant="dossier?.statut === 1
-                                            ? 'warning'
-                                            : dossier?.statut === 2
-                                                ? 'success'
-                                                : dossier?.statut === 3
-                                                    ? 'error'
-                                                    : dossier?.statut === 4
-                                                        ? 'warning'
-                                                        : 'secondary'
+                                        ? 'warning'
+                                        : dossier?.statut === 2
+                                            ? 'success'
+                                            : dossier?.statut === 3
+                                                ? 'error'
+                                                : dossier?.statut === 4
+                                                    ? 'warning'
+                                                    : 'secondary'
                                         ">
                                         {{
                                             dossier?.statut === 2
@@ -337,14 +337,14 @@
                                 <h2>
                                     Statut du dossier :
                                     <Badge :variant="dossier?.statut === 1
-                                            ? 'warning'
-                                            : dossier?.statut === 2
-                                                ? 'success'
-                                                : dossier?.statut === 3
-                                                    ? 'error'
-                                                    : dossier?.statut === 4
-                                                        ? 'warning'
-                                                        : 'secondary'
+                                        ? 'warning'
+                                        : dossier?.statut === 2
+                                            ? 'success'
+                                            : dossier?.statut === 3
+                                                ? 'error'
+                                                : dossier?.statut === 4
+                                                    ? 'warning'
+                                                    : 'secondary'
                                         ">
                                         {{
                                             dossier?.statut === 2
@@ -460,7 +460,7 @@
                                     <InfoRow label="Poids Total en charge" :value="oldData.vehicule.poids_total_charge
                                         " />
                                     <InfoRow label="Puissance administrative" :value="oldData.vehicule
-                                            .puissance_administrative
+                                        .puissance_administrative
                                         " />
                                     <InfoRow label="Poids Utile" :value="oldData.vehicule.poids_utile" />
                                     <InfoRow label="Places Assises" :value="oldData.vehicule.places_assises" />
@@ -495,19 +495,19 @@
                                     <InfoRow label="Registre de commerce" :value="oldData.entreprise.registre_commerce
                                         " />
                                     <InfoRow label="N° de Compte contribuable" :value="oldData.entreprise
-                                            .compte_contribuale
+                                        .compte_contribuale
                                         " />
                                     <InfoRow label="Nom du Representant Legal" :value="oldData.entreprise
-                                            .nom_representant_legal
+                                        .nom_representant_legal
                                         " />
                                     <InfoRow label="Téléphone du Representant Legal" :value="oldData.entreprise
-                                            .telephone_representant_legal
+                                        .telephone_representant_legal
                                         " />
                                     <InfoRow label="Profession du Representant Legal" :value="oldData.entreprise
-                                            .profession_representant_legal
+                                        .profession_representant_legal
                                         " />
                                     <InfoRow label="Date de Naissance du Representant Legal" :value="oldData.entreprise
-                                            .date_de_naissance_representant_legal
+                                        .date_de_naissance_representant_legal
                                         " />
                                 </div>
                                 <hr v-if="oldData.entreprise" />
@@ -548,7 +548,7 @@
                                         )
                                             " />
                                     <InfoRow label="Puissance administrative" :value="newData.vehicule
-                                            .puissance_administrative
+                                        .puissance_administrative
                                         " :highlight="isDifferent(
                                             'vehicule.puissance_administrative',
                                         )
@@ -619,31 +619,31 @@
                                         )
                                             " />
                                     <InfoRow label="N° de Compte contribuable" :value="newData.entreprise
-                                            .compte_contribuable
+                                        .compte_contribuable
                                         " :highlight="isDifferent(
                                             'entreprise.compte_contribuable',
                                         )
                                             " />
                                     <InfoRow label="Nom du représentant légal" :value="newData.entreprise
-                                            .nom_representant_legal
+                                        .nom_representant_legal
                                         " :highlight="isDifferent(
                                             'entreprise.nom_representant_legal',
                                         )
                                             " />
                                     <InfoRow label="Téléphone du Representant Legal" :value="newData.entreprise
-                                            .telephone_representant_legal
+                                        .telephone_representant_legal
                                         " :highlight="isDifferent(
                                             'entreprise.telephone_representant_legal',
                                         )
                                             " />
                                     <InfoRow label="Profession du Representant Legal" :value="newData.entreprise
-                                            .profession_representant_legal
+                                        .profession_representant_legal
                                         " :highlight="isDifferent(
                                             'entreprise.profession_representant_legal',
                                         )
                                             " />
                                     <InfoRow label="Date de Naissance du Representant Legal" :value="newData.entreprise
-                                            .date_de_naissance_representant_legal
+                                        .date_de_naissance_representant_legal
                                         " :highlight="isDifferent(
                                             'entreprise.date_de_naissance_representant_legal',
                                         )
@@ -1049,70 +1049,70 @@
                                                                                     class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm my-4">
                                                                                     <InfoRow label="Châssis (VIN)"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .vin
+                                                                                            .vehicule
+                                                                                            .vin
                                                                                             " />
                                                                                     <InfoRow label="Couleur" :value="oldData
-                                                                                            .vehicule
-                                                                                            .couleur
+                                                                                        .vehicule
+                                                                                        .couleur
                                                                                         " />
                                                                                     <InfoRow label="Marque du véhicule"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .marque
+                                                                                            .vehicule
+                                                                                            .marque
                                                                                             " />
                                                                                     <InfoRow label="Carrosserie" :value="oldData
-                                                                                            .vehicule
-                                                                                            .carrosserie
+                                                                                        .vehicule
+                                                                                        .carrosserie
                                                                                         " />
                                                                                     <InfoRow label="Modèle" :value="oldData
-                                                                                            .vehicule
-                                                                                            .modele
+                                                                                        .vehicule
+                                                                                        .modele
                                                                                         " />
                                                                                     <InfoRow label="Type technique"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .type_technique
+                                                                                            .vehicule
+                                                                                            .type_technique
                                                                                             " />
                                                                                     <InfoRow label="Genre" :value="oldData
-                                                                                            .vehicule
-                                                                                            .genre_vehicule
+                                                                                        .vehicule
+                                                                                        .genre_vehicule
                                                                                         " />
                                                                                     <InfoRow label="Poids à Vide"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .poids_vide
+                                                                                            .vehicule
+                                                                                            .poids_vide
                                                                                             " />
                                                                                     <InfoRow
                                                                                         label="Poids Total en charge"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .poids_total_charge
+                                                                                            .vehicule
+                                                                                            .poids_total_charge
                                                                                             " />
                                                                                     <InfoRow
                                                                                         label="Puissance administrative"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .puissance_administrative
+                                                                                            .vehicule
+                                                                                            .puissance_administrative
                                                                                             " />
                                                                                     <InfoRow label="Poids Utile" :value="oldData
-                                                                                            .vehicule
-                                                                                            .poids_utile
+                                                                                        .vehicule
+                                                                                        .poids_utile
                                                                                         " />
                                                                                     <InfoRow label="Places Assises"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .places_assises
+                                                                                            .vehicule
+                                                                                            .places_assises
                                                                                             " />
                                                                                     <InfoRow label="Sources d’énergie"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .source_energie
+                                                                                            .vehicule
+                                                                                            .source_energie
                                                                                             " />
                                                                                     <InfoRow label="Nbre d’Essieux"
                                                                                         :value="oldData
-                                                                                                .vehicule
-                                                                                                .nombre_essieux
+                                                                                            .vehicule
+                                                                                            .nombre_essieux
                                                                                             " />
                                                                                 </div>
                                                                                 <hr />
@@ -1125,38 +1125,38 @@
                                                                                 <div
                                                                                     class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm my-4">
                                                                                     <InfoRow label="Civilité" :value="oldData
-                                                                                            .client
-                                                                                            .civilite
+                                                                                        .client
+                                                                                        .civilite
                                                                                         " />
                                                                                     <InfoRow label="Nom" :value="oldData
-                                                                                            .client
-                                                                                            .nom
+                                                                                        .client
+                                                                                        .nom
                                                                                         " />
                                                                                     <InfoRow label="Prénom" :value="oldData
-                                                                                            .client
-                                                                                            .prenom
+                                                                                        .client
+                                                                                        .prenom
                                                                                         " />
                                                                                     <InfoRow label="Adresse" :value="oldData
-                                                                                            .client
-                                                                                            .adresse
+                                                                                        .client
+                                                                                        .adresse
                                                                                         " />
                                                                                     <InfoRow label="Téléphone" :value="oldData
-                                                                                            .client
-                                                                                            .telephone
+                                                                                        .client
+                                                                                        .telephone
                                                                                         " />
                                                                                     <InfoRow label="Date de Naissance"
                                                                                         :value="oldData
-                                                                                                .client
-                                                                                                .date_naissance
+                                                                                            .client
+                                                                                            .date_naissance
                                                                                             " />
                                                                                     <InfoRow label="Ville de Naissance"
                                                                                         :value="oldData
-                                                                                                .client
-                                                                                                .ville_naissance
+                                                                                            .client
+                                                                                            .ville_naissance
                                                                                             " />
                                                                                     <InfoRow label="Email" :value="oldData
-                                                                                            .client
-                                                                                            .email
+                                                                                        .client
+                                                                                        .email
                                                                                         " />
                                                                                 </div>
                                                                                 <hr />
@@ -1174,38 +1174,38 @@
                                                                                     ">
                                                                                     <InfoRow label="Nom de l'entreprise"
                                                                                         :value="oldData
-                                                                                                .entreprise
-                                                                                                .nom
+                                                                                            .entreprise
+                                                                                            .nom
                                                                                             " />
                                                                                     <InfoRow label="Adresse" :value="oldData
-                                                                                            .entreprise
-                                                                                            .adresse
+                                                                                        .entreprise
+                                                                                        .adresse
                                                                                         " />
                                                                                     <InfoRow label="Téléphone" :value="oldData
-                                                                                            .entreprise
-                                                                                            .telephone
+                                                                                        .entreprise
+                                                                                        .telephone
                                                                                         " />
                                                                                     <InfoRow label="Email" :value="oldData
-                                                                                            .entreprise
-                                                                                            .email
+                                                                                        .entreprise
+                                                                                        .email
                                                                                         " />
                                                                                     <InfoRow label="District" :value="oldData
-                                                                                            .entreprise
-                                                                                            .district
+                                                                                        .entreprise
+                                                                                        .district
                                                                                         " />
                                                                                     <InfoRow label="Préfecture" :value="oldData
-                                                                                            .entreprise
-                                                                                            .prefecture
+                                                                                        .entreprise
+                                                                                        .prefecture
                                                                                         " />
                                                                                     <InfoRow label="Sous-préfecture"
                                                                                         :value="oldData
-                                                                                                .entreprise
-                                                                                                .sous_prefecture
+                                                                                            .entreprise
+                                                                                            .sous_prefecture
                                                                                             " />
                                                                                     <InfoRow label="Code de région"
                                                                                         :value="oldData
-                                                                                                .entreprise
-                                                                                                .code_de_region
+                                                                                            .entreprise
+                                                                                            .code_de_region
                                                                                             " />
                                                                                 </div>
                                                                                 <hr v-if="
@@ -1229,113 +1229,113 @@
                                                                                     class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm my-4">
                                                                                     <InfoRow label="Châssis (VIN)"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .vin
-                                                                                            " :highlight="isDifferent(
-                                                                                            'vehicule.vin',
-                                                                                        )
-                                                                                            " />
-                                                                                    <InfoRow label="Couleur" :value="newData
                                                                                             .vehicule
-                                                                                            .couleur
+                                                                                            .vin
+                                                                                            " :highlight="isDifferent(
+                                                                                                'vehicule.vin',
+                                                                                            )
+                                                                                                " />
+                                                                                    <InfoRow label="Couleur" :value="newData
+                                                                                        .vehicule
+                                                                                        .couleur
                                                                                         " :highlight="isDifferent(
                                                                                             'vehicule.couleur',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Marque du véhicule"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .marque
-                                                                                            " :highlight="isDifferent(
-                                                                                            'vehicule.marque',
-                                                                                        )
-                                                                                            " />
-                                                                                    <InfoRow label="Carrosserie" :value="newData
                                                                                             .vehicule
-                                                                                            .carrosserie
+                                                                                            .marque
+                                                                                            " :highlight="isDifferent(
+                                                                                                'vehicule.marque',
+                                                                                            )
+                                                                                                " />
+                                                                                    <InfoRow label="Carrosserie" :value="newData
+                                                                                        .vehicule
+                                                                                        .carrosserie
                                                                                         " :highlight="isDifferent(
                                                                                             'vehicule.carrosserie',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Modèle" :value="newData
-                                                                                            .vehicule
-                                                                                            .modele
+                                                                                        .vehicule
+                                                                                        .modele
                                                                                         " :highlight="isDifferent(
                                                                                             'vehicule.modele',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Type technique"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .type_technique
-                                                                                            " :highlight="isDifferent(
-                                                                                            'vehicule.type_technique',
-                                                                                        )
-                                                                                            " />
-                                                                                    <InfoRow label="Genre" :value="newData
                                                                                             .vehicule
-                                                                                            .genre_vehicule
+                                                                                            .type_technique
+                                                                                            " :highlight="isDifferent(
+                                                                                                'vehicule.type_technique',
+                                                                                            )
+                                                                                                " />
+                                                                                    <InfoRow label="Genre" :value="newData
+                                                                                        .vehicule
+                                                                                        .genre_vehicule
                                                                                         " :highlight="isDifferent(
                                                                                             'vehicule.genre_vehicule',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Poids à Vide"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .poids_vide
+                                                                                            .vehicule
+                                                                                            .poids_vide
                                                                                             " :highlight="isDifferent(
-                                                                                            'vehicule.poids_vide',
-                                                                                        )
-                                                                                            " />
+                                                                                                'vehicule.poids_vide',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="Poids Total en charge"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .poids_total_charge
+                                                                                            .vehicule
+                                                                                            .poids_total_charge
                                                                                             " :highlight="isDifferent(
-                                                                                            'vehicule.poids_total_charge',
-                                                                                        )
-                                                                                            " />
+                                                                                                'vehicule.poids_total_charge',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="Puissance administrative"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .puissance_administrative
-                                                                                            " :highlight="isDifferent(
-                                                                                            'vehicule.puissance_administrative',
-                                                                                        )
-                                                                                            " />
-                                                                                    <InfoRow label="Poids Utile" :value="newData
                                                                                             .vehicule
-                                                                                            .poids_utile
+                                                                                            .puissance_administrative
+                                                                                            " :highlight="isDifferent(
+                                                                                                'vehicule.puissance_administrative',
+                                                                                            )
+                                                                                                " />
+                                                                                    <InfoRow label="Poids Utile" :value="newData
+                                                                                        .vehicule
+                                                                                        .poids_utile
                                                                                         " :highlight="isDifferent(
                                                                                             'vehicule.poids_utile',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Places Assises"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .places_assises
+                                                                                            .vehicule
+                                                                                            .places_assises
                                                                                             " :highlight="isDifferent(
-                                                                                            'vehicule.places_assises',
-                                                                                        )
-                                                                                            " />
+                                                                                                'vehicule.places_assises',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow label="Sources d’énergie"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .source_energie
+                                                                                            .vehicule
+                                                                                            .source_energie
                                                                                             " :highlight="isDifferent(
-                                                                                            'vehicule.source_energie',
-                                                                                        )
-                                                                                            " />
+                                                                                                'vehicule.source_energie',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow label="Nbre d’Essieux"
                                                                                         :value="newData
-                                                                                                .vehicule
-                                                                                                .nombre_essieux
+                                                                                            .vehicule
+                                                                                            .nombre_essieux
                                                                                             " :highlight="isDifferent(
-                                                                                            'vehicule.nombre_essieux',
-                                                                                        )
-                                                                                            " />
+                                                                                                'vehicule.nombre_essieux',
+                                                                                            )
+                                                                                                " />
                                                                                 </div>
                                                                                 <hr />
                                                                                 <!-- Informations du propriétaire -->
@@ -1347,59 +1347,59 @@
                                                                                 <div
                                                                                     class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                                                                     <InfoRow label="Civilité" :value="newData
-                                                                                            .client
-                                                                                            .civilite
+                                                                                        .client
+                                                                                        .civilite
                                                                                         " :highlight="isDifferent(
                                                                                             'client.civilite',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Nom" :value="newData
-                                                                                            .client
-                                                                                            .nom
+                                                                                        .client
+                                                                                        .nom
                                                                                         " :highlight="isDifferent(
                                                                                             'client.nom',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Prénom" :value="newData
-                                                                                            .client
-                                                                                            .prenom
+                                                                                        .client
+                                                                                        .prenom
                                                                                         " :highlight="isDifferent(
                                                                                             'client.prenom',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Adresse" :value="newData
-                                                                                            .client
-                                                                                            .adresse
+                                                                                        .client
+                                                                                        .adresse
                                                                                         " :highlight="isDifferent(
                                                                                             'client.adresse',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Téléphone" :value="newData
-                                                                                            .client
-                                                                                            .telephone
+                                                                                        .client
+                                                                                        .telephone
                                                                                         " :highlight="isDifferent(
                                                                                             'client.telephone',
                                                                                         )
                                                                                             " />
                                                                                     <InfoRow label="Date de Naissance"
                                                                                         :value="newData
-                                                                                                .client
-                                                                                                .date_naissance
+                                                                                            .client
+                                                                                            .date_naissance
                                                                                             " :highlight="isDifferent(
-                                                                                            'client.date_naissance',
-                                                                                        )
-                                                                                            " />
+                                                                                                'client.date_naissance',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow label="Ville de Naissance"
                                                                                         :value="newData
-                                                                                                .client
-                                                                                                .ville_naissance
-                                                                                            " :highlight="isDifferent(
-                                                                                            'client.ville_naissance',
-                                                                                        )
-                                                                                            " />
-                                                                                    <InfoRow label="Email" :value="newData
                                                                                             .client
-                                                                                            .email
+                                                                                            .ville_naissance
+                                                                                            " :highlight="isDifferent(
+                                                                                                'client.ville_naissance',
+                                                                                            )
+                                                                                                " />
+                                                                                    <InfoRow label="Email" :value="newData
+                                                                                        .client
+                                                                                        .email
                                                                                         " :highlight="isDifferent(
                                                                                             'client.email',
                                                                                         )
@@ -1422,66 +1422,66 @@
                                                                                     ">
                                                                                     <InfoRow label="Nom de l'entreprise"
                                                                                         :value="newData
-                                                                                                .entreprise
-                                                                                                .nom_entreprise
+                                                                                            .entreprise
+                                                                                            .nom_entreprise
                                                                                             " :highlight="isDifferent(
-                                                                                            'entreprise.nom_entreprise',
-                                                                                        )
-                                                                                            " />
+                                                                                                'entreprise.nom_entreprise',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="Registre de commerce"
                                                                                         :value="newData
-                                                                                                .entreprise
-                                                                                                .registre_commerce
+                                                                                            .entreprise
+                                                                                            .registre_commerce
                                                                                             " :highlight="isDifferent(
-                                                                                            'entreprise.registre_commerce',
-                                                                                        )
-                                                                                            " />
+                                                                                                'entreprise.registre_commerce',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="N° de Compte contribuable"
                                                                                         :value="newData
-                                                                                                .entreprise
-                                                                                                .compte_contribuable
+                                                                                            .entreprise
+                                                                                            .compte_contribuable
                                                                                             " :highlight="isDifferent(
-                                                                                            'entreprise.compte_contribuable',
-                                                                                        )
-                                                                                            " />
+                                                                                                'entreprise.compte_contribuable',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="Nom du représentant légal"
                                                                                         :value="newData
-                                                                                                .entreprise
-                                                                                                .nom_representant_legal
+                                                                                            .entreprise
+                                                                                            .nom_representant_legal
                                                                                             " :highlight="isDifferent(
-                                                                                            'entreprise.nom_representant_legal',
-                                                                                        )
-                                                                                            " />
+                                                                                                'entreprise.nom_representant_legal',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="Téléphone du Representant Legal"
                                                                                         :value="newData
-                                                                                                .entreprise
-                                                                                                .telephone_representant_legal
+                                                                                            .entreprise
+                                                                                            .telephone_representant_legal
                                                                                             " :highlight="isDifferent(
-                                                                                            'entreprise.telephone_representant_legal',
-                                                                                        )
-                                                                                            " />
+                                                                                                'entreprise.telephone_representant_legal',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="Profession du Representant Legal"
                                                                                         :value="newData
-                                                                                                .entreprise
-                                                                                                .profession_representant_legal
+                                                                                            .entreprise
+                                                                                            .profession_representant_legal
                                                                                             " :highlight="isDifferent(
-                                                                                            'entreprise.profession_representant_legal',
-                                                                                        )
-                                                                                            " />
+                                                                                                'entreprise.profession_representant_legal',
+                                                                                            )
+                                                                                                " />
                                                                                     <InfoRow
                                                                                         label="Date de Naissance du Representant Legal"
                                                                                         :value="newData
-                                                                                                .entreprise
-                                                                                                .date_de_naissance_representant_legal
+                                                                                            .entreprise
+                                                                                            .date_de_naissance_representant_legal
                                                                                             " :highlight="isDifferent(
-                                                                                            'entreprise.date_de_naissance_representant_legal',
-                                                                                        )
-                                                                                            " />
+                                                                                                'entreprise.date_de_naissance_representant_legal',
+                                                                                            )
+                                                                                                " />
                                                                                 </div>
                                                                                 <hr v-if="
                                                                                     newData.entreprise
@@ -1503,8 +1503,8 @@
                                                                     }}
                                                                 </h2>
                                                                 <img :src="docsArray[
-                                                                        selectedIndex
-                                                                    ]?.src
+                                                                    selectedIndex
+                                                                ]?.src
                                                                     " alt="Document"
                                                                     class="w-[900px] h-[600px] object-contain rounded shadow" />
 
@@ -1515,8 +1515,8 @@
                                                                         :disabled="selectedIndex ===
                                                                             0
                                                                             " @click="
-                                                                            selectedIndex--
-                                                                            ">
+                                                                                selectedIndex--
+                                                                                ">
                                                                         <ChevronLeft />
                                                                     </button>
 
@@ -1537,8 +1537,8 @@
                                                                             docsArray.length -
                                                                             1
                                                                             " @click="
-                                                                            selectedIndex++
-                                                                            ">
+                                                                                selectedIndex++
+                                                                                ">
                                                                         <ChevronRight />
                                                                     </button>
                                                                 </div>
@@ -1884,7 +1884,7 @@ function toggleField(fieldKey) {
 // Charger les motifs depuis l'API
 const fetchItems = async () => {
     try {
-        const res = await fetch("/minister/mt1/get/rejets/data");
+        const res = await fetch(`/minister/mt1/get/rejets/data?id_service=${props.dossier.id_service}`);
         const data = await res.json();
         console.log(" ✅ Données des motifs :", data);
         items.value = data;

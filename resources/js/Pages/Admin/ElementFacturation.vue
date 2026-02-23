@@ -21,7 +21,8 @@
                             <AlertDialogDescription>
                                 <div class="space-y-8 my-8">
                                     <Input v-model="element_facturation" placeholder="Nom de l'élément" />
-                                    <Input v-model="montant" placeholder="Montant" />
+                                    <Input v-model="montant_2_plaques" placeholder="Montant-2 plaques" />
+                                    <Input v-model="montant_1_plaque" placeholder="Montant-1 plaque" />
                                 </div>
                                 <div class="flex gap-4">
                                     <Select v-model="id_site" class="my-8" placeholder="Type de site">
@@ -138,10 +139,11 @@
                                     <TableHead>ID</TableHead>
                                     <TableHead>Nom</TableHead>
                                     <TableHead>Service</TableHead>
-                                    <TableHead>Type de service</TableHead>
+                                    <!-- <TableHead>Type de service</TableHead> -->
                                     <TableHead> Site </TableHead>
                                     <TableHead>Entité</TableHead>
-                                    <TableHead>Montant</TableHead>
+                                    <TableHead>Montant-2 plaques</TableHead>
+                                    <TableHead>Montant-1 plaque</TableHead>
                                     <!-- <TableHead>Statut</TableHead> -->
                                     <TableHead class="text-right">Actions</TableHead>
                                 </TableRow>
@@ -171,6 +173,12 @@
                                         <TableCell>
                                             <Skeleton class="h-4 w-20" />
                                         </TableCell>
+                                        <TableCell>
+                                            <Skeleton class="h-4 w-20" />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Skeleton class="h-4 w-20" />
+                                        </TableCell>
                                         <TableCell class="text-right">
                                             <Skeleton class="h-4 w-10 ml-auto" />
                                         </TableCell>
@@ -180,7 +188,7 @@
                                     <TableRow v-for="(
 element, index
                                         ) in props.elementFacturation" :key="index">
-                                        <TableCell>{{ element.id }}</TableCell>
+                                        <TableCell>{{ index + 1 }}</TableCell>
                                         <TableCell>{{
                                             element?.element_facturation || "—"
                                             }}</TableCell>
@@ -189,14 +197,13 @@ element, index
                                                 ?.r_details_type_service_service
                                                 .nom_service || "—"
                                         }}</TableCell>
-                                        <TableCell>
+                                        <!-- <TableCell>
                                             {{
                                                 element
                                                     ?.r_details_type_service_type_service
                                                     .nom_type_service || "—"
                                             }}
-                                            <!-- {{ dossier?.r_dossier_services }} -->
-                                        </TableCell>
+                                        </TableCell> -->
                                         <TableCell>{{
                                             element?.r_details_type_service_site?.nom_site
                                             || "—"
@@ -207,7 +214,10 @@ element, index
 
                                         }}</TableCell>
                                         <TableCell>{{
-                                            element?.montant || "—"
+                                            element?.montant_2_plaques || "—"
+                                            }}</TableCell>
+                                        <TableCell>{{
+                                            element?.montant_1_plaque || "—"
                                             }}</TableCell>
 
                                         <TableCell>
@@ -274,7 +284,8 @@ element, index
                             <AlertDialogDescription>
                                 <div class="space-y-8 my-8">
                                     <Input v-model="element_facturation" placeholder="Nom de l'élément" />
-                                    <Input v-model="montant" placeholder="Montant" />
+                                    <Input v-model="montant_2_plaques" placeholder="Montant-2 plaques" />
+                                    <Input v-model="montant_1_plaque" placeholder="Montant-1 plaque" />
                                 </div>
                                 <div class="flex gap-4">
                                     <Select v-model="id_site" class="my-8" placeholder="Type de site">
@@ -450,7 +461,8 @@ const id_type_services = ref("");
 const id_site = ref("");
 const id_service = ref("");
 const id_entite = ref("");
-const montant = ref("");
+const montant_2_plaques = ref("");
+const montant_1_plaque = ref("");
 
 const statuts = [
     {
@@ -542,7 +554,8 @@ const openEditElement = async (id) => {
         id_site.value = res.data.id_site;
         id_service.value = res.data.id_service;
         id_entite.value = res.data.id_entite;
-        montant.value = res.data.montant;
+        montant_2_plaques.value = res.data.montant_2_plaques;
+        montant_1_plaque.value = res.data.montant_1_plaque;
         openEditModal.value = true;
         siteId.value = id;
     }
@@ -553,7 +566,8 @@ const openCreateElement = () => {
     id_site.value = "";
     id_service.value = "";
     id_entite.value = "";
-    montant.value = "";
+    montant_2_plaques.value = "";
+    montant_1_plaque.value = "";
     openCreateElementModal.value = true;
 };
 
@@ -564,7 +578,8 @@ const handleCreateSite = async () => {
         id_site.value === "" ||
         id_service.value === "" ||
         id_entite.value === "" ||
-        montant.value === ""
+        montant_2_plaques.value === "" ||
+        montant_1_plaque.value === ""
     ) {
         toast.error("Veuillez remplir tous les champs");
         return;
@@ -577,7 +592,8 @@ const handleCreateSite = async () => {
             id_site: id_site.value,
             id_service: id_service.value,
             id_entite: id_entite.value,
-            montant: montant.value,
+            montant_2_plaques: montant_2_plaques.value,
+            montant_1_plaque: montant_1_plaque.value,
         });
         toast.success("Élément créé avec succès");
         router.reload();
@@ -597,7 +613,8 @@ const handleEditSite = async () => {
         id_site.value === "" ||
         id_service.value === "" ||
         id_entite.value === "" ||
-        montant.value === ""
+        montant_2_plaques.value === "" ||
+        montant_1_plaque.value === ""
     ) {
         toast.error("Veuillez remplir tous les champs");
         return;
@@ -610,7 +627,8 @@ const handleEditSite = async () => {
             id_site: id_site.value,
             id_service: id_service.value,
             id_entite: id_entite.value,
-            montant: montant.value,
+            montant_2_plaques: montant_2_plaques.value,
+            montant_1_plaque: montant_1_plaque.value,
         });
         toast.success("Élément modifié avec succès");
         router.reload();

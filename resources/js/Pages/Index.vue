@@ -16,7 +16,7 @@
                     <a href="#" class="text-gray-800 hover:text-amber-600 font-medium">
                         Nous contactez
                     </a>
-                    <Link :href="route('show.login')" v-if="!connectedUser">
+                    <Link :href="route('login')" v-if="!connectedUser">
                     <a class="text-gray-800 hover:text-amber-600 font-medium">
                         Se connecter
                     </a>

@@ -103,9 +103,9 @@
                 <!-- Partie droite -->
                 <div style="text-align: right;">
                     <p style="font-weight: 600; text-decoration: underline;">Accès de connexion</p>
-                    <p style="color: #111827;">Nom d'utilisateur : {{
+                    <p style="color: #111827;">Numéro de téléphone : {{
                         donneeClient.Telephone }}</p>
-                    <p style="color: #111827;">Mot de passe : {{
+                    <p style="color: #111827;">Numéro de chrono : {{
                         props?.dossier?.num_chrono }}</p>
                 </div>
             </div>
@@ -140,6 +140,7 @@ const qrCodeRef = ref(null)
 
 async function imprimer() {
     await nextTick(); // s'assure que tout est rendu
+
     // ✅ 1) On clone le contenu de la div
     let contenu = zoneImpression.value.innerHTML;
 
@@ -150,43 +151,111 @@ async function imprimer() {
         contenu = contenu.replace(/<canvas[^>]*class="qrcode-print"[^>]*><\/canvas>/, qrImg);
     }
 
-    // ✅ 3) On ouvre la fenêtre d'impression
-    const printWindow = window.open('', '', 'width=800,height=600');
-    printWindow.document.write(`
+    // ✅ 3) Séparateur pointillé entre les deux exemplaires
+    const separateur = `
+        <div style="
+            width: 100%; 
+            height: 3px; 
+            border-top: 3px dashed #6b7280; 
+            margin: 15px 0; 
+            position: relative;
+        ">
+            <span style="
+                position: absolute; 
+                top: -10px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                background: white; 
+                padding: 0 10px; 
+                font-size: 10px; 
+                color: #6b7280;
+                font-weight: bold;
+            ">
+                - - - COUPER ICI - - -
+            </span>
+        </div>
+    `;
+
+    // ✅ 4) On crée le HTML avec 2 exemplaires (réduits à 48% pour tenir sur une page A4)
+    const htmlContent = `
         <html>
             <head>
-                <title>Reçu</title>
+                <title>Reçu - 2 Exemplaires</title>
                 <style>
                     @media print {
                         @page {
-                            size: A5;
-                            margin: 10mm;
+                            size: A4 landscape;
+                            margin: 5mm;
                         }
                         body { 
                             font-family: Arial, sans-serif; 
                             margin: 0; 
                             padding: 0; 
                             background: white;
-                            width: 148mm;
-                            min-height: 210mm;
+                        }
+                        .exemplaire {
+                            width: 48%;
+                            display: inline-block;
+                            vertical-align: top;
+                            box-sizing: border-box;
+                            padding: 5mm;
+                            border: 1px solid #d1d5db;
+                            border-radius: 8px;
+                        }
+                        .exemplaire:first-child {
+                            margin-right: 2%;
+                        }
+                        .exemplaire:last-child {
+                            margin-left: 2%;
+                        }
+                        .contenu-recu {
+                            transform: scale(0.95);
+                            transform-origin: top left;
                         }
                     }
                     body { 
                         font-family: Arial, sans-serif; 
                         margin: 0; 
-                        padding: 10mm;
+                        padding: 5mm;
                         background: white;
-                        width: 148mm;
-                        min-height: 210mm;
+                    }
+                    .page-container {
+                        width: 100%;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                    }
+                    .exemplaire {
+                        width: 48%;
+                        box-sizing: border-box;
+                        padding: 5mm;
+                        border: 1px solid #d1d5db;
+                        border-radius: 8px;
+                        background: white;
+                    }
+                    .exemplaire:first-child {
+                        margin-right: 1%;
+                    }
+                    .exemplaire:last-child {
+                        margin-left: 1%;
+                    }
+                    .badge-exemplaire {
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 11px;
+                        color: #d97706;
+                        margin-bottom: 5px;
+                        border-bottom: 1px solid #e5e7eb;
+                        padding-bottom: 3px;
                     }
                     table { 
                         border-collapse: collapse; 
                         width: 100%; 
-                        font-size: 0.75rem;
+                        font-size: 0.7rem;
                     }
                     th, td { 
                         border: 1px solid #ccc; 
-                        padding: 0.4rem 0.6rem; 
+                        padding: 0.3rem 0.4rem; 
                         text-align: left; 
                     }
                     h2, p { 
@@ -194,13 +263,34 @@ async function imprimer() {
                         padding: 0; 
                     }
                     .qrcode-print { 
-                        width: 80px !important; 
-                        height: 80px !important; 
+                        width: 60px !important; 
+                        height: 60px !important; 
+                    }
+                    img[src*="data:image"] {
+                        width: 60px !important;
+                        height: 60px !important;
                     }
                 </style>
             </head>
             <body>
-                ${contenu}
+                <div class="page-container">
+                    <!-- Exemplaire 1 -->
+                    <div class="exemplaire">
+                        <div class="badge-exemplaire">CLIENT</div>
+                        <div class="contenu-recu">
+                            ${contenu}
+                        </div>
+                    </div>
+                    
+                    <!-- Exemplaire 2 -->
+                    <div class="exemplaire">
+                        <div class="badge-exemplaire">CAISSE / ARCHIVE</div>
+                        <div class="contenu-recu">
+                            ${contenu}
+                        </div>
+                    </div>
+                </div>
+                
                 <script>
                     window.onload = function() {
                         window.print();
@@ -209,8 +299,11 @@ async function imprimer() {
                 <\/script>
             </body>
         </html>
-    `);
+    `;
 
+    // ✅ 5) On ouvre la fenêtre d'impression
+    const printWindow = window.open('', '', 'width=1000,height=800');
+    printWindow.document.write(htmlContent);
     printWindow.document.close();
     printWindow.focus();
 }
@@ -237,15 +330,6 @@ const hasTriggerService = tableauFusionne.some(item =>
 console.log('tableauFusionne:', tableauFusionne);
 console.log('hasTriggerService', hasTriggerService);
 
-// Fonction : récupérer le nom du type de service par ID
-// function getNomTypeServiceById(id) {
-//     const serviceTypes = props.dossier.r_dossier_services.r_service_types
-//     if (props.dossier_lier) {
-//         serviceTypes.push(...props.dossier_lier.r_dossier_services.r_service_types)
-//     }
-//     const match = serviceTypes.find(item => item.id === id)
-//     return match ? match.nom_type_service : 'Type inconnu'
-// }
 
 
 const items = computed(() => {
@@ -255,13 +339,16 @@ const items = computed(() => {
         result.push({
             name: props.autre_facturation.nom,
             amount: parseFloat(props.autre_facturation.montant),
+            // props.autre_facturation.montant,
         })
     }
 
     result.push(
         ...tableauFusionne.map(item => ({
             name: item.element_facturation,
-            amount: parseFloat(item.montant),
+            amount: parseFloat(props.dossier.r_dossier_vehicule.nb_plaque == 1
+                ? item?.montant_1_plaque
+                : item?.montant_2_plaques),
         }))
     )
 
@@ -321,8 +408,4 @@ import Main from '/resources/js/Pages/Main.vue';
 export default {
     layout: Main,
 };
-
-
-
-
 </script>

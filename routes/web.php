@@ -26,12 +26,14 @@ use App\Http\Controllers\RejetController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\TypeServiceController;
+use App\Http\Controllers\Admin\MarqueController;
+use App\Http\Controllers\Admin\ModelController;
 use App\Models\Caisse;
 
 //Route groupe des utilisteurs non authentifier
 Route::middleware('guest')->group(function () {
     //Route de d'affichage du login 
-    Route::get('/login', [AuthenticateController::class, "showLogin"])->name('show.login');
+    Route::get('/login', [AuthenticateController::class, "showLogin"])->name('login');
     Route::post('user/login', [AuthenticateController::class, "authenticate"])->name("login.user");
     //Route d'affichage de la page Partenaires Register
     // Route::get('/paretainer/register', function () {
@@ -332,6 +334,26 @@ Route::group([
     Route::delete('/site/delete/{id}', [SiteController::class, "deleteSite"])->name('delete.admin');
     Route::get('/site/view/{id}', [SiteController::class, "showViewSite"])->name('show.view.admin');
 
+    //*******************************Marques & Modèles***************************** */
+
+    // Marques routes
+    Route::get('/marques/data', [MarqueController::class, "index"])->name('show.marques.data');
+    Route::get('/marques/get/data', [MarqueController::class, "getData"])->name('get.marques.data');
+    Route::get('/marques/{id}/models', [MarqueController::class, "getModels"])->name('get.marques.models');
+    Route::get('/marques/new', [MarqueController::class, "create"])->name('show.new.marques');
+    Route::post('/marques/new', [MarqueController::class, "store"])->name('store.new.marques');
+    Route::get('/marques/edit/{id}', [MarqueController::class, "edit"])->name('show.edit.marques');
+    Route::put('/marques/update/{id}', [MarqueController::class, "update"])->name('update.marques');
+    Route::delete('/marques/delete/{id}', [MarqueController::class, "destroy"])->name('delete.marques');
+
+    // Models routes
+    Route::get('/models/data', [ModelController::class, "index"])->name('show.models.data');
+    Route::get('/models/get/data', [ModelController::class, "getData"])->name('get.models.data');
+    Route::get('/models/new', [ModelController::class, "create"])->name('show.new.models');
+    Route::post('/models/new', [ModelController::class, "store"])->name('store.new.models');
+    Route::get('/models/edit/{id}', [ModelController::class, "edit"])->name('show.edit.models');
+    Route::put('/models/update/{id}', [ModelController::class, "update"])->name('update.models');
+    Route::delete('/models/delete/{id}', [ModelController::class, "destroy"])->name('delete.models');
 
     // Element facturation
     Route::get('/element-facturation/data', [ElementFacturationController::class, 'showElementFacturationList'])->name('show.element.facturation.list');
@@ -343,6 +365,12 @@ Route::group([
     Route::put('/element-facturation/statut/{id}', [ElementFacturationController::class, "updateStatutElementFacturation"])->name('update.element.facturation.statut');
 
 
+    // Rejet routes
+
+    Route::get('/rejets', [RejetController::class, 'listRejets'])->name('rejets.index');
+    Route::post('/rejets', [RejetController::class, 'storeRejets'])->name('rejets.store');
+    Route::put('/rejets/{rejet}', [RejetController::class, 'updateRejets'])->name('rejets.update');
+    Route::delete('/rejets/{rejet}', [RejetController::class, 'destroyRejets'])->name('rejets.destroy');
 
     // Entité
     Route::get('/entite/data', [EntiteController::class, "showEntiteList"])->name('show.entite.list');

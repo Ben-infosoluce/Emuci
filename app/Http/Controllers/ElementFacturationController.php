@@ -37,7 +37,8 @@ class ElementFacturationController extends Controller
             'id_site' => 'required|exists:sites,id',
             'id_service' => 'required|exists:services,id',
             'id_entite' => 'required|exists:entites,id',
-            'montant' => 'required|numeric|min:0',
+            'montant_2_plaques' => 'required|numeric|min:0',
+            'montant_1_plaque' => 'required|numeric|min:0',
         ]);
 
         $item = DetailTypeService::create(array_merge($validated, [
@@ -61,7 +62,8 @@ class ElementFacturationController extends Controller
             'id_site' => 'required|exists:sites,id',
             'id_service' => 'required|exists:services,id',
             'id_entite' => 'required|exists:entites,id',
-            'montant' => 'required|numeric|min:0',
+            'montant_2_plaques' => 'required|numeric|min:0',
+            'montant_1_plaque' => 'required|numeric|min:0',
         ]);
 
         $item = DetailTypeService::findOrFail($id);

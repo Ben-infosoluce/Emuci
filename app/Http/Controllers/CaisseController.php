@@ -61,6 +61,7 @@ class CaisseController extends Controller
             ])->find($dossier->id_dossier_lier);
         }
 
+
         /*
     |--------------------------------------------------------------------------
     | DetailTypeServices du dossier principal
@@ -98,16 +99,30 @@ class CaisseController extends Controller
                 ->get();
         }
 
+        //récupéérer de nb_plaque 
+        $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
+        //si nb_plaque == 1 
+        $autre_facturation = null;
+        if ($nb_plaque == 1) {
+            $autre_facturation = DB::table('autre_facturation')
+                ->where('id', 2) // ID fixe pour "Changement de plaque"
+                ->where('status', 1) // Actif
+                ->first();
+        } else {
+            $autre_facturation = DB::table('autre_facturation')
+                ->where('id', 1) // ID fixe pour "Changement de plaque"
+                ->where('status', 1) // Actif
+                ->first();
+        }
+
         return inertia('Caisse/components/createForm', [
             'chrono' => $vin,
             'dossier' => $dossier,
             'dossier_lier' => $dossier_lier,
             'detailTypeServices' => $detailTypeServices,
             'detailTypeServices_lier' => $detailTypeServices_lier,
-            'autre_facturation' => DB::table('autre_facturation')
-                ->where('id', 1) // ID fixe pour "Changement de plaque"
-                ->where('status', 1) // Actif
-                ->first(),
+            'autre_facturation' => $autre_facturation,
+            'nb_plaque' => $nb_plaque
         ]);
     }
 

@@ -332,7 +332,6 @@ class PdcController extends Controller
             ->where('nom', $request->input('genre'))
             ->value('nb_plaque');
 
-        //si nb_plaque ==1 alors generer un numero de plaque 6300
 
         try {
             DB::beginTransaction();
@@ -413,7 +412,7 @@ class PdcController extends Controller
             $dossier->id_site = getIdSite();
             $dossier->id_service = 1;
             $dossier->id_type_service = 1;
-            $dossier->detail = '["' . $request->input('type_service')  . '"]';
+            $dossier->detail = '["' . $request->input('type_service') . '"]';
             $dossier->statut = 1;
             $dossier->date_creation = now();
             $dossier->save();
