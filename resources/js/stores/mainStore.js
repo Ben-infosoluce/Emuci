@@ -43,11 +43,13 @@ export const useCaisseStore = defineStore("caisseOpened", {
             this.loading = true;
             this.error = null;
 
-            if (!fondDeCaisse || isNaN(fondDeCaisse)) {
+            const valeur = String(fondDeCaisse).trim();
+            if (valeur === '' || isNaN(Number(valeur))) {
                 this.error = "Veuillez entrer un fond de caisse valide";
                 this.loading = false;
                 return;
             }
+            // Ensuite, vous pouvez utiliser Number(valeur) pour obtenir la valeur numérique.
 
             try {
                 const res = await axios.post("/caisses/ouvertures", {
