@@ -781,7 +781,7 @@
 
 
                                             <p><strong>Ville de naissance :</strong> {{ formDataSummary.villeNaissance
-                                                }}</p>
+                                            }}</p>
 
                                             <p><strong>Téléphone :</strong> {{ formDataSummary.phone }}</p>
                                             <p><strong>Type de personne :</strong> {{ formDataSummary.typePersonne }}
@@ -802,14 +802,14 @@
                                             </p>
                                             <p><strong>Type technique :</strong> {{
                                                 formDataSummary.typeTechnique
-                                            }}</p>
+                                                }}</p>
                                             <p><strong>Genre :</strong> {{ formDataSummary.genre }}</p>
                                             <p><strong>Poids Total en charge (PTAC) :</strong> {{ formDataSummary.ptac
-                                            }}</p>
+                                                }}</p>
                                             <p><strong>Poids Utile (PU) :</strong> {{ formDataSummary.pu }}</p>
                                             <p><strong>Poids à Vide (PV) :</strong> {{ formDataSummary.pv }}</p>
                                             <p><strong>Puissance administrative :</strong> {{ formDataSummary.puissance
-                                            }}</p>
+                                                }}</p>
                                             <p><strong>Places Assises :</strong> {{ formDataSummary.placesAssises }}</p>
                                             <p><strong>Sources d’énergie :</strong> {{ formDataSummary.sourcesEnergie }}
                                             </p>
@@ -837,22 +837,22 @@
 
                                             <p><strong>Registre de commerce :</strong> {{
                                                 formDataSummary.registreCommerce
-                                            }}</p>
+                                                }}</p>
                                             <p><strong>Representant Legal :</strong> {{
                                                 formDataSummary.representantLegal }}
                                             </p>
                                             <p><strong>Numéro de Telephone :</strong> {{ formDataSummary.numeroTelephone
-                                            }}
+                                                }}
                                             </p>
                                             <p><strong>Compte Contribuable :</strong> {{
                                                 formDataSummary.compteContribuable
-                                            }}</p>
+                                                }}</p>
                                             <p><strong>Prefecture :</strong> {{ formDataSummary.prefecture
-                                            }}</p>
+                                                }}</p>
                                             <p><strong>Sous Prefecture :</strong> {{ formDataSummary.sousPrefecture
-                                            }}</p>
+                                                }}</p>
                                             <p><strong>Region :</strong> {{ formDataSummary.region
-                                            }}</p>
+                                                }}</p>
 
                                             <p><strong>Profession du représentant légal
                                                     :</strong> {{

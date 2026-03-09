@@ -7,7 +7,7 @@
         </h4>
         <div class="flex items-center space-x-2">
             <Link :href="route('show.new.pdc.duplicata')">
-            <BoutonRetour />
+                <BoutonRetour />
             </Link>
         </div>
     </div>
@@ -32,7 +32,7 @@
                                     <p><strong>Email :</strong> {{ data.r_vehicule_client.email }}</p>
                                     <p><strong>Adresse :</strong> {{ data.r_vehicule_client.adresse }}</p>
                                     <p><strong>Ville de naissance :</strong> {{ data.r_vehicule_client.ville_naissance
-                                    }}
+                                        }}
                                     </p>
                                     <p><strong>Téléphone :</strong> {{ data.r_vehicule_client.telephone }}</p>
                                     <!-- <p><strong>Type de personne :</strong> {{ data.r_vehicule_client.typePersonne }}</p> -->
@@ -95,13 +95,13 @@
                                         data.r_vehicule_entreprise.compte_contribuale }}</p>
                                     <p><strong>Préfecture :</strong> {{ data.r_vehicule_entreprise.prefecture }}</p>
                                     <p><strong>Sous-préfecture :</strong> {{ data.r_vehicule_entreprise.sous_prefecture
-                                    }}</p>
+                                        }}</p>
                                     <p><strong>Région :</strong> {{ data.r_vehicule_entreprise.region }}</p>
                                     <p><strong>Profession représentant :</strong> {{
                                         data.r_vehicule_entreprise.profession_representant_legal }}</p>
                                     <p><strong>Date naissance représentant :</strong> {{
                                         data.r_vehicule_entreprise.date_de_naissance_representant_legal
-                                    }}</p>
+                                        }}</p>
                                 </div>
                             </div>
                             <div
@@ -111,9 +111,9 @@
                                     <!-- show.new.pdc.post.immatriculation -->
 
                                     <Link :href="route('show.new.pdc.duplicata.post', { vin: props.vin })">
-                                    <Button class="bg-[#ca7600]">
-                                        <Plus class="w-4 h-4 mr-2" /> Ouvrir un post
-                                    </Button>
+                                        <Button class="bg-[#ca7600]">
+                                            <Plus class="w-4 h-4 mr-2" /> Ouvrir un post
+                                        </Button>
                                     </Link>
                                     <!-- <Link :href="route('show.new.service.pdc.duplicata', props.data.immatriculation.vin + '_' +
                                         props.data.immatriculation.genre.nb_plaque)"> -->
@@ -159,7 +159,7 @@ onMounted(() => {
 });
 
 const newDuplicata = () => {
-    const vinWithGenre = `${props.data.immatriculation.vin}_${props.data.immatriculation.genre.nb_plaque}`;
+    const vinWithGenre = `${props.data.immatriculation.vin}_${props.data.immatriculation.genre_vehicule.nb_plaque}`;
     const donne = {
         vinWithGenre: vinWithGenre
     };

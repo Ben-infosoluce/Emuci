@@ -21,8 +21,7 @@
                             <AlertDialogDescription>
                                 <div class="space-y-8 my-8">
                                     <Input v-model="element_facturation" placeholder="Nom de l'élément" />
-                                    <Input v-model="montant_2_plaques" placeholder="Montant-2 plaques" />
-                                    <Input v-model="montant_1_plaque" placeholder="Montant-1 plaque" />
+                                    <Input v-model="montant" placeholder="Montant" />
                                 </div>
                                 <div class="flex gap-4">
                                     <Select v-model="id_site" class="my-8" placeholder="Type de site">
@@ -142,9 +141,9 @@
                                     <!-- <TableHead>Type de service</TableHead> -->
                                     <TableHead> Site </TableHead>
                                     <TableHead>Entité</TableHead>
-                                    <TableHead>Montant-2 plaques</TableHead>
-                                    <TableHead>Montant-1 plaque</TableHead>
-                                    <!-- <TableHead>Statut</TableHead> -->
+                                    <TableHead>Montant</TableHead>
+                                    <TableHead>Status</TableHead>
+
                                     <TableHead class="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -191,7 +190,7 @@ element, index
                                         <TableCell>{{ index + 1 }}</TableCell>
                                         <TableCell>{{
                                             element?.element_facturation || "—"
-                                            }}</TableCell>
+                                        }}</TableCell>
                                         <TableCell>{{
                                             element
                                                 ?.r_details_type_service_service
@@ -207,18 +206,15 @@ element, index
                                         <TableCell>{{
                                             element?.r_details_type_service_site?.nom_site
                                             || "—"
-                                            }}</TableCell>
+                                        }}</TableCell>
                                         <TableCell>{{
                                             element.r_details_type_service_entite
                                                 .nom || "—"
 
                                         }}</TableCell>
                                         <TableCell>{{
-                                            element?.montant_2_plaques || "—"
-                                            }}</TableCell>
-                                        <TableCell>{{
-                                            element?.montant_1_plaque || "—"
-                                            }}</TableCell>
+                                            element?.montant || "—"
+                                        }}</TableCell>
 
                                         <TableCell>
                                             <Badge :variant="element?.statut === 1
@@ -284,8 +280,7 @@ element, index
                             <AlertDialogDescription>
                                 <div class="space-y-8 my-8">
                                     <Input v-model="element_facturation" placeholder="Nom de l'élément" />
-                                    <Input v-model="montant_2_plaques" placeholder="Montant-2 plaques" />
-                                    <Input v-model="montant_1_plaque" placeholder="Montant-1 plaque" />
+                                    <Input v-model="montant" placeholder="Montant" />
                                 </div>
                                 <div class="flex gap-4">
                                     <Select v-model="id_site" class="my-8" placeholder="Type de site">
@@ -461,8 +456,7 @@ const id_type_services = ref("");
 const id_site = ref("");
 const id_service = ref("");
 const id_entite = ref("");
-const montant_2_plaques = ref("");
-const montant_1_plaque = ref("");
+const montant = ref("");
 
 const statuts = [
     {
@@ -554,8 +548,7 @@ const openEditElement = async (id) => {
         id_site.value = res.data.id_site;
         id_service.value = res.data.id_service;
         id_entite.value = res.data.id_entite;
-        montant_2_plaques.value = res.data.montant_2_plaques;
-        montant_1_plaque.value = res.data.montant_1_plaque;
+        montant.value = res.data.montant;
         openEditModal.value = true;
         siteId.value = id;
     }
@@ -566,8 +559,7 @@ const openCreateElement = () => {
     id_site.value = "";
     id_service.value = "";
     id_entite.value = "";
-    montant_2_plaques.value = "";
-    montant_1_plaque.value = "";
+    montant.value = "";
     openCreateElementModal.value = true;
 };
 
@@ -578,8 +570,7 @@ const handleCreateSite = async () => {
         id_site.value === "" ||
         id_service.value === "" ||
         id_entite.value === "" ||
-        montant_2_plaques.value === "" ||
-        montant_1_plaque.value === ""
+        montant.value === ""
     ) {
         toast.error("Veuillez remplir tous les champs");
         return;
@@ -592,8 +583,7 @@ const handleCreateSite = async () => {
             id_site: id_site.value,
             id_service: id_service.value,
             id_entite: id_entite.value,
-            montant_2_plaques: montant_2_plaques.value,
-            montant_1_plaque: montant_1_plaque.value,
+            montant: montant.value,
         });
         toast.success("Élément créé avec succès");
         router.reload();
@@ -613,8 +603,7 @@ const handleEditSite = async () => {
         id_site.value === "" ||
         id_service.value === "" ||
         id_entite.value === "" ||
-        montant_2_plaques.value === "" ||
-        montant_1_plaque.value === ""
+        montant.value === ""
     ) {
         toast.error("Veuillez remplir tous les champs");
         return;
@@ -627,8 +616,7 @@ const handleEditSite = async () => {
             id_site: id_site.value,
             id_service: id_service.value,
             id_entite: id_entite.value,
-            montant_2_plaques: montant_2_plaques.value,
-            montant_1_plaque: montant_1_plaque.value,
+            montant: montant.value,
         });
         toast.success("Élément modifié avec succès");
         router.reload();

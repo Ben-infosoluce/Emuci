@@ -92,7 +92,7 @@
                                             <path d="M5 13l4 4L19 7" />
                                         </svg>
                                     </div>
-                                    <span class="text-xl">{{ props.selected[0].nom_type_service }}</span>
+                                    <span class="text-xl">{{ props.selected[5].element_facturation }}</span>
                                 </div>
                             </div>
                         </div>
@@ -175,47 +175,14 @@ console.log(props.vehicule)
 onMounted(() => {
     console.log("postImtData : ", props.postImtData)
     console.log("selected : ", props.selected)
+    console.log("iici : ")
 })
 
-function SendData1() {
-    const payload = {
-        vehicule_id: data.value.id,
-        detail: [props.selected[0].nom_type_service], // Si tu veux envoyer un tableau de services
-        client_id: data.value.id_client
-    }
-
-    //je veux envoyer : payload, props.postImtData, props.selected
-
-    // const data = formDataSummary.value;
-    axios.post('/pdc/duplicata/save/data', payload)
-        .then(response => {
-            const res = response.data;
-            console.log('Réponse serveur :', res);
-
-            if (res.success) {
-                toast.success(res.message || 'Information enregistré avec succès !');
-
-                setTimeout(() => {
-                    // Redirection avec l'ID du dossier
-                    window.location.href = `/pdc/duplicata/receipt/${res.data.id}`;
-                }, 1500);
-            } else {
-                toast.error(res.message || "Une erreur est survenue lors de l'enregistrement.");
-            }
-        })
-        .catch(error => {
-            console.error('Erreur :', error);
-
-            const errMsg = error.response?.data?.message || 'Erreur lors de l’enregistrement des données.';
-            toast.error(errMsg);
-        });
-
-}
 
 function SendData() {
     const payload = {
         vehicule_id: data.value.id,
-        detail: [props.selected[0].nom_type_service],
+        detail: [props.selected[0].id],
         client_id: data.value.id_client
     }
 

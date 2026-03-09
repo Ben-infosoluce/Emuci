@@ -11,6 +11,7 @@ use App\Models\Vehicule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use PhpParser\Node\Expr\Cast\Double;
 
 class PaiementController extends Controller
 {
@@ -219,19 +220,27 @@ class PaiementController extends Controller
                 // Récupération depuis la table autre_facturation (ID 20 = Changement de plaque)
                 //récupéérer de nb_plaque 
                 $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
+                $genre = $dossier->r_dossier_vehicule->genre_vehicule;
                 //si nb_plaque == 1 
+                // dd($genre, $nb_plaque);
                 $changementPlaqueData = null;
-                if ($nb_plaque == 1) {
+                if (stripos($genre, "REMORQUE") !== false) {
                     $changementPlaqueData = DB::table('autre_facturation')
-                        ->where('id', 2) // ID fixe pour "Changement de plaque"
-                        ->where('status', 1) // Actif
+                        ->where('id', 3) // ID pour "REMORQUE"
+                        ->where('status', 1)
+                        ->first();
+                } else if ($nb_plaque == 1) {
+                    $changementPlaqueData = DB::table('autre_facturation')
+                        ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
+                        ->where('status', 1)
                         ->first();
                 } else {
                     $changementPlaqueData = DB::table('autre_facturation')
-                        ->where('id', 1) // ID fixe pour "Changement de plaque"
-                        ->where('status', 1) // Actif
+                        ->where('id', 1) // ID par défaut
+                        ->where('status', 1)
                         ->first();
                 }
+
 
                 if (!$changementPlaqueData) {
                     DB::rollBack();
@@ -270,7 +279,7 @@ class PaiementController extends Controller
                     'id' => $changementPlaqueData->id,
                     "statut" => 1,
                     "id_site" => 2,
-                    'montant' => (int)$changementPlaqueData->montant, //convertir en int si besoin
+                    'montant' => (float)$changementPlaqueData->montant, //convertir en int si besoin
                     "id_entite" => 1,
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s'),
@@ -439,13 +448,22 @@ class PaiementController extends Controller
         $details = json_decode($dossier->detail); // tableau de noms
 
         $ids = DB::table('type_services')
-            ->whereIn('nom_type_service', $details)
+            ->whereIn('id', $details)
             ->pluck('id');
 
+        // if ($dossier->id_dossier_lier == null && $dossier->id_service == 4) {
+        // dd($ids);
         $detailTypeServices = DB::table('detail_type_services')
-            ->whereIn('id_type_services', $ids)
+            ->whereIn('id', $details)
             ->where('id_site', getIdSite())
             ->get();
+        // } else {
+        //     // dd('ici');
+        //     $detailTypeServices = DB::table('detail_type_services')
+        //         ->whereIn('id_type_services', $ids)
+        //         ->where('id_site', getIdSite())
+        //         ->get();
+        // }
 
 
         /*
@@ -477,11 +495,11 @@ class PaiementController extends Controller
                 $details_lier = json_decode($dossier_lier->detail);
 
                 $ids_lier = DB::table('type_services')
-                    ->whereIn('nom_type_service', $details_lier)
+                    ->whereIn('id', $details_lier)
                     ->pluck('id');
 
                 $detailTypeServices_lier = DB::table('detail_type_services')
-                    ->whereIn('id_type_services', $ids_lier)
+                    ->whereIn('id', $details_lier)
                     ->where('id_site', getIdSite())
                     ->get();
             }
@@ -500,9 +518,15 @@ class PaiementController extends Controller
 
         //récupéérer de nb_plaque 
         $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
+        $genre = $dossier->r_dossier_vehicule->genre_vehicule;
         //si nb_plaque == 1 
         $autre_facturation = null;
-        if ($nb_plaque == 1) {
+        if (stripos($genre, "REMORQUE") !== false) {
+            $autre_facturation = DB::table('autre_facturation')
+                ->where('id', 3) // ID fixe pour "Changement de plaque"
+                ->where('status', 1) // Actif
+                ->first();
+        } else if ($nb_plaque == 1) {
             $autre_facturation = DB::table('autre_facturation')
                 ->where('id', 2) // ID fixe pour "Changement de plaque"
                 ->where('status', 1) // Actif
@@ -513,6 +537,7 @@ class PaiementController extends Controller
                 ->where('status', 1) // Actif
                 ->first();
         }
+
 
         /*
         |--------------------------------------------------------------------------

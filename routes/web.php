@@ -23,6 +23,7 @@ use App\Http\Controllers\Mt1Controller;
 use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\RafCaisseController;
 use App\Http\Controllers\RejetController;
+use App\Http\Controllers\GenreController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\TypeServiceController;
@@ -250,7 +251,7 @@ Route::group([
 
     Route::get('/pdc/duplicata/data', [PdcController::class, "getPdcDuplicataData"])->name('get.pdc.duplicata.data');
     Route::get('/pdc/duplicata/new', [PdcController::class, "showNewPdcDuplicata"])->name('show.new.pdc.duplicata');
-    Route::get('/pdc/duplicata/new/add/data/{vin}', [PdcController::class, "showNewPdcDuplicataAddData"])->name('show.new.pdc.duplicata.add.data');
+    Route::get('/pdc/duplicata/new/add/data', [PdcController::class, "showNewPdcDuplicataAddData"])->name('show.new.pdc.duplicata.add.data');
     Route::get('/pdc/duplicata/edit/{id}', [PdcController::class, "showEditPdcDuplicata"])->name('show.edit.pdc.duplicata');
     Route::get('/pdc/duplicata/view/{id}', [PdcController::class, "showViewPdcDuplicata"])->name('show.view.pdc.duplicata');
     Route::get('/pdc/duplicata/receipt/{id}', [PdcController::class, "showReceiptPdcDuplicata"])->name('show.receipt.pdc.duplicata');
@@ -371,6 +372,12 @@ Route::group([
     Route::post('/rejets', [RejetController::class, 'storeRejets'])->name('rejets.store');
     Route::put('/rejets/{rejet}', [RejetController::class, 'updateRejets'])->name('rejets.update');
     Route::delete('/rejets/{rejet}', [RejetController::class, 'destroyRejets'])->name('rejets.destroy');
+
+    // Genre routes
+    Route::get('/genres', [GenreController::class, 'index'])->name('genres.index');
+    Route::post('/genres', [GenreController::class, 'store'])->name('genres.store');
+    Route::put('/genres/{genre}', [GenreController::class, 'update'])->name('genres.update');
+    Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('genres.destroy');
 
     // Entité
     Route::get('/entite/data', [EntiteController::class, "showEntiteList"])->name('show.entite.list');

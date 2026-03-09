@@ -1487,7 +1487,9 @@ class PdcController extends Controller
     public function showNewPdcPostImmatriculation()
     {
 
-        $typeServices = DB::table('type_services')->where('id_service', 3)->get();
+        // $typeServices = DB::table('type_services')->where('id_service', 3)->get();
+        $typeServices = DB::table('detail_type_services')->where('id_service', 3)->get();
+
         return inertia('Pdc/PostImmatriculation/new', compact('typeServices'));
     }
     //add post-immatriculation
@@ -1557,7 +1559,9 @@ class PdcController extends Controller
             'modeles' => $vehicule->model_id ? DB::table('model')->where('marque_id', $vehicule->marque_id)->get() : []
         ];
 
-        return inertia('Pdc/PostImmatriculation/components/editForm', ['entreprise' => $entreprise, 'vehicule' => $vehicule, 'client' => $client, 'data' => $data]);
+        $typeServices = DB::table('type_services')->get();
+
+        return inertia('Pdc/PostImmatriculation/components/editForm', ['entreprise' => $entreprise, 'vehicule' => $vehicule, 'client' => $client, 'data' => $data, 'typeServices' => $typeServices]);
     }
 
     public function showPdcPostImmatriculationModificationLog1($id)
@@ -1616,6 +1620,7 @@ class PdcController extends Controller
 
     public function savePostImmatriculationDraft(Request $request, $vehiculeId)
     {
+        // dd($request->all());
         $typePersonne = $request->input('typePersonne');
 
         // Récupération des modèles
@@ -1879,52 +1884,50 @@ class PdcController extends Controller
 
     public function savePdcDuplicataData(Request $request)
     {
+        // dd($request->all());
+        $postImtData  = $request->input('postImtData');
+        $payload      = $request->input('payload') ?? [];
 
-        // Récupération des blocs de données
-        $postImtData  = $request->input('postImtData') ?? [];
-        $payload      = $request->input('payload') ?? []; // vehicule_id, client_id, detail
-        $vehicule_id  = $payload['vehicule_id'] ?? null;
+        $vehicule_id   = $payload['vehicule_id'] ?? null;
         $detailPayload = $payload['detail'] ?? [];
-        $client_id    = $payload['client_id'] ?? null;
+        $client_id     = $payload['client_id'] ?? null;
 
-        $selected = $postImtData['selected'] ?? [];
-        $mutation = $postImtData['mutation'] ?? null;
+        // récupération selected
+        $selected = $request->input('selected.0.id');
+        $selected = $selected ? [$selected] : [];
 
-        // Validation du payload
+        //PostImtData selected
+        $postImtSelected = $postImtData['selected'] ?? [];
+        $postImtSelected = $postImtSelected ? [$postImtSelected] : [];
+        // dd($postImtSelected);
+
+        // $mutation = $postImtData['mutation'] ?? null;
+
+        // if (!is_array($mutation)) {
+        //     $mutation = $mutation ? [$mutation] : [];
+        // }
+
         $validated = $request->validate([
             'payload.vehicule_id' => 'required|integer|exists:vehicules,id',
             'payload.detail'      => 'required|array|min:1',
             'payload.client_id'   => 'required|integer|exists:clients,id',
-        ], [
-            'payload.vehicule_id.required' => 'Le véhicule est obligatoire.',
-            'payload.vehicule_id.integer'  => 'L\'ID du véhicule doit être un entier.',
-            'payload.vehicule_id.exists'   => 'Le véhicule sélectionné est introuvable.',
-
-            'payload.detail.required' => 'Les détails du service sont requis.',
-            'payload.detail.array'    => 'Le format des détails du service est invalide.',
-            'payload.detail.min'      => 'Au moins un service doit être sélectionné.',
-
-            'payload.client_id.required' => 'Le client est obligatoire.',
-            'payload.client_id.integer'  => 'L\'ID du client doit être un entier.',
-            'payload.client_id.exists'   => 'Le client sélectionné est introuvable.',
         ]);
 
-        //ajouter validation de Duplicata si elle existe verifier avec vehicule_id
-
-        $existingDossier = Dossier::where('id_service', 4) // 4 pour Duplicata
-            ->whereHas('r_dossier_vehicule', function ($query) use ($validated) {
-                $query->where('id', $validated['payload']['vehicule_id']);
-            })
-            ->whereIn('statut', [1, 4]) // Statuts en cours 1: En attente, 2: Valider, 3: Refuser, 4: En cours	
+        // Vérifier duplicata existant
+        $existingDossier = Dossier::where('id_service', 4)
+            ->where('id_vehicule', $validated['payload']['vehicule_id'])
+            ->whereIn('statut', [1, 4])
             ->first();
+
         if ($existingDossier) {
             return response()->json([
                 'success' => false,
                 'message' => 'Oups! un duplicata est déjà en cours pour ce véhicule.'
-            ], 409); // 409 Conflict
+            ], 409);
         }
-        // dd($request->all());
+
         try {
+
             DB::beginTransaction();
 
             $vehicule = Vehicule::findOrFail($vehicule_id);
@@ -1934,153 +1937,190 @@ class PdcController extends Controller
             $dossierPost = null;
             $modification_log = null;
 
-            // --------------------------------------------------------------------
-            //  PARTIE POST-IMMATRICULATION — EXECUTÉE SEULEMENT SI postImtData NON VIDE
-            // --------------------------------------------------------------------
+            /*
+        |--------------------------------------------------------------------------
+        | POST IMMATRICULATION (OPTIONNEL)
+        |--------------------------------------------------------------------------
+        */
+
             if (!empty($postImtData)) {
 
                 $typePersonne = $postImtData['typePersonne'] ?? 'Physique';
 
-                // === Mise à jour CLIENT ===
+                /*
+            |--------------------------------------------------------------------------
+            | CLIENT
+            |--------------------------------------------------------------------------
+            */
+
                 $donneesClient = [
-                    'nom' => $postImtData['firstname'],
-                    'prenom' => $postImtData['lastname'],
-                    'date_naissance' => $postImtData['DateNaissance'],
-                    'ville_naissance' => $postImtData['villeNaissance'],
-                    'adresse' => $postImtData['adresse'],
-                    'telephone' => $postImtData['phone'],
-                    'email' => $postImtData['email'],
-                    'civilite' => $postImtData['sex'],
+                    'nom' => $postImtData['firstname'] ?? null,
+                    'prenom' => $postImtData['lastname'] ?? null,
+                    'date_naissance' => $postImtData['DateNaissance'] ?? null,
+                    'ville_naissance' => $postImtData['villeNaissance'] ?? null,
+                    'adresse' => $postImtData['adresse'] ?? null,
+                    'telephone' => $postImtData['phone'] ?? null,
+                    'email' => $postImtData['email'] ?? null,
+                    'civilite' => $postImtData['sex'] ?? null,
                 ];
 
-                $client->fill($donneesClient);
                 $oldClientData = $client->getOriginal();
                 $client->update($donneesClient);
 
-                // === Mise à jour ENTREPRISE (si personne morale)
+                /*
+            |--------------------------------------------------------------------------
+            | ENTREPRISE (PERSONNE MORALE)
+            |--------------------------------------------------------------------------
+            */
+
                 $oldEntrepriseData = null;
                 $donneesEntreprise = null;
 
                 if ($typePersonne != 'Physique') {
+
                     $donneesEntreprise = [
-                        'nom_entreprise' => $postImtData['nomEntreprise'],
-                        'nom_representant_legal' => $postImtData['representantLegal'],
-                        'telephone_representant_legal' => $postImtData['numeroTelephone'],
-                        'registre_commerce' => $postImtData['registreCommerce'],
-                        'compte_contribuale' => $postImtData['compteContribuable'],
-                        'prefecture' => $postImtData['prefecture'],
-                        'sous_prefecture' => $postImtData['sousPrefecture'],
-                        'region' => $postImtData['region'],
-                        'date_de_naissance_representant_legal' => $postImtData['dateNaissanceRepresantant'],
-                        'profession_representant_legal' => $postImtData['professionRepresantant'],
+                        'nom_entreprise' => $postImtData['nomEntreprise'] ?? null,
+                        'nom_representant_legal' => $postImtData['representantLegal'] ?? null,
+                        'telephone_representant_legal' => $postImtData['numeroTelephone'] ?? null,
+                        'registre_commerce' => $postImtData['registreCommerce'] ?? null,
+                        'compte_contribuale' => $postImtData['compteContribuable'] ?? null,
+                        'prefecture' => $postImtData['prefecture'] ?? null,
+                        'sous_prefecture' => $postImtData['sousPrefecture'] ?? null,
+                        'region' => $postImtData['region'] ?? null,
+                        'date_de_naissance_representant_legal' => $postImtData['DateNaissanceRepresantant'] ?? null,
+                        'profession_representant_legal' => $postImtData['professionRepresantant'] ?? null,
                     ];
 
                     if (!$entreprise) {
                         $entreprise = Entreprise::create($donneesEntreprise);
                     } else {
-                        $entreprise->fill($donneesEntreprise);
                         $oldEntrepriseData = $entreprise->getOriginal();
                         $entreprise->update($donneesEntreprise);
                     }
                 }
 
-                // === Mise à jour VEHICULE ===
+                /*
+            |--------------------------------------------------------------------------
+            | VEHICULE
+            |--------------------------------------------------------------------------
+            */
+
                 $donneesVehicule = [
-                    'annee_production' => $postImtData['anneeProduction'] ?? null,
-                    'vin'               => $postImtData['vin'] ?? null,
-                    'marque'            => $postImtData['marqueVehicule']['nom'] ?? null,
-                    'modele'            => $postImtData['modelVehicule']['nom'] ?? null,
-                    'couleur'           => $postImtData['couleurVehicule'] ?? null,
-                    'source_energie'    => $postImtData['sourcesEnergie'] ?? null,
-                    'genre_vehicule'    => $postImtData['genre'] ?? null,
+
+                    'annee_production' => $postImtData['AnneeProduction'] ?? null,
+                    'vin' => $postImtData['vin'] ?? null,
+                    'marque' => $postImtData['marqueVehicule']['nom'] ?? null,
+                    'modele' => $postImtData['modelVehicule']['nom'] ?? null,
+                    'couleur' => $postImtData['couleurVehicule'] ?? null,
+                    'source_energie' => $postImtData['sourcesEnergie'] ?? null,
+                    'genre_vehicule' => $postImtData['genre'] ?? null,
                     'poids_total_charge' => $postImtData['ptac'] ?? null,
-                    'poids_utile'       => $postImtData['pu'] ?? null,
-                    'poids_vide'        => $postImtData['pv'] ?? null,
+                    'poids_utile' => $postImtData['pu'] ?? null,
+                    'poids_vide' => $postImtData['pv'] ?? null,
                     'puissance_administrative' => $postImtData['puissance'] ?? null,
+
                     'places_assises' => intval(preg_replace('/\D/', '', $postImtData['placesAssises'] ?? '0')),
                     'nombre_essieux' => intval(preg_replace('/\D/', '', $postImtData['nombreEssieux'] ?? '0')),
-                    'date_mise_circulation' => $postImtData['dateCirculation'] ?? null,
-                    'carrosserie'           => $postImtData['carrosserie'] ?? null,
-                    'type_technique'        => $postImtData['typeTechnique'] ?? null,
-                    'code_de_region'        => $postImtData['codeRegion'] ?? null,
-                    'usage_vehicule'        => $postImtData['usage'] ?? null,
+
+                    'date_mise_circulation' => $postImtData['DateCirculation'] ?? null,
+
+                    'carrosserie' => $postImtData['carrosserie'] ?? null,
+                    'type_technique' => $postImtData['typeTechnique'] ?? null,
+                    'code_de_region' => $postImtData['codeRegion'] ?? null,
+                    'usage_vehicule' => $postImtData['usage'] ?? null,
+
                     'physique_morale' => $typePersonne,
-                    'model_id'  => $postImtData['modelVehicule']['id'] ?? null,
+
+                    'model_id' => $postImtData['modelVehicule']['id'] ?? null,
                     'marque_id' => $postImtData['marqueVehicule']['id'] ?? null,
-                    'entreprise_id' => $typePersonne != 'Physique' && $entreprise ? $entreprise->id : null,
+
+                    'entreprise_id' => $typePersonne != 'Physique' && $entreprise
+                        ? $entreprise->id
+                        : null,
                 ];
 
-                $vehicule->fill($donneesVehicule);
                 $oldVehiculeData = $vehicule->getOriginal();
                 $vehicule->update($donneesVehicule);
 
-                if ($typePersonne === 'Physique' && $vehicule->entreprise_id !== null) {
-                    $vehicule->entreprise_id = null;
-                    $vehicule->save();
-                }
+                /*
+            |--------------------------------------------------------------------------
+            | LOG
+            |--------------------------------------------------------------------------
+            */
 
-                // === Journal global ===
                 $modification_log = ModificationLog::create([
                     'model_type' => 'global',
                     'model_id' => $vehicule->id,
                     'user_id' => getConnectedUserId(),
+
                     'old_values' => json_encode([
                         'vehicule' => $oldVehiculeData,
                         'client' => $oldClientData,
-                        'entreprise' => $typePersonne != 'Physique' ? $oldEntrepriseData : null,
+                        'entreprise' => $oldEntrepriseData,
                     ], JSON_UNESCAPED_UNICODE),
+
                     'new_values' => json_encode([
                         'vehicule' => $donneesVehicule,
                         'client' => $donneesClient,
-                        'entreprise' => $typePersonne != 'Physique' ? $donneesEntreprise : null,
+                        'entreprise' => $donneesEntreprise,
                     ], JSON_UNESCAPED_UNICODE),
                 ]);
 
-                // === Création du dossier Post-Immatriculation ===
-                if (!is_array($mutation)) {
-                    $mutation = [$mutation];
-                }
+                /*
+            |--------------------------------------------------------------------------
+            | DOSSIER POST IMMATRICULATION
+            |--------------------------------------------------------------------------
+            */
+                // Remplacez cette ligne :
+                // $detail = array_merge($postImtSelected);
+                // Par :
+                $detail = $postImtSelected[0]; // ou $postImtSelected si c'est déjà un tableau plat
 
-                $detail = array_merge($selected, $mutation);
-
-                $dossierPost = new Dossier();
-                $dossierPost->id_vehicule = $vehicule->id;
-                $dossierPost->id_user = getConnectedUserId();
-                $dossierPost->id_client = $client->id;
-                $dossierPost->id_service = 3;
-                $dossierPost->detail = json_encode($detail, JSON_UNESCAPED_UNICODE);
-                $dossierPost->id_site = getIdSite();
-                $dossierPost->modification_log_id = $modification_log->id;
-                $dossierPost->statut = 1;
-                $dossierPost->num_chrono = generateChronoNumber('POST');
-                $dossierPost->date_creation = now();
-                $dossierPost->save();
+                // Puis encodez en JSON
+                $dossierPost = Dossier::create([
+                    'id_vehicule' => $vehicule->id,
+                    'id_user' => getConnectedUserId(),
+                    'id_client' => $client->id,
+                    'id_service' => 3,
+                    'detail' => json_encode($detail, JSON_UNESCAPED_UNICODE),
+                    'id_site' => getIdSite(),
+                    'est_lier' => 1,
+                    'modification_log_id' => $modification_log->id,
+                    'statut' => 1,
+                    'num_chrono' => generateChronoNumber('POST'),
+                    'date_creation' => now(),
+                ]);
             }
 
-            // --------------------------------------------------------------------
-            //  PARTIE DUPLICATA — S’EXÉCUTE TOUJOURS
-            // --------------------------------------------------------------------
-            $detailDuplicata = !empty($detailPayload) ? $detailPayload : $detail ?? [];
+            /*
+        |--------------------------------------------------------------------------
+        | DUPLICATA (TOUJOURS)
+        |--------------------------------------------------------------------------
+        */
 
-            $dossierDuplicata = new Dossier();
-            $dossierDuplicata->id_vehicule   = $vehicule->id;
-            $dossierDuplicata->id_user       = getConnectedUserId();
-            $dossierDuplicata->num_chrono    = generateChronoNumber('DUPL');
-            $dossierDuplicata->id_client     = $client_id ?? $client->id;
-            $dossierDuplicata->id_site       = getIdSite();
-            $dossierDuplicata->detail        = json_encode($detailDuplicata, JSON_UNESCAPED_UNICODE);
-            $dossierDuplicata->id_service    = 4;
-            $dossierDuplicata->statut        = 1;
-            $dossierDuplicata->id_dossier_lier = $dossierPost ? $dossierPost->id : null;
-            $dossierDuplicata->date_creation = now();
-            $dossierDuplicata->save();
+            $detailDuplicata = !empty($detailPayload)
+                ? $detailPayload
+                : array_merge($selected);
+
+            $dossierDuplicata = Dossier::create([
+                'id_vehicule' => $vehicule->id,
+                'id_user' => getConnectedUserId(),
+                'num_chrono' => generateChronoNumber('DUPL'),
+                'id_client' => $client_id ?? $client->id,
+                'id_site' => getIdSite(),
+                'detail' => json_encode($detailDuplicata, JSON_UNESCAPED_UNICODE),
+                'id_service' => 4,
+                'statut' => 1,
+                'id_dossier_lier' => $dossierPost ? $dossierPost->id : null,
+                'date_creation' => now(),
+            ]);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Enregistrement réussi.',
-                'data'    => $dossierDuplicata,
+                'data' => $dossierDuplicata
             ], 201);
         } catch (\Throwable $e) {
 
@@ -2088,7 +2128,7 @@ class PdcController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $e->getMessage()
             ], 500);
         }
     }
@@ -2406,13 +2446,12 @@ class PdcController extends Controller
     }
 
     //add duplicata
-    public function showNewPdcDuplicataAddData($donne)
+    public function showNewPdcDuplicataAddData(Request $request)
     {
-        $donne = json_decode(urldecode($donne), true);
-        // dd($donne);
-        $vin = $donne['vin'];
-        $selected = $donne['selected'];
-        $postImtData = $donne['postImtData'];
+        // dd($request->all());
+        $vin = $request->vin ?? null;
+        $selected = $request->selected ?? [];
+        $postImtData = $request->postImtData ?? null;
         $vehicule = Vehicule::with([
             'r_vehicule_client',
             'r_vehicule_entreprise',
@@ -2458,6 +2497,7 @@ class PdcController extends Controller
 
     public function showNewPdcDuplicataService($donne)
     {
+        // dd($donne);
         // Décodage du JSON envoyé dans l’URL
         $donne = json_decode(urldecode($donne), true);
 
@@ -2473,12 +2513,23 @@ class PdcController extends Controller
 
         // Séparer vin et nb_plaque via _
         [$vin, $nb_plaque] = explode('_', $vinWithGenre);
+        // dd($vin, $nb_plaque);
 
-        // Convertir en entier
-        $nb_plaque = (int) $nb_plaque;
+        $vehicule = Vehicule::where('vin', $vin)->get();
+        // dd($vehicule[0]->genre_vehicule);
 
-        // Récupérer les services
-        $typeServices = DB::table('type_services')
+        // $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
+        $genre = $vehicule[0]->genre_vehicule;
+        // dd($genre);
+        $genreData = DB::table('genre')
+            ->where('nom', $genre)
+            ->get();
+
+        $nb_plaque = $genreData[0]->nb_plaque;
+        // dd($genre, $genreData[0]->nb_plaque);
+
+        // Récupérer les élemnts de facture avec leurs détails
+        $typeServices = DB::table('detail_type_services')
             ->where('id_service', 4)
             ->get();
 
@@ -2489,28 +2540,37 @@ class PdcController extends Controller
             'data' => [
                 'vin' => $vin,
                 'nb_plaque' => $nb_plaque,
+                'genre' => $genre,
             ],
         ]);
     }
 
     public function showNewPdcDuplicataPost($vin)
     {
-        // dd($vin);
-        $typeServices = DB::table('type_services')
+        // dd($vin); ici
+        // $typeServices = DB::table('type_services')
+        //     ->where('id_service', 3)
+        //     ->whereNotIn('nom_type_service', ['Changement de Couleur', 'Usage', "Changement de zone (Code région)"])
+        //     ->get();
+        $typeServices = DB::table('detail_type_services')
             ->where('id_service', 3)
-            ->whereNotIn('nom_type_service', ['Changement de Couleur', 'Usage', "Changement de zone (Code région)"])
+            ->whereNotIn('id', ['10', '25', "28"])
             ->get();
 
         return inertia('Pdc/Duplicata/newPost', ['typeServices' => $typeServices, 'vin' => $vin ?? null]);
     }
 
-    public function showNewPdcDuplicataPostImmatriculationAddData($vin)
+    public function showNewPdcDuplicataPostImmatriculationAddData(Request $request, $vin)
     {
+        // dd($request->all(), $vin);
         // 
         $vehicule = Vehicule::where('vin', $vin)->first();
         if (!$vehicule) {
             abort(404, 'Véhicule non rencontré');
         }
+        //selected
+        $selected = $request->selected ?? [];
+        $mutation = $request->mutation ?? null;
 
         $client = $vehicule->r_vehicule_client;
         $entreprise = $vehicule->entreprise_id ? Entreprise::find($vehicule->entreprise_id) : null;
@@ -2519,12 +2579,13 @@ class PdcController extends Controller
 
         // On récupère le genre
         $genre = null;
-
+        // dd($vehicule->genre_vehicule);
         if (!empty($vehicule->genre_vehicule)) {
             $genre = DB::table('genre')
                 ->where('nom', $vehicule->genre_vehicule)
                 ->first();
         }
+        // dd($genre);
 
         $data = [
             'immatriculation' => [
@@ -2579,7 +2640,7 @@ class PdcController extends Controller
             'modeles' => $vehicule->model_id ? DB::table('model')->where('marque_id', $vehicule->marque_id)->get() : []
         ];
 
-        return inertia('Pdc/Duplicata/editPost', ['entreprise' => $entreprise, 'vehicule' => $vehicule, 'client' => $client, 'data' => $data, 'genreVehicule' => $genre]);
+        return inertia('Pdc/Duplicata/editPost', ['entreprise' => $entreprise, 'vehicule' => $vehicule, 'client' => $client, 'data' => $data, 'genreVehicule' => $genre, 'selected' => $selected, 'mutation' => $mutation]);
     }
 
     //correction

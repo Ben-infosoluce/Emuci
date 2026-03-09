@@ -3,7 +3,7 @@
     <div
         class="sticky top-[-30px] z-10 bg-[#f1f5f9] dark:bg-gray-900 flex flex-col space-y-4 px-8  py-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <h4 class="text-2xl font-bold tracking-tight">
-            Duplicata / Post-immatriculation
+            Duplicata / Post-immatriculations
         </h4>
         <div class="flex items-center space-x-2">
             <Link :href="route('show.new.pdc.duplicata.post', { vin: form.vin })">
@@ -33,15 +33,15 @@
                                         <FormItem v-auto-animate>
                                             <FormLabel>Couleur du véhicule</FormLabel>
                                             <FormControl>
-                                                <Select v-bind="componentField" autocomplete="couleurVehicule"
-                                                    v-model="form.couleurVehicule"
-                                                    :disabled="!selected.includes('Changement de Couleur')">
+                                                <Select v-bind="componentField" autocomplete="couleurVehicule" v-model="form.couleurVehicule
+                                                    " :disabled="!selected.includes('10')">
                                                     <SelectTrigger class="w-full">
                                                         <SelectValue placeholder="Sélectionner une couleur" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectGroup>
-                                                            <SelectLabel>Couleurs disponibles</SelectLabel>
+                                                            <SelectLabel>Couleurs
+                                                                disponibles</SelectLabel>
                                                             <SelectItem value="Vert">Vert</SelectItem>
                                                             <SelectItem value="Bleu">Bleu</SelectItem>
                                                             <SelectItem value="Beige">Beige</SelectItem>
@@ -68,8 +68,8 @@
                                             <FormLabel>Carrosserie</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Berline" v-bind="componentField"
-                                                    :disabled="!selected.includes('Changement-Carrosserie')"
-                                                    autocomplete="carrosserie" v-model="form.carrosserie" />
+                                                    :disabled="!selected.includes('22')" autocomplete="carrosserie"
+                                                    v-model="form.carrosserie" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -81,8 +81,8 @@
                                             <FormLabel>Type Techniques</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="type Technique" v-bind="componentField"
-                                                    :disabled="!selected.includes('Changement Type Technique')"
-                                                    autocomplete="typeTechnique" v-model="form.typeTechnique" />
+                                                    :disabled="!selected.includes('19')" autocomplete="typeTechnique"
+                                                    v-model="form.typeTechnique" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -91,14 +91,24 @@
 
                                 <!-- Deuxième grille -->
                                 <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
-                                    <!-- Usage -->
                                     <FormField v-slot="{ componentField }" name="usage">
                                         <FormItem v-auto-animate>
                                             <FormLabel>Usage</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="transport" v-bind="componentField"
-                                                    :disabled="!selected.includes('Usage')" autocomplete="usage"
-                                                    v-model="form.usage" />
+                                                <Select v-bind="componentField" autocomplete="couleurVehicule"
+                                                    v-model="form.usage" :disabled="!selected.includes('25')">
+                                                    <SelectTrigger class="w-full">
+                                                        <SelectValue placeholder="Sélectionner l'usage" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectLabel>Usage
+                                                            </SelectLabel>
+                                                            <SelectItem value="Public">Public</SelectItem>
+                                                            <SelectItem value="Privé">Privé</SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -110,17 +120,19 @@
                                             <FormLabel>Sources d’énergie</FormLabel>
                                             <FormControl>
                                                 <Select v-bind="componentField" autocomplete="sourcesEnergie"
-                                                    :disabled="!selected.includes('Changement de Sources d’énergie')"
-                                                    v-model="form.sourcesEnergie">
+                                                    :disabled="!selected.includes('16')" v-model="form.sourcesEnergie
+                                                        ">
                                                     <SelectTrigger class="w-full">
                                                         <SelectValue placeholder="Sélectionner une Source d’énergie" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectGroup>
-                                                            <SelectLabel>Sources d’énergie</SelectLabel>
+                                                            <SelectLabel>Sources
+                                                                d’énergie</SelectLabel>
                                                             <SelectItem value="ESSENCE">ESSENCE</SelectItem>
                                                             <SelectItem value="GAS-OIL">GAS-OIL</SelectItem>
-                                                            <SelectItem value="SANS ENERGIE">SANS ENERGIE</SelectItem>
+                                                            <SelectItem value="SANS ENERGIE">SANS
+                                                                ENERGIE</SelectItem>
                                                             <SelectItem value="ELECTRICITE">ELECTRICITE</SelectItem>
                                                             <SelectItem value="AUTRE">AUTRE</SelectItem>
                                                         </SelectGroup>
@@ -131,13 +143,13 @@
                                         </FormItem>
                                     </FormField>
 
-                                    <!-- Code Région -->
+                                    <!-- Code de zone -->
                                     <FormField v-slot="{ componentField }" name="codeRegion">
                                         <FormItem v-auto-animate>
                                             <FormLabel>Code de région *</FormLabel>
                                             <FormControl>
                                                 <Select v-bind="componentField" v-model="form.codeRegion"
-                                                    :disabled="!selected.includes('Changement de zone (Code région)')">
+                                                    :disabled="!selected.includes('28')">
                                                     <SelectTrigger class="w-full">
                                                         <SelectValue placeholder="Sélectionner le code de région" />
                                                     </SelectTrigger>
@@ -145,8 +157,11 @@
                                                         <SelectGroup>
                                                             <SelectLabel>Districts</SelectLabel>
                                                             <SelectItem v-for="item in codes_regions" :key="item.code"
-                                                                :value="item.code">
-                                                                {{ item.district }}
+                                                                :value="item.code
+                                                                    ">
+                                                                {{
+                                                                    item.district
+                                                                }}
                                                             </SelectItem>
                                                         </SelectGroup>
                                                     </SelectContent>
@@ -158,13 +173,12 @@
                                 </div>
                             </div>
 
+                            <!-- a revoir -->
                             <div v-show="mutation">
-                                <h1 class="text-md font-semibold mt-14">Changement de propriétaire : MUTATION</h1>
-                                <!-- Type de personne -->
-                                <!-- <h3 class="text-md font-semibold  mb-6 mt-6">Type de personne</h3> -->
-                                <!-- type -->
+                                <h1 class="text-md font-semibold mt-14">
+                                    Changement de propriétaire : MUTATION
+                                </h1>
                                 <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mt-6">
-
                                     <!-- type -->
                                     <FormField v-slot="{ componentField }" name="type">
                                         <FormItem v-auto-animate>
@@ -188,21 +202,11 @@
                                         </FormItem>
                                     </FormField>
                                 </div>
-                                <!-- <div class="flex items-center gap-6 mb-5">
-                                    <label class="flex items-center gap-2">
-                                        <input type="radio" value="Morale" v-model="form.type" />
-                                        Morale
-                                    </label>
-                                    <label class="flex items-center gap-2">
-                                        <input type="radio" value="Physique" v-model="form.type" />
-                                        Physique
-                                    </label>
-                                    <p v-if="typeError" class="text-red-600 text-sm mt-1">{{ typeError }}</p>
-                                </div> -->
                                 <!-- Informations du propriétaire -->
-                                <h3 class="text-md font-semibold mt-6 mb-6">Informations du propriétaire</h3>
+                                <h3 class="text-md font-semibold mt-6 mb-6">
+                                    Informations du propriétaire
+                                </h3>
                                 <div class="flex flex-1 flex-col gap-4 md:gap-6">
-
                                     <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
                                         <FormField v-slot="{ componentField }" name="civilite">
                                             <FormItem v-auto-animate>
@@ -251,7 +255,8 @@
                                     <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
                                         <FormField v-slot="{ componentField }" name="phone">
                                             <FormItem v-auto-animate>
-                                                <FormLabel>Numéro de téléphone*</FormLabel>
+                                                <FormLabel>Numéro de
+                                                    téléphone*</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="0701020304" v-bind="componentField"
                                                         autocomplete="phone" v-model="form.phone" />
@@ -273,10 +278,12 @@
                                         <!-- Date de naissance -->
                                         <FormField v-slot="{ componentField }" name="DateNaissance">
                                             <FormItem v-auto-animate>
-                                                <FormLabel>Date de naissance*</FormLabel>
+                                                <FormLabel>Date de
+                                                    naissance*</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="01-01-1984" v-bind="componentField"
-                                                        autocomplete="DateNaissance" v-model="form.DateNaissance" />
+                                                        autocomplete="DateNaissance" v-model="form.DateNaissance
+                                                            " />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -286,10 +293,12 @@
                                         <!-- ville de naissance  -->
                                         <FormField v-slot="{ componentField }" name="villeNaissance">
                                             <FormItem v-auto-animate>
-                                                <FormLabel>Ville de naissance*</FormLabel>
+                                                <FormLabel>Ville de
+                                                    naissance*</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="Bouaké" v-bind="componentField"
-                                                        autocomplete="villeNaissance" v-model="form.villeNaissance" />
+                                                        autocomplete="villeNaissance" v-model="form.villeNaissance
+                                                            " />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -323,7 +332,8 @@
                                                 <FormLabel>Préfecture</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="prefecture 1" v-bind="componentField"
-                                                        autocomplete="prefecture" v-model="form.prefecture" />
+                                                        autocomplete="prefecture" v-model="form.prefecture
+                                                            " />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -334,7 +344,8 @@
                                                 <FormLabel>Sous Préfecture</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="Sous prefecture 1" v-bind="componentField"
-                                                        autocomplete="SousPrefecture" v-model="form.sousPrefecture" />
+                                                        autocomplete="SousPrefecture" v-model="form.sousPrefecture
+                                                            " />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -344,451 +355,800 @@
                             </div>
 
                             <!-- Informations de l'entreprise -->
-                            <div v-show="form.typePersonne != 'Physique' && mutation" class="mt-10">
-                                <h3 class="text-md font-semibold mb-6 ">Informations de l'entreprise</h3>
+                            <div v-show="form.typePersonne != 'Physique' && mutation
+                                " class="mt-10">
+                                <h3 class="text-md font-semibold mb-6">
+                                    Informations de l'entreprise
+                                </h3>
                                 <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Nom de l'entreprise</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Nom de l'entreprise
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.nomEntreprise" />
-                                        <p v-if="nomEntrepriseError" class="text-red-600 text-sm mt-1">{{
-                                            nomEntrepriseError }}</p>
+                                        <p v-if="nomEntrepriseError" class="text-red-600 text-sm mt-1">
+                                            {{ nomEntrepriseError }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Numéro du registre de Commerce</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Numéro du registre de Commerce
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.registreCommerce" />
-                                        <p v-if="registreCommerceError" class="text-red-600 text-sm mt-1">{{
-                                            registreCommerceError }}</p>
+                                        <p v-if="registreCommerceError" class="text-red-600 text-sm mt-1">
+                                            {{ registreCommerceError }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Nom et Prénom du représentant légal</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Nom et Prénom du représentant légal
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.representantLegal" />
-                                        <p v-if="representantLegalError" class="text-red-600 text-sm mt-1">{{
-                                            representantLegalError }}</p>
+                                        <p v-if="representantLegalError" class="text-red-600 text-sm mt-1">
+                                            {{ representantLegalError }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Téléphone du représentant légal</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Téléphone du représentant légal
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.numeroTelephone" />
-                                        <p v-if="numeroTelephoneError" class="text-red-600 text-sm mt-1">{{
-                                            numeroTelephoneError }}</p>
+                                        <p v-if="numeroTelephoneError" class="text-red-600 text-sm mt-1">
+                                            {{ numeroTelephoneError }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Date de naissance du représentant légal</p>
-                                        <Input class="py-0 h-9" v-model="form.DateNaissanceRepresantant" />
-                                        <p v-if="DateNaissanceRepresantantError" class="text-red-600 text-sm mt-1">{{
-                                            DateNaissanceRepresantantError }}</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Date de naissance du représentant
+                                            légal
+                                        </p>
+                                        <Input class="py-0 h-9" v-model="form.DateNaissanceRepresantant
+                                            " />
+                                        <p v-if="
+                                            DateNaissanceRepresantantError
+                                        " class="text-red-600 text-sm mt-1">
+                                            {{ DateNaissanceRepresantantError }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Profession du représentant légal</p>
-                                        <Input class="py-0 h-9" v-model="form.ProfessionRepresantant" />
-                                        <p v-if="ProfessionRepresantantError" class="text-red-600 text-sm mt-1">{{
-                                            ProfessionRepresantantError }}</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Profession du représentant légal
+                                        </p>
+                                        <Input class="py-0 h-9" v-model="form.ProfessionRepresantant
+                                            " />
+                                        <p v-if="ProfessionRepresantantError" class="text-red-600 text-sm mt-1">
+                                            {{ ProfessionRepresantantError }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Numéro de compte contribuale</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Numéro de compte contribuale
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.compteContribuable" />
-                                        <p v-if="compteContribuableError" class="text-red-600 text-sm mt-1">{{
-                                            compteContribuableError }}</p>
+                                        <p v-if="compteContribuableError" class="text-red-600 text-sm mt-1">
+                                            {{ compteContribuableError }}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Péfecture</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Péfecture
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.prefecture" />
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Sous-Péfecture</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Sous-Péfecture
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.sousPrefecture" />
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium mb-2 ">Région</p>
+                                        <p class="text-sm font-medium mb-2">
+                                            Région
+                                        </p>
                                         <Input class="py-0 h-9" v-model="form.region" />
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- gage /levée de gage -->
+                            <div class="flex items-center gap-10 pt-6 mt-6 mb-8">
+                                <!-- Gage -->
+                                <div class="flex items-center gap-2">
+                                    <input type="radio" id="gage" value="gage" v-model="form.gage" class="h-4 w-4" />
+                                    <label for="gage" class="text-sm">Gage sur la carte grise</label>
+                                </div>
+
+                                <!-- Levée de gage / Autorisation -->
+                                <div class="flex items-center gap-2">
+                                    <input type="radio" id="leveGage" value="leveGage" v-model="form.gage"
+                                        class="h-4 w-4" />
+                                    <label for="leveGage" class="text-sm">Levée de gage / Autorisation</label>
+                                </div>
+                            </div>
+
                             <!-- show Summary -->
                             <div v-if="showSummary"
                                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-auto">
                                 <div
                                     class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-4xl shadow-2xl space-y-6">
-                                    <h3 class="text-2xl font-bold text-center mb-2">Résumé des informations de
-                                        Post-Immatriculation</h3>
+                                    <h3 class="text-2xl font-bold text-center mb-2">
+                                        Résumé des informations
+                                    </h3>
                                     <!-- Informations du propriétaire -->
-
                                     <div>
                                         <h4 class="text-lg font-semibold mb-8 text-center">
-                                            --------------- Informations du propriétaire ---------------
+                                            --------------- Informations du
+                                            propriétaire ---------------
                                         </h4>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <!-- <p>toto : {{ formDataSummary }}</p> -->
                                             <!-- Civilité -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.sex !== data.civilite">Nouvelle</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.sex !==
+                                                        data.civilite
+                                                    ">Nouvelle</span>
                                                     Civilité :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.sex !== data.civilite }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.sex !==
+                                                        data.civilite,
+                                                }">
                                                     {{ formDataSummary.sex }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.sex !== data.civilite">
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.sex !==
+                                                data.civilite
+                                            ">
                                                 <strong>Ancienne Civilité :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.civilite }}</samp>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.civilite
+                                                    }}</samp>
                                             </p>
                                             <!-- Nom -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.lastname !== data.lastname">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.lastname !==
+                                                        data.lastname
+                                                    ">Nouveau</span>
                                                     Nom :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.lastname !== data.lastname }">
-                                                    {{ formDataSummary.lastname }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.lastname !==
+                                                        data.lastname,
+                                                }">
+                                                    {{
+                                                        formDataSummary.lastname
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.lastname !== data.lastname">
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.lastname !==
+                                                data.lastname
+                                            ">
                                                 <strong>Ancien Nom :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.lastname }}</samp>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.lastname
+                                                    }}</samp>
                                             </p>
                                             <!-- Prénom -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.firstname !== data.firstname">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.firstname !==
+                                                        data.firstname
+                                                    ">Nouveau</span>
                                                     Prénom :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.firstname !== data.firstname }">
-                                                    {{ formDataSummary.firstname }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.firstname !==
+                                                        data.firstname,
+                                                }">
+                                                    {{
+                                                        formDataSummary.firstname
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.firstname !== data.firstname">
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.firstname !==
+                                                data.firstname
+                                            ">
                                                 <strong>Ancien Prénom :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.firstname }}</samp>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.firstname
+                                                    }}</samp>
                                             </p>
                                             <!-- Email -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.email !== data.email">Nouvel</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.email !==
+                                                        data.email
+                                                    ">Nouvel</span>
                                                     Email :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.email !== data.email }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.email !==
+                                                        data.email,
+                                                }">
                                                     {{ formDataSummary.email }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.email !== data.email">
-                                                <strong>Ancien Email :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.email }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.email !==
+                                                data.email
+                                            ">
+                                                <strong>Ancien Email :</strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.email
+                                                    }}</samp>
                                             </p>
                                             <!-- Adresse -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.adresse !== data.adresse">Nouvelle</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.adresse !==
+                                                        data.adresse
+                                                    ">Nouvelle</span>
                                                     Adresse :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.adresse !== data.adresse }">
-                                                    {{ formDataSummary.adresse }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.adresse !==
+                                                        data.adresse,
+                                                }">
+                                                    {{
+                                                        formDataSummary.adresse
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.adresse !== data.adresse">
-                                                <strong>Ancienne Adresse :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.adresse }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.adresse !==
+                                                data.adresse
+                                            ">
+                                                <strong>Ancienne Adresse :</strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.adresse
+                                                    }}</samp>
                                             </p>
                                             <!-- Ville de naissance -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.villeNaissance !== data.villeNaissance">Nouvelle</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.villeNaissance !==
+                                                        data.villeNaissance
+                                                    ">Nouvelle</span>
                                                     Ville de naissance :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.villeNaissance !== data.villeNaissance }">
-                                                    {{ formDataSummary.villeNaissance }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.villeNaissance !==
+                                                        data.villeNaissance,
+                                                }">
+                                                    {{
+                                                        formDataSummary.villeNaissance
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="mutation && formDataSummary.villeNaissance !== data.villeNaissance">
-                                                <strong>Ancienne Ville de naissance :</strong> <samp
-                                                    class="text-[#ca7600]">{{ data.villeNaissance }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.villeNaissance !==
+                                                data.villeNaissance
+                                            ">
+                                                <strong>Ancienne Ville de naissance
+                                                    :</strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.villeNaissance
+                                                    }}</samp>
                                             </p>
                                             <!-- date de naissance -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.DateNaissance !== data.DateNaissance">Nouvelle</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.DateNaissance !==
+                                                        data.DateNaissance
+                                                    ">Nouvelle</span>
                                                     Date de naissance :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.DateNaissance !== data.DateNaissance }">
-                                                    {{ formDataSummary.DateNaissance }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.DateNaissance !==
+                                                        data.DateNaissance,
+                                                }">
+                                                    {{
+                                                        formDataSummary.DateNaissance
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.DateNaissance !== data.DateNaissance">
-                                                <strong>Ancienne Date de naissance :</strong> <samp
-                                                    class="text-[#ca7600]">{{ data.DateNaissance }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.DateNaissance !==
+                                                data.DateNaissance
+                                            ">
+                                                <strong>Ancienne Date de naissance
+                                                    :</strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.DateNaissance
+                                                    }}</samp>
                                             </p>
                                             <!-- Téléphone -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.phone !== data.phone">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.phone !==
+                                                        data.phone
+                                                    ">Nouveau</span>
                                                     Téléphone :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.phone !== data.phone }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.phone !==
+                                                        data.phone,
+                                                }">
                                                     {{ formDataSummary.phone }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.phone !== data.phone">
-                                                <strong>Ancien Téléphone :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.phone }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.phone !==
+                                                data.phone
+                                            ">
+                                                <strong>Ancien Téléphone :</strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.phone
+                                                    }}</samp>
                                             </p>
                                         </div>
                                     </div>
                                     <Separator class="my-4" />
                                     <!-- Informations du véhicule -->
+
                                     <div>
                                         <h4 class="text-lg font-semibold mb-8 text-center">
                                             --------------- Informations du véhicule ---------------
                                         </h4>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <p><strong>Marque :</strong> {{ formDataSummary.marqueVehicule.nom }}</p>
-                                            <p><strong>Model :</strong> {{ formDataSummary.modelVehicule.nom }}</p>
 
-                                            <!-- Couleur -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+
+                                            <!-- Marque -->
+                                            <p>
+                                                <strong>Marque :</strong>
+                                                {{ formDataSummary.marqueVehicule?.nom ?? "-" }}
+                                            </p>
+
+                                            <!-- Modèle -->
+                                            <p>
+                                                <strong>Model :</strong>
+                                                {{ formDataSummary.modelVehicule?.nom ?? "-" }}
+                                            </p>
+
+                                            <!-- Couleur (ID: 4) -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="selected.includes('Changement de Couleur') && formDataSummary.couleurVehicule != data.couleurVehicule">Nouvelle</span>
+                                                    <span v-if="selected.includes('10') &&
+                                                        formDataSummary.couleurVehicule != data.couleurVehicule">
+                                                        Nouvelle
+                                                    </span>
                                                     Couleur :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': selected.includes('Changement de Couleur') && formDataSummary.couleurVehicule != data.couleurVehicule }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        selected.includes('10') &&
+                                                        formDataSummary.couleurVehicule != data.couleurVehicule
+                                                }">
                                                     {{ formDataSummary.couleurVehicule }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="selected.includes('Changement de Couleur') && formDataSummary.couleurVehicule != data.couleurVehicule">
-                                                <strong>Ancienne Couleur :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.couleurVehicule }}</samp>
+
+                                            <p v-if="selected.includes('10') &&
+                                                formDataSummary.couleurVehicule != data.couleurVehicule">
+                                                <strong>Ancienne Couleur : </strong>
+                                                <samp class="text-[#ca7600]">
+                                                    {{ data.couleurVehicule }}
+                                                </samp>
                                             </p>
 
-                                            <!-- Carrosserie -->
+                                            <!-- Carrosserie (ID: 8) -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="selected.includes('Changement-Carrosserie') && formDataSummary.carrosserie != data.carrosserie">Nouvelle</span>
+                                                    <span v-if="selected.includes('22') &&
+                                                        formDataSummary.carrosserie != data.carrosserie">
+                                                        Nouvelle
+                                                    </span>
                                                     Carrosserie :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': selected.includes('Changement-Carrosserie') && formDataSummary.carrosserie != data.carrosserie }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        selected.includes('22') &&
+                                                        formDataSummary.carrosserie != data.carrosserie
+                                                }">
                                                     {{ formDataSummary.carrosserie }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="selected.includes('Changement-Carrosserie') && formDataSummary.carrosserie != data.carrosserie">
-                                                <strong>Ancienne Carrosserie :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.carrosserie }}</samp>
+
+                                            <p v-if="selected.includes('22') &&
+                                                formDataSummary.carrosserie != data.carrosserie">
+                                                <strong>Ancienne Carrosserie :</strong>
+                                                <samp class="text-[#ca7600]">
+                                                    {{ data.carrosserie }}
+                                                </samp>
                                             </p>
 
-                                            <!-- Type technique -->
+                                            <!-- Type Technique (ID: 7) -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="selected.includes('Changement Type Technique') && formDataSummary.typeTechnique != data.typeTechnique">Nouveau</span>
+                                                    <span v-if="selected.includes('19') &&
+                                                        formDataSummary.typeTechnique != data.typeTechnique">
+                                                        Nouveau
+                                                    </span>
                                                     Type technique :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': selected.includes('Changement Type Technique') && formDataSummary.typeTechnique != data.typeTechnique }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        selected.includes('19') &&
+                                                        formDataSummary.typeTechnique != data.typeTechnique
+                                                }">
                                                     {{ formDataSummary.typeTechnique }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="selected.includes('Changement Type Technique') && formDataSummary.typeTechnique != data.typeTechnique">
-                                                <strong>Ancien Type technique :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.typeTechnique }}</samp>
+
+                                            <p v-if="selected.includes('19') &&
+                                                formDataSummary.typeTechnique != data.typeTechnique">
+                                                <strong>Ancien Type technique :</strong>
+                                                <samp class="text-[#ca7600]">
+                                                    {{ data.typeTechnique }}
+                                                </samp>
                                             </p>
 
-                                            <!-- Usage -->
+                                            <!-- Usage (ID: 9) -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="selected.includes('Usage') && formDataSummary.usage != data.usage">Nouvel</span>
+                                                    <span v-if="selected.includes('25') &&
+                                                        formDataSummary.usage != data.usage">
+                                                        Nouvel
+                                                    </span>
                                                     Usage :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': selected.includes('Usage') && formDataSummary.usage != data.usage }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        selected.includes('25') &&
+                                                        formDataSummary.usage != data.usage
+                                                }">
                                                     {{ formDataSummary.usage }}
                                                 </samp>
                                             </p>
-                                            <p v-if="selected.includes('Usage') && formDataSummary.usage != data.usage">
-                                                <strong>Ancien Usage :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.usage }}</samp>
+
+                                            <p v-if="selected.includes('25') &&
+                                                formDataSummary.usage != data.usage">
+                                                <strong>Ancien Usage :</strong>
+                                                <samp class="text-[#ca7600]">
+                                                    {{ data.usage }}
+                                                </samp>
                                             </p>
 
-                                            <p><strong>Genre :</strong> {{ formDataSummary.genre }}</p>
-                                            <p><strong>Poids Total en charge (PTAC) :</strong> {{ formDataSummary.ptac
-                                            }}</p>
-                                            <p><strong>Poids Utile (PU) :</strong> {{ formDataSummary.pu }}</p>
-                                            <p><strong>Poids à Vide (PV) :</strong> {{ formDataSummary.pv }}</p>
-                                            <p><strong>Puissance administrative :</strong> {{ formDataSummary.puissance
-                                            }}</p>
-                                            <p><strong>Places Assises :</strong> {{ formDataSummary.placesAssises }}</p>
-
-                                            <!-- Sources d’énergie -->
+                                            <!-- Sources d’énergie (ID: 6) -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="selected.includes('Changement de Sources d’énergie') && formDataSummary.sourcesEnergie != data.sourcesEnergie">Nouvelles</span>
+                                                    <span v-if="selected.includes('16') &&
+                                                        formDataSummary.sourcesEnergie != data.sourcesEnergie">
+                                                        Nouvelles
+                                                    </span>
                                                     Sources d’énergie :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': selected.includes('Changement de Sources d’énergie') && formDataSummary.sourcesEnergie != data.sourcesEnergie }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        selected.includes('16') &&
+                                                        formDataSummary.sourcesEnergie != data.sourcesEnergie
+                                                }">
                                                     {{ formDataSummary.sourcesEnergie }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="selected.includes('Changement de Sources d’énergie') && formDataSummary.sourcesEnergie != data.sourcesEnergie">
-                                                <strong>Anciennes Sources d’énergie :</strong> <samp
-                                                    class="text-[#ca7600]">{{ data.sourcesEnergie }}</samp>
+
+                                            <p v-if="selected.includes('16') &&
+                                                formDataSummary.sourcesEnergie != data.sourcesEnergie">
+                                                <strong>Anciennes Sources d’énergie :</strong>
+                                                <samp class="text-[#ca7600]">
+                                                    {{ data.sourcesEnergie }}
+                                                </samp>
                                             </p>
 
-                                            <!-- Code de Région -->
+                                            <!-- Code Région (ID: 10) -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="selected.includes('Changement de zone (Code région)') && formDataSummary.codeRegion != data.codeRegion">Nouveau</span>
+                                                    <span v-if="selected.includes('28') &&
+                                                        formDataSummary.codeRegion != data.codeRegion">
+                                                        Nouveau
+                                                    </span>
                                                     Code de Région :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': selected.includes('Changement de zone (Code région)') && formDataSummary.codeRegion != data.codeRegion }">
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        selected.includes('28') &&
+                                                        formDataSummary.codeRegion != data.codeRegion
+                                                }">
                                                     {{ formDataSummary.codeRegion }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="selected.includes('Changement de zone (Code région)') && formDataSummary.codeRegion != data.codeRegion">
-                                                <strong>Ancien Code de Région :</strong> <samp class="text-[#ca7600]">{{
-                                                    data.codeRegion }}</samp>
+
+                                            <p v-if="selected.includes('28') &&
+                                                formDataSummary.codeRegion != data.codeRegion">
+                                                <strong>Ancien Code de Région :</strong>
+                                                <samp class="text-[#ca7600]">
+                                                    {{ data.codeRegion }}
+                                                </samp>
                                             </p>
 
-                                            <p><strong>Nbre d’Essieux :</strong> {{ formDataSummary.nombreEssieux }}</p>
+                                            <!-- Autres infos -->
+                                            <p>
+                                                <strong>Genre :</strong>
+                                                {{ formDataSummary.genre }}
+                                            </p>
+
+                                            <p>
+                                                <strong>Poids Total en charge (PTAC) :</strong>
+                                                {{ formDataSummary.ptac }}
+                                            </p>
+
+                                            <p>
+                                                <strong>Poids Utile (PU) :</strong>
+                                                {{ formDataSummary.pu }}
+                                            </p>
+
+                                            <p>
+                                                <strong>Poids à Vide (PV) :</strong>
+                                                {{ formDataSummary.pv }}
+                                            </p>
+
+                                            <p>
+                                                <strong>Puissance administrative :</strong>
+                                                {{ formDataSummary.puissance }}
+                                            </p>
+
+                                            <p>
+                                                <strong>Places Assises :</strong>
+                                                {{ formDataSummary.placesAssises }}
+                                            </p>
+
+                                            <p>
+                                                <strong>Nbre d’Essieux :</strong>
+                                                {{ formDataSummary.nombreEssieux }}
+                                            </p>
+
                                         </div>
                                     </div>
                                     <Separator class="my-4" />
                                     <!-- Information de l'entreprise -->
-                                    <div v-if="formDataSummary.typePersonne != 'Physique'">
+                                    <div v-if="
+                                        formDataSummary.typePersonne !=
+                                        'Physique'
+                                    ">
                                         <h4 class="text-lg font-semibold mb-8 text-center">
-                                            --------------- Informations de l'entreprise ---------------
-
+                                            --------------- Informations de
+                                            l'entreprise ---------------
                                         </h4>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                             <!-- Nom de l'entreprise -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.nomEntreprise !== data.nomEntreprise">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.nomEntreprise !==
+                                                        data.nomEntreprise
+                                                    ">Nouveau</span>
                                                     Nom de l'entreprise :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.nomEntreprise !== data.nomEntreprise }">
-                                                    {{ formDataSummary.nomEntreprise }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.nomEntreprise !==
+                                                        data.nomEntreprise,
+                                                }">
+                                                    {{
+                                                        formDataSummary.nomEntreprise
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p v-if="mutation && formDataSummary.nomEntreprise !== data.nomEntreprise">
-                                                <strong>Ancien Nom de l'entreprise : </strong> <samp
-                                                    class="text-[#ca7600]">{{ data.nomEntreprise }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.nomEntreprise !==
+                                                data.nomEntreprise
+                                            ">
+                                                <strong>Ancien Nom de l'entreprise
+                                                    :
+                                                </strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.nomEntreprise
+                                                    }}</samp>
                                             </p>
 
                                             <!-- Registre de commerce -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.registreCommerce !== data.registreCommerce">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.registreCommerce !==
+                                                        data.registreCommerce
+                                                    ">Nouveau</span>
                                                     Registre de commerce :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.registreCommerce !== data.registreCommerce }">
-                                                    {{ formDataSummary.registreCommerce }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.registreCommerce !==
+                                                        data.registreCommerce,
+                                                }">
+                                                    {{
+                                                        formDataSummary.registreCommerce
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="mutation && formDataSummary.registreCommerce !== data.registreCommerce">
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.registreCommerce !==
+                                                data.registreCommerce
+                                            ">
                                                 <strong>Ancien Registre :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.registreCommerce }}</samp>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.registreCommerce
+                                                    }}</samp>
                                             </p>
 
                                             <!-- Représentant légal -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.representantLegal !== data.representantLegal">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.representantLegal !==
+                                                        data.representantLegal
+                                                    ">Nouveau</span>
                                                     Représentant Légal :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.representantLegal !== data.representantLegal }">
-                                                    {{ formDataSummary.representantLegal }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.representantLegal !==
+                                                        data.representantLegal,
+                                                }">
+                                                    {{
+                                                        formDataSummary.representantLegal
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="mutation && formDataSummary.representantLegal !== data.representantLegal">
-                                                <strong>Ancien Représentant :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.representantLegal }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.representantLegal !==
+                                                data.representantLegal
+                                            ">
+                                                <strong>Ancien Représentant
+                                                    :</strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.representantLegal
+                                                    }}</samp>
                                             </p>
 
                                             <!-- Téléphone -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.numeroTelephone !== data.numeroTelephone">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.numeroTelephone !==
+                                                        data.numeroTelephone
+                                                    ">Nouveau</span>
                                                     Numéro de Téléphone :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.numeroTelephone !== data.numeroTelephone }">
-                                                    {{ formDataSummary.numeroTelephone }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.numeroTelephone !==
+                                                        data.numeroTelephone,
+                                                }">
+                                                    {{
+                                                        formDataSummary.numeroTelephone
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="mutation && formDataSummary.numeroTelephone !== data.numeroTelephone">
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.numeroTelephone !==
+                                                data.numeroTelephone
+                                            ">
                                                 <strong>Ancien Téléphone :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.numeroTelephone }}</samp>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.numeroTelephone
+                                                    }}</samp>
                                             </p>
 
                                             <!-- Compte contribuable -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.compteContribuable !== data.compteContribuable">Nouveau</span>
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.compteContribuable !==
+                                                        data.compteContribuable
+                                                    ">Nouveau</span>
                                                     Compte Contribuable :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.compteContribuable !== data.compteContribuable }">
-                                                    {{ formDataSummary.compteContribuable }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.compteContribuable !==
+                                                        data.compteContribuable,
+                                                }">
+                                                    {{
+                                                        formDataSummary.compteContribuable
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="mutation && formDataSummary.compteContribuable !== data.compteContribuable">
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.compteContribuable !==
+                                                data.compteContribuable
+                                            ">
                                                 <strong>Ancien Compte :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.compteContribuable }}</samp>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.compteContribuable
+                                                    }}</samp>
                                             </p>
                                             <!-- Profession représentant -->
                                             <p>
                                                 <strong>
-                                                    <span
-                                                        v-if="mutation && formDataSummary.professionRepresantant !== data.professionRepresantant">Nouvelle</span>
-                                                    Profession du représentant légal :
+                                                    <span v-if="
+                                                        mutation &&
+                                                        formDataSummary.professionRepresantant !==
+                                                        data.professionRepresantant
+                                                    ">Nouvelle</span>
+                                                    Profession du représentant
+                                                    légal :
                                                 </strong>
-                                                <samp
-                                                    :class="{ 'text-[#ca7600]': mutation && formDataSummary.professionRepresantant !== data.professionRepresantant }">
-                                                    {{ formDataSummary.professionRepresantant }}
+                                                <samp :class="{
+                                                    'text-[#ca7600]':
+                                                        mutation &&
+                                                        formDataSummary.professionRepresantant !==
+                                                        data.professionRepresantant,
+                                                }">
+                                                    {{
+                                                        formDataSummary.professionRepresantant
+                                                    }}
                                                 </samp>
                                             </p>
-                                            <p
-                                                v-if="mutation && formDataSummary.professionRepresantant !== data.professionRepresantant">
-                                                <strong>Ancienne Profession :</strong>
-                                                <samp class="text-[#ca7600]">{{ data.professionRepresantant }}</samp>
+                                            <p v-if="
+                                                mutation &&
+                                                formDataSummary.professionRepresantant !==
+                                                data.professionRepresantant
+                                            ">
+                                                <strong>Ancienne Profession
+                                                    :</strong>
+                                                <samp class="text-[#ca7600]">{{
+                                                    data.professionRepresantant
+                                                    }}</samp>
                                             </p>
                                         </div>
                                     </div>
@@ -810,7 +1170,7 @@
                                                         En continuant, vous acceptez de valider les données de
                                                         post-immatriculation.
                                                         Vous serez ensuite redirigé vers la page de validation du
-                                                        duplicata.
+                                                        duplicata.s
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -823,6 +1183,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Bouton continuer -->
                             <!-- Bouton continuer -->
                             <Button @click="showSummary = true" class="mt-8">
                                 METTRE À JOUR
@@ -883,16 +1244,19 @@ const props = defineProps({
     immatriculation: Object,
     marques: Array,
     modeles: Array,
-    vin: String,
     dossier: Object,
     entreprise: Object,
     data: Object,
-    genreVehicule: Object
+    genreVehicule: Object,
+    selected: Array,
+    mutation: String,
 });
-
+const MUTATION_ID = "31";
 // Réfs locales
 const marques = ref([])
 const modeles = ref([])
+const selected = ref([])
+const mutation = ref(null);
 const selectedMarqueId = ref('')
 const selectedModeleId = ref('')
 
@@ -1284,7 +1648,8 @@ function submitFinal() {
         selected: selected.value,
         mutation: mutation.value
     };
-    console.log(data)
+    // console.log(data)
+    // console.log(props.dossier)
     //visité show.new.service.pdc.duplicata
 
     const vinWithGenre = `${props.data.immatriculation.vin}_${props.genreVehicule.nb_plaque}`;
@@ -1293,7 +1658,7 @@ function submitFinal() {
         postImtData: data,
         vinWithGenre: vinWithGenre
     };
-
+    console.log(donne)
     router.visit(`/pdc/duplicata/new/service/${encodeURIComponent(JSON.stringify(donne))}`);
 
 
@@ -1329,25 +1694,21 @@ function submitFinal() {
 }
 
 
-const selected = ref([]);
 
+const vin = ref('')
 // Initialisation au montage du composant
 onMounted(async () => {
     await fetchMarques();
     initializeForm();
-    const params = new URLSearchParams(window.location.search)
-    const names = []
-    for (const [key, value] of params.entries()) {
-        const match = key.match(/^selected\[\d+]\[nom_type_service]$/)
-        if (match) {
-            names.push(decodeURIComponent(value))
-        }
-    }
-    selected.value = names
-    console.log('nom_type_service :', names)
-    console.log('nom_type_service :', mutation)
+    // 6. Logs pour vérification
+    console.log('toto VIN:', props.vin);
+    // Extraire uniquement les IDs des services sélectionnés
+    selected.value = props.selected.map(service => service.id);
+    console.log('IDs des services sélectionnés:', selected.value); // Ex: [16, 31, 19, 22]
+    // Extraire uniquement l'ID de la mutation
+    mutation.value = props.mutation ? props.mutation.id : null;
+    console.log('ID de la mutation:', mutation.value); // Ex: 31
 
-    getTypeService();
 });
 
 
@@ -1356,14 +1717,10 @@ const goBack = () => {
 }
 
 
-const mutation = ref(null); // Crée la variable mutation
 
 const getTypeService = () => {
-    // Vérifie s'il y a une mutation
-    const index = selected.value.findIndex(item => item === 'Changement de propriétaire : MUTATION');
-
+    const index = selected.value.findIndex((id) => id === MUTATION_ID);
     if (index !== -1) {
-        // Retirer l'élément de selected et le stocker dans mutation
         mutation.value = selected.value.splice(index, 1)[0];
     }
 };

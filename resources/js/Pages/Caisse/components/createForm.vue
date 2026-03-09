@@ -25,7 +25,7 @@
                                         informations du véhicule - VIN :
                                         <strong>{{
                                             dossier.r_dossier_vehicule.vin
-                                            }}</strong>
+                                        }}</strong>
                                     </h3>
                                     <h2>Statut du dossier : <Badge class="mx-2"
                                             :variant="dossier?.statut === 1 ? 'warning' : dossier?.statut === 2 ? 'success' : dossier?.statut === 3 ? 'error' : 'secondary'">
@@ -137,7 +137,7 @@
                                     informations du propriétaire :
                                     <strong>{{
                                         dossier.r_dossier_client.civilite
-                                        }}
+                                    }}
                                         , {{ dossier.r_dossier_client.nom }}
                                         {{ dossier.r_dossier_client.prenom }}
                                     </strong>
@@ -185,7 +185,7 @@
                                     </p>
                                     <p>Date de naissance du représentant : {{
                                         entreprise.date_de_naissance_representant_legal
-                                        }}</p>
+                                    }}</p>
                                 </div>
                             </div>
                         </ScrollArea>
@@ -401,7 +401,6 @@ import { Toaster, toast } from 'vue-sonner'
 import { onMounted } from 'vue';
 import { router } from '@inertiajs/vue3'
 import { computed } from 'vue';
-// import { useToast } from '@/components/ui/toast'; // si tu utilises un toast UI
 
 const store = useCaisseStore();
 const { isOpen } = storeToRefs(store);
@@ -412,56 +411,42 @@ const props = defineProps({
     dossier_lier: Object,
     detailTypeServices: Object,
     detailTypeServices_lier: Object,
-    autre_facturation: Object,
-    nb_plaque: Number
+    autre_facturation: Object
 });
-
+console.log("Props reçus dans createForm.vue:", props.detailTypeServices_lier);
 const showSummary = ref(false);
 
+// IDs des services déclencheurs
+const TRIGGER_SERVICE_IDS = [4, 10, 9]; // "Changement de Couleur", "Changement de zone (Code région)", "Usage"
+//ajouter Marque 
 const tableauFusionne = [
     ...props.detailTypeServices,
     ...(props.detailTypeServices_lier || [])
 ].map(item => {
+    // we now use a single montant field regardless of nb_plaque
+    const montant = Number(item.montant) || 0;
 
-    const montant = props.nb_plaque == 1
-        ? Number(item.montant_1_plaque)
-        : Number(item.montant_2_plaques)
-
-    const { montant_1_plaque, montant_2_plaques, ...rest } = item
-
+    // strip out the old plaque-specific fields if they exist
+    const { ...rest } = item;
     return {
         ...rest,
-        montant: montant || 0
-    }
-})
-
-console.log('autre_facturation:', props.autre_facturation);
-console.log('nb_plaque:', props.nb_plaque);
-
+        montant
+    };
+});
 
 // Vérification des services déclencheurs
 const serviceTypes = [
     ...(props.dossier?.r_dossier_services?.r_service_types || []),
     ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
 ]
-console.log('serviceTypes:', serviceTypes)
-const triggerServices = [
-    "Changement de Couleur",
-    "Changement de zone (Code région)",
-    "Usage"
-]
 
-const hasTriggerService = tableauFusionne.some(item =>
-    triggerServices.includes(item.element_facturation)
-)
-console.log('tableauFusionne:', tableauFusionne);
-console.log('hasTriggerService', hasTriggerService);
-
-
+// Vérification basée sur les IDs
+const hasTriggerService = serviceTypes.some(item =>
+    TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
+);
 
 // Fonction : récupérer le nom du type de service par ID
 function getNomTypeServiceById(id) {
-    // Créer une copie pour éviter de muter les props réactives (Vue Proxy)
     const serviceTypes = [
         ...props.dossier.r_dossier_services.r_service_types
     ]
@@ -470,70 +455,50 @@ function getNomTypeServiceById(id) {
         serviceTypes.push(...props.dossier_lier.r_dossier_services.r_service_types)
     }
 
-    // Liste des services déclencheurs
-    const triggerServices = [
-        "Changement de Couleur",
-        "Changement de zone (Code région)",
-        "Usage"
-    ]
-
-    // Vérifier si un des services déclencheurs est présent
-    const hasTriggerService = serviceTypes.some(item =>
-        triggerServices.includes(item.nom_type_service)
-    )
-
-    // Ajouter "Changement de Plaque" si condition remplie
     if (hasTriggerService) {
         serviceTypes.push({
             id: 20,
-            nom_type_service: props.autre_facturation.nom,
-            montant: props.autre_facturation.montant,
+            nom_type_service: props.autre_facturation?.nom,
+            montant: props.autre_facturation?.montant,
             id_service: 3
         })
     }
 
-    console.log('serviceTypes:', serviceTypes)
     const match = serviceTypes.find(item => item.id === id)
-    console.log('match:', match)
     return match ? match.nom_type_service : 'Type inconnu'
 }
 
-// Fonction : formater le montant
-function formatMontant(montant) {
-    return Number(montant).toLocaleString()
-}
 
 // Computed : grouper les éléments par id_type_services
 const groupedDetailTypeServices = computed(() => {
     const groups = {}
 
-    // Helper pour remplir les groupes sans répétition
-    const fillGroups = (items) => { items?.forEach(item => { if (!groups[item.id_type_services]) { groups[item.id_type_services] = [] } groups[item.id_type_services].push(item) }) }
+    const fillGroups = (items) => {
+        items?.forEach(item => {
+            if (!groups[item.id_type_services]) {
+                groups[item.id_type_services] = []
+            }
+            groups[item.id_type_services].push(item)
+        })
+    }
 
-
-    // Remplissage avec les données existantes
     fillGroups(tableauFusionne)
-    // fillGroups(props.detailTypeServices_lier)
 
-
-
-    // Ajout conditionnel du groupe "Changement de Plaque" (id: 20)
     if (hasTriggerService) {
         if (!groups[20]) {
             groups[20] = []
         }
 
-        // Ajout d'un item représentatif dans le groupe
         groups[20].push({
             id: 'generated-plaque',
-            id_type_services: 13,
-            element_facturation: props.autre_facturation.nom,
-            montant: props.autre_facturation.montant,
+            id_type_services: 20,
+            element_facturation: props.autre_facturation?.nom,
+            montant: props.autre_facturation?.montant,
             id_service: 3,
-            isGenerated: true // flag pour identifier l'item ajouté
+            isGenerated: true
         })
     }
-    console.log('groupsa:', groups)
+
     return groups
 })
 
@@ -542,22 +507,28 @@ const getPrixHT = () => {
     return tableauFusionne.reduce((total, item) => {
         return total + parseInt(item.montant);
     }, 0);
-
 };
 
-
+// Ajoute le prix des plaques si nécessaire
 const FinalPrice = () => {
-    var palque_price = 0
+    let plaque_price = 0;
     if (hasTriggerService) {
-        palque_price = parseInt(props.autre_facturation.montant)
+        plaque_price = parseInt(props.autre_facturation?.montant);
     }
-    return getPrixHT() + palque_price
+    return getPrixHT() + plaque_price;
 }
 
 // Calcule la TVA (par défaut à 18 %)
 const getTVA = () => {
     return FinalPrice() * 0.18;
 };
+function formatMontant(val) {
+    return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'XOF',
+        minimumFractionDigits: 0
+    }).format(val);
+}
 
 // Calcule le total TTC
 const getMontantTotal = () => {
@@ -566,17 +537,14 @@ const getMontantTotal = () => {
 
 const formatedMontant = (items = []) => {
     return items.map(item => {
-        const montant = props.nb_plaque == 1
-            ? Number(item.montant_1_plaque)
-            : Number(item.montant_2_plaques)
-
-        const { montant_1_plaque, montant_2_plaques, ...rest } = item
-
+        // always use the montant property
+        const montant = Number(item.montant) || 0;
+        const { ...rest } = item;
         return {
             ...rest,
-            montant: montant || 0
-        }
-    })
+            montant
+        };
+    });
 }
 
 const detailTypeServicesFormatted = computed(() =>
@@ -587,24 +555,21 @@ const detailTypeServicesLierFormatted = computed(() =>
     formatedMontant(props.detailTypeServices_lier)
 )
 
-
 async function validerPaiement() {
     const nouveauStatut = 2;
-    // Récupérer le token CSRF depuis le <meta>
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    // Vérification des services déclencheurs
+
     const serviceTypes = [
         ...(props.dossier?.r_dossier_services?.r_service_types || []),
         ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
-    ]
-    const triggerServices = [
-        "Changement de Couleur",
-        "Changement de zone (Code région)",
-        "Usage"
-    ]
+    ];
+
+    // Vérification basée sur les IDs
     const hasTriggerService = serviceTypes.some(item =>
-        triggerServices.includes(item.nom_type_service)
-    )
+        TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
+    );
+
+
     try {
         const response = await axios.post(
             `/statut/paiement`,
@@ -627,11 +592,9 @@ async function validerPaiement() {
                 },
             }
         );
-        // Succès
+
         toast.success(response.data.message);
-        // console.log(response.data);
         props.dossier.statut_paiement = nouveauStatut;
-        // Rediriger vers le reçu
         router.visit('/paiement/receipt/' + props.dossier.num_chrono);
     } catch (error) {
         toast.error("Une erreur s'est produite lors de la mise à jour.");
@@ -640,12 +603,11 @@ async function validerPaiement() {
 }
 
 const entreprise = ref(null);
-// Gestion de l'entreprise liée au dossier
+
 async function fetchEntreprise(id) {
     try {
         const response = await axios.get(`/entreprises/${id}`);
-        entreprise.value = response.data.data; // On stocke uniquement la partie data
-        // console.log("Données de l'entreprise :", entreprise.value);
+        entreprise.value = response.data.data;
     } catch (error) {
         console.error("Erreur :", error.response?.data || error);
         entreprise.value = null;
@@ -658,6 +620,7 @@ onMounted(() => {
     }
 })
 </script>
+
 
 <script>
 import Main from "/resources/js/Pages/Main.vue";

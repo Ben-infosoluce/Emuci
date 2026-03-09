@@ -52,7 +52,7 @@
                                 <TableHead>ID</TableHead>
                                 <TableHead>Vin</TableHead>
                                 <TableHead>Véhicule</TableHead>
-                                <TableHead>Changement</TableHead>
+                                <TableHead>Service</TableHead>
                                 <TableHead>Num chrono</TableHead>
                                 <TableHead>Date</TableHead>
                                 <TableHead>Statut</TableHead>
@@ -97,16 +97,17 @@
                                     <TableCell>{{ dossier?.r_dossier_vehicule?.vin || '—' }}</TableCell>
                                     <TableCell>{{ dossier?.r_dossier_vehicule?.marque || '—' }}</TableCell>
                                     <TableCell>
-                                        <template v-if="dossier.detail && Array.isArray(dossier.detail)">
-                                            {{ dossier.detail.slice(0, 2).join(', ') }}<span
-                                                v-if="dossier.detail.length > 2">...</span>
-                                        </template>
-
-                                        <template v-else-if="dossier.detail && typeof dossier.detail === 'string'">
-                                            {{
-                                                JSON.parse(dossier.detail).slice(0, 2).join(', ')
-                                            }}<span v-if="JSON.parse(dossier.detail).length > 2">...</span>
-                                        </template>
+                                        {{
+                                            dossier.id_service === 1
+                                                ? 'Operation Spéciale'
+                                                : dossier.id_service === 2
+                                                    ? 'Re-immatriculation'
+                                                    : dossier.id_service === 3
+                                                        ? 'Post-immatriculation'
+                                                        : dossier.id_service === 4
+                                                            ? 'Duplicata'
+                                                            : '—'
+                                        }}
                                     </TableCell>
                                     <TableCell>{{ dossier?.num_chrono || '—' }}</TableCell>
                                     <TableCell>{{ dossier?.date_creation || '—' }}</TableCell>

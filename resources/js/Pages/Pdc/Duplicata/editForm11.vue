@@ -200,17 +200,6 @@
                                         </FormItem>
                                     </FormField>
                                 </div>
-                                <!-- <div class="flex items-center gap-6 mb-5">
-                                    <label class="flex items-center gap-2">
-                                        <input type="radio" value="Morale" v-model="form.type" />
-                                        Morale
-                                    </label>
-                                    <label class="flex items-center gap-2">
-                                        <input type="radio" value="Physique" v-model="form.type" />
-                                        Physique
-                                    </label>
-                                    <p v-if="typeError" class="text-red-600 text-sm mt-1">{{ typeError }}</p>
-                                </div> -->
                                 <!-- Informations du propriétaire -->
                                 <h3 class="text-md font-semibold mt-6 mb-6">
                                     Informations du propriétaire
@@ -1167,20 +1156,19 @@
                                             class="px-6 py-2 rounded-lg">Modifier</Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger as-child>
-                                                <Button class="px-6 py-2 rounded-lg primary-color text-white">
+                                                <Button class=" px-6 py-2 rounded-lg primary-color text-white">
                                                     Valider
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        Êtes-vous sûr de vouloir
-                                                        continuer ?
+                                                    <AlertDialogTitle>Etes-vous sur de vouloir continuer?
                                                     </AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        En continuant, vous
-                                                        acceptez de valider la
-                                                        post-immatriculation .
+                                                        En continuant, vous acceptez de valider les données de
+                                                        post-immatriculation.
+                                                        Vous serez ensuite redirigé vers la page de validation du
+                                                        duplicata.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -1451,28 +1439,52 @@ const onSubmit = handleSubmit((values) => {
 function submitFinal() {
     const data = {
         ...formDataSummary.value,
-        id: props.data.immatriculation.id,
-        selected: selected.value,  // Liste des IDs des services sélectionnés
-        mutation: mutation.value, // ID de la mutation (ou null)
-        gage: form.value.gage,
+        id: props.data.immatriculation.id,// Ajouter l'ID pour la mise à jour
+        selected: selected.value,
+        mutation: mutation.value
     };
-    console.log("Données envoyées :", data);
-    axios.put(`/pdc/postimmatriculation/${data.id}/update`, data)
-        .then((response) => {
-            const res = response.data;
-            if (res.success) {
-                toast.success(res.message || "Information mise à jour avec succès !");
-                setTimeout(() => {
-                    window.location.href = `/pdc/post/immatriculation/receipt/${res.dossier_id}`;
-                }, 1500);
-            } else {
-                toast.error(res.message || "Une erreur est survenue.");
-            }
-        })
-        .catch((error) => {
-            console.error("Erreur :", error);
-            toast.error(error.response?.data?.message || "Erreur lors de la mise à jour.");
-        });
+    console.log(data)
+    //visité show.new.service.pdc.duplicata
+
+    const vinWithGenre = `${props.data.immatriculation.vin}_${props.genreVehicule.nb_plaque}`;
+
+    const donne = {
+        postImtData: data,
+        vinWithGenre: vinWithGenre
+    };
+
+    router.visit(`/pdc/duplicata/new/service/${encodeURIComponent(JSON.stringify(donne))}`);
+
+
+
+
+
+    // Récupérer le genre associé
+
+
+    //     /pdc/duplicata/new/service/{data}
+    // router.visit(linnk);    
+    // Utiliser PUT ou PATCH pour la mise à jour
+    // axios.put(`/pdc/postimmatriculation/${data.id}/update`, data)
+    //     .then(response => {
+    //         const res = response.data;
+    //         console.log('Réponse serveur :', res);
+
+    //         if (res.success) {
+    //             toast.success(res.message || 'Information mise à jour avec succès !');
+    //             setTimeout(() => {
+    //                 // Redirection avec l'ID du dossier
+    //                 window.location.href = `/pdc/post/immatriculation/receipt/${res.data.dossier.id}`;
+    //             }, 1500);
+    //         } else {
+    //             toast.error(res.message || "Une erreur est survenue lors de la mise à jour.");
+    //         }
+    //     })
+    //     .catch(error => {
+    //         console.error('Erreur :', error);
+    //         const errMsg = error.response?.data?.message || 'Erreur lors de la mise à jour des données.';
+    //         toast.error(errMsg);
+    //     });
 }
 
 // Récupération des marques et modèles
@@ -1517,8 +1529,6 @@ onMounted(async () => {
 
     selected.value = ids; // selected.value contient maintenant ["4", "9", "8", "11"]
     getTypeService();
-
-
 });
 
 

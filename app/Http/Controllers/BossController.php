@@ -133,82 +133,168 @@ class BossController extends Controller
 
         // Stats par semaine
         $weeklyStats = DB::table('dossiers')
-            ->selectRaw(
-                '
-            YEARWEEK(CURDATE(), 1) AS week,
-            SUM(
-                CASE
-                    WHEN statut = 1 AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) THEN 1
-                    WHEN statut = 2 AND YEARWEEK(date_validation, 1) = YEARWEEK(CURDATE(), 1) THEN 1
-                    WHEN statut = 3 AND YEARWEEK(date_rejet, 1) = YEARWEEK(CURDATE(), 1) THEN 1
-                    WHEN statut = 4 AND YEARWEEK(date_paiement, 1) = YEARWEEK(CURDATE(), 1) THEN 1
-                    ELSE 0
-                END
-            ) AS Total,
-            SUM(CASE WHEN statut = 1 AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) THEN 1 ELSE 0 END) AS `En attente`,
-            SUM(CASE WHEN statut = 2 AND YEARWEEK(date_validation, 1) = YEARWEEK(CURDATE(), 1) THEN 1 ELSE 0 END) AS `Valider`,
-            SUM(CASE WHEN statut = 3 AND YEARWEEK(date_rejet, 1) = YEARWEEK(CURDATE(), 1) THEN 1 ELSE 0 END) AS `Refuser`,
-            SUM(CASE WHEN statut = 4 AND YEARWEEK(date_paiement, 1) = YEARWEEK(CURDATE(), 1) THEN 1 ELSE 0 END) AS `En cours`,
-            SUM(CASE WHEN (statut = 1 AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 2 AND YEARWEEK(date_validation, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 3 AND YEARWEEK(date_rejet, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 4 AND YEARWEEK(date_paiement, 1) = YEARWEEK(CURDATE(), 1))
-                        AND id_service = 1 THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
-            SUM(CASE WHEN (statut = 1 AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 2 AND YEARWEEK(date_validation, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 3 AND YEARWEEK(date_rejet, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 4 AND YEARWEEK(date_paiement, 1) = YEARWEEK(CURDATE(), 1))
-                        AND id_service = 2 THEN 1 ELSE 0 END) AS `Re-immatriculation`,
-            SUM(CASE WHEN (statut = 1 AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 2 AND YEARWEEK(date_validation, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 3 AND YEARWEEK(date_rejet, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 4 AND YEARWEEK(date_paiement, 1) = YEARWEEK(CURDATE(), 1))
-                        AND id_service = 3 THEN 1 ELSE 0 END) AS `Post-immatriculation`,
-            SUM(CASE WHEN (statut = 1 AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 2 AND YEARWEEK(date_validation, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 3 AND YEARWEEK(date_rejet, 1) = YEARWEEK(CURDATE(), 1) OR
-                            statut = 4 AND YEARWEEK(date_paiement, 1) = YEARWEEK(CURDATE(), 1))
-                        AND id_service = 4 THEN 1 ELSE 0 END) AS `Duplicata`'
-            )->get();
+            ->selectRaw('
+        YEARWEEK(CURDATE(),1) AS week,
+
+        SUM(
+            CASE
+                WHEN statut = 1 AND YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1) THEN 1
+                WHEN statut = 2 AND YEARWEEK(date_validation,1) = YEARWEEK(CURDATE(),1) THEN 1
+                WHEN statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1) THEN 1
+                WHEN statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1) THEN 1
+                ELSE 0
+            END
+        ) AS Total,
+
+        SUM(CASE 
+            WHEN statut = 1 AND YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)
+            THEN 1 ELSE 0 END
+        ) AS `En attente`,
+
+        SUM(CASE 
+            WHEN statut = 2 AND YEARWEEK(date_validation,1) = YEARWEEK(CURDATE(),1)
+            THEN 1 ELSE 0 END
+        ) AS `Valider`,
+
+        SUM(CASE 
+            WHEN statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1)
+            THEN 1 ELSE 0 END
+        ) AS `Refuser`,
+
+        SUM(CASE 
+            WHEN statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1)
+            THEN 1 ELSE 0 END
+        ) AS `En cours`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 2 AND YEARWEEK(date_validation,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1)
+                OR statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1)
+            )
+            AND id_service = 1
+            THEN 1 ELSE 0 END
+        ) AS `Immatriculation-Special`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 2 AND YEARWEEK(date_validation,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1)
+                OR statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1)
+            )
+            AND id_service = 2
+            THEN 1 ELSE 0 END
+        ) AS `Re-immatriculation`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 2 AND YEARWEEK(date_validation,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1)
+                OR statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1)
+            )
+            AND id_service = 3
+            THEN 1 ELSE 0 END
+        ) AS `Post-immatriculation`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 2 AND YEARWEEK(date_validation,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1)
+                OR statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1)
+            )
+            AND id_service = 4
+            THEN 1 ELSE 0 END
+        ) AS `Duplicata`
+    ')
+            ->get();
+
+
+
+
 
         // Stats par jour
         $dailyStats = DB::table('dossiers')
             ->selectRaw('
-            CURDATE() AS day,
-            SUM(
-                CASE
-                    WHEN statut = 1 AND DATE(created_at) = CURDATE() THEN 1
-                    WHEN statut = 2 AND DATE(date_validation) = CURDATE() THEN 1
-                    WHEN statut = 3 AND DATE(date_rejet) = CURDATE() THEN 1
-                    WHEN statut = 4 AND DATE(date_paiement) = CURDATE() THEN 1
-                    ELSE 0
-                END
-            ) AS Total,
-            SUM(CASE WHEN statut = 1 AND DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) AS `En attente`,
-            SUM(CASE WHEN statut = 2 AND DATE(date_validation) = CURDATE() THEN 1 ELSE 0 END) AS `Valider`,
-            SUM(CASE WHEN statut = 3 AND DATE(date_rejet) = CURDATE() THEN 1 ELSE 0 END) AS `Refuser`,
-            SUM(CASE WHEN statut = 4 AND DATE(date_paiement) = CURDATE() THEN 1 ELSE 0 END) AS `En cours`,
-            SUM(CASE WHEN (statut = 1 AND DATE(created_at) = CURDATE() OR
-                          statut = 2 AND DATE(date_validation) = CURDATE() OR
-                          statut = 3 AND DATE(date_rejet) = CURDATE() OR
-                          statut = 4 AND DATE(date_paiement) = CURDATE())
-                     AND id_service = 1 THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
-            SUM(CASE WHEN (statut = 1 AND DATE(created_at) = CURDATE() OR
-                          statut = 2 AND DATE(date_validation) = CURDATE() OR
-                          statut = 3 AND DATE(date_rejet) = CURDATE() OR
-                          statut = 4 AND DATE(date_paiement) = CURDATE())
-                     AND id_service = 2 THEN 1 ELSE 0 END) AS `Re-immatriculation`,
-            SUM(CASE WHEN (statut = 1 AND DATE(created_at) = CURDATE() OR
-                          statut = 2 AND DATE(date_validation) = CURDATE() OR
-                          statut = 3 AND DATE(date_rejet) = CURDATE() OR
-                          statut = 4 AND DATE(date_paiement) = CURDATE())
-                     AND id_service = 3 THEN 1 ELSE 0 END) AS `Post-immatriculation`,
-            SUM(CASE WHEN (statut = 1 AND DATE(created_at) = CURDATE() OR
-                          statut = 2 AND DATE(date_validation) = CURDATE() OR
-                          statut = 3 AND DATE(date_rejet) = CURDATE() OR
-                          statut = 4 AND DATE(date_paiement) = CURDATE())
-                     AND id_service = 4 THEN 1 ELSE 0 END) AS `Duplicata`
-        ')
+        CURDATE() AS day,
+
+        SUM(
+            CASE
+                WHEN statut = 1 AND DATE(created_at) = CURDATE() THEN 1
+                WHEN statut = 2 AND DATE(date_validation) = CURDATE() THEN 1
+                WHEN statut = 3 AND DATE(date_rejet) = CURDATE() THEN 1
+                WHEN statut_paiement = 2 AND DATE(date_paiement) = CURDATE() THEN 1
+                ELSE 0
+            END
+        ) AS Total,
+
+        SUM(CASE 
+            WHEN statut = 1 AND DATE(created_at) = CURDATE()
+            THEN 1 ELSE 0 END
+        ) AS `En attente`,
+
+        SUM(CASE 
+            WHEN statut = 2 AND DATE(date_validation) = CURDATE()
+            THEN 1 ELSE 0 END
+        ) AS `Valider`,
+
+        SUM(CASE 
+            WHEN statut = 3 AND DATE(date_rejet) = CURDATE()
+            THEN 1 ELSE 0 END
+        ) AS `Refuser`,
+
+        SUM(CASE 
+            WHEN statut_paiement = 2 AND DATE(date_paiement) = CURDATE()
+            THEN 1 ELSE 0 END
+        ) AS `En cours`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND DATE(created_at) = CURDATE()
+                OR statut = 2 AND DATE(date_validation) = CURDATE()
+                OR statut = 3 AND DATE(date_rejet) = CURDATE()
+                OR statut_paiement = 2 AND DATE(date_paiement) = CURDATE()
+            )
+            AND id_service = 1
+            THEN 1 ELSE 0 END
+        ) AS `Immatriculation-Special`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND DATE(created_at) = CURDATE()
+                OR statut = 2 AND DATE(date_validation) = CURDATE()
+                OR statut = 3 AND DATE(date_rejet) = CURDATE()
+                OR statut_paiement = 2 AND DATE(date_paiement) = CURDATE()
+            )
+            AND id_service = 2
+            THEN 1 ELSE 0 END
+        ) AS `Re-immatriculation`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND DATE(created_at) = CURDATE()
+                OR statut = 2 AND DATE(date_validation) = CURDATE()
+                OR statut = 3 AND DATE(date_rejet) = CURDATE()
+                OR statut_paiement = 2 AND DATE(date_paiement) = CURDATE()
+            )
+            AND id_service = 3
+            THEN 1 ELSE 0 END
+        ) AS `Post-immatriculation`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND DATE(created_at) = CURDATE()
+                OR statut = 2 AND DATE(date_validation) = CURDATE()
+                OR statut = 3 AND DATE(date_rejet) = CURDATE()
+                OR statut_paiement = 2 AND DATE(date_paiement) = CURDATE()
+            )
+            AND id_service = 4
+            THEN 1 ELSE 0 END
+        ) AS `Duplicata`
+    ')
             ->get();
 
         // Stats par année

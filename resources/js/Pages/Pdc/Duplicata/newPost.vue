@@ -25,7 +25,7 @@
                             <div class="flex items-start space-x-3 p-4 ">
                                 <Checkbox :checked="selected.includes(option)" @change="toggleSelection(option)" />
                                 <Label class="text-sm font-medium text-gray-900">
-                                    {{ option.nom_type_service }}
+                                    {{ option.element_facturation }}
                                 </Label>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
         <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <Card class="h-full flex flex-col">
                 <h5 class="pl-8 pt-8 text-[#ca7600]">Post-immatriculation : </h5>
-                <span v-for="i in selected" class="pl-8 pt-3 ">{{ i.nom_type_service }},</span>
+                <span v-for="i in selected" class="pl-8 pt-3 ">{{ i.element_facturation }},</span>
                 <!-- <span v-if="mutation" class="pl-8 pt-3 ">{{ mutation }},</span> -->
 
                 <!-- Formulaire initial -->
@@ -108,7 +108,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeMount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeMount } from 'vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -124,83 +124,83 @@ const props = defineProps({
     vin: String,
 })
 
-console.log('Props reçues:', props)
-console.log('VIN reçu:', props.vin)
+// IDs des services spéciaux
+const MUTATION_ID = 31 // ID de "MUTATION : modification nom du propriétaire"
 
 const options = computed(() => props.typeServices)
 
-//  TOUTES LES VARIABLES RÉACTIVES ICI
+// Variables réactives
 const showTypeService = ref(true)
 const showRechercheVin = ref(false)
-const selected = ref([])
-const mutation = ref(null)
+const selected = ref([]) // Tableau pour tous les services sélectionnés
+const mutation = ref(null) // Stocke l'objet de la mutation si sélectionnée
 
-// Créer une variable locale pour le VIN qui se synchronise avec la prop
 const vinLocal = ref(props.vin || '')
-
 const vin = computed({
     get: () => vinLocal.value,
-    set: (value) => {
-        vinLocal.value = value
-    }
+    set: (value) => { vinLocal.value = value }
 })
-
-// Synchroniser avec la prop quand elle change
-// watch(() => props.vin, (newVin) => {
-//     console.log('Watch - Nouveau VIN reçu:', newVin)
-//     if (newVin) {
-//         vinLocal.value = newVin
-//         console.log('vinLocal mise à jour:', vinLocal.value)
-//     }
-// }, { immediate: true })
 
 const vinStatus = ref('initial')
 const isLoading = ref(false)
-// const vinError = ref('')
 
-// ---------------------------------------------
-//   FONCTIONS
-// ---------------------------------------------
+// Fonction pour vérifier si un service est sélectionné
+const isSelected = (option) => {
+    return selected.value.some(opt => opt.id === option.id)
+}
+
+// Fonction pour basculer la sélection d'un service
 const toggleSelection = (option) => {
-    if (selected.value.includes(option)) {
-        selected.value = selected.value.filter(o => o !== option)
+    const index = selected.value.findIndex(opt => opt.id === option.id)
+
+    if (index !== -1) {
+        // Désélectionner le service
+        selected.value.splice(index, 1)
+
+        // Si c'est la mutation, réinitialiser mutation.value
+        if (option.id === MUTATION_ID) {
+            mutation.value = null
+        }
     } else {
+        // Sélectionner le service
         selected.value.push(option)
+
+        // Si c'est la mutation, mettre à jour mutation.value
+        if (option.id === MUTATION_ID) {
+            mutation.value = option
+        }
     }
+
+    console.log('Services sélectionnés:', selected.value.map(opt => ({
+        id: opt.id,
+        nom: opt.element_facturation
+    })))
+    console.log('Mutation:', mutation.value?.element_facturation)
 }
 
 function cleanVin(vin) {
-    return vin.replace(/\s+/g, '');
+    return vin.replace(/\s+/g, '')
 }
 
 const getTypeService = () => {
-    const mutationText = "Changement de propriétaire : MUTATION"
+    // Mettre à jour la mutation si elle est dans les services sélectionnés
+    const mutationOption = selected.value.find(option => option.id === MUTATION_ID)
+    mutation.value = mutationOption || null
 
-    if (selected.value.some(opt => opt.nom_type_service === mutationText)) {
-        mutation.value = mutationText
-    }
-
-    if (selected.value.length) {
+    if (selected.value.length > 0) {
         showTypeService.value = false
         showRechercheVin.value = true
     } else {
         toast.error('Sélectionner au moins un type de service')
     }
 }
+
 function revenirArriere() {
-    window.history.back(); // Simule le clic sur le bouton "Retour"
+    window.history.back()
 }
 
-
-
-
-
 const reset = () => {
-    // Ne pas réinitialiser vin car il vient de la prop
     vinStatus.value = 'initial'
-    // vinError.value = ''
-    // showTypeService.value = true
-    // showRechercheVin.value = false
     selected.value = []
     mutation.value = null
 }
@@ -208,7 +208,6 @@ const reset = () => {
 const resetForm = () => {
     vinLocal.value = ''
     vinStatus.value = 'initial'
-    // vinError.value = ''
     showTypeService.value = true
     showRechercheVin.value = false
     selected.value = []
@@ -216,17 +215,9 @@ const resetForm = () => {
 }
 
 const findVin = async () => {
-    // vinError.value = ''
-
-    const cleanedVin = props.vin.trim()
-
-    // if (!cleanedVin) {
-    //     vinError.value = 'Entrez le numéro de châssis (VIN).'
-    //     return
-    // }
-
     isLoading.value = true
     try {
+        const cleanedVin = props.vin.trim()
         const response = await axios.get(`/verifie/vin/${cleanedVin}`)
         vinStatus.value = response.data.exists ? 'found' : 'not_found'
     } catch (error) {
@@ -236,14 +227,15 @@ const findVin = async () => {
     }
 }
 
-// ---------------------------------------------
-//   RESET AUTOMATIQUE AU CHARGEMENT DE LA PAGE
-// ---------------------------------------------
+// Réinitialisation automatique
 onBeforeMount(() => {
     resetForm()
-    // resetTypeService()
 })
 </script>
+
+
+
+
 
 
 <script>

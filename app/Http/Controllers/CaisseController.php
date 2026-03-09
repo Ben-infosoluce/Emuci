@@ -60,7 +60,7 @@ class CaisseController extends Controller
                 'r_dossier_services.r_service_types'
             ])->find($dossier->id_dossier_lier);
         }
-
+        // dd($dossier_lier);
 
         /*
     |--------------------------------------------------------------------------
@@ -68,16 +68,26 @@ class CaisseController extends Controller
     |--------------------------------------------------------------------------
     */
         $details = json_decode($dossier->detail); // tableau de noms de services
-
+        // dd($details);
         $ids = DB::table('type_services')
-            ->whereIn('nom_type_service', $details)
+            ->whereIn('id', $details)
             ->pluck('id');
-
+        // dd($dossier);
+        // if ($dossier->id_dossier_lier == null && $dossier->id_service == 4) {
+        // dd('laba');
         $detailTypeServices = DB::table('detail_type_services')
-            ->whereIn('id_type_services', $ids)
+            ->whereIn('id', $details)
             ->where('id_site', getIdSite())
             ->get();
 
+        // dd($detailTypeServices);
+        // } else {
+        //     // dd('ici');
+        //     $detailTypeServices = DB::table('detail_type_services')
+        //         ->whereIn('id_type_services', $ids)
+        //         ->where('id_site', getIdSite())
+        //         ->get();
+        // }
         /*
     |--------------------------------------------------------------------------
     | DetailTypeServices du dossier lié (si existe)
@@ -90,30 +100,42 @@ class CaisseController extends Controller
             // dd($details_lier);
 
             $ids_lier = DB::table('type_services')
-                ->whereIn('nom_type_service', $details_lier)
+                ->whereIn('id', $details_lier)
                 ->pluck('id');
 
             $detailTypeServices_lier = DB::table('detail_type_services')
-                ->whereIn('id_type_services', $ids_lier)
+                ->whereIn('id', $details_lier)
                 ->where('id_site', getIdSite())
                 ->get();
         }
 
-        //récupéérer de nb_plaque 
+        // récupération du genre et du nombre de plaques (pour choisir la facturation correcte)
         $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
-        //si nb_plaque == 1 
+        $genre = $dossier->r_dossier_vehicule->genre_vehicule;
+
+        // dd($genre, $nb_plaque);
         $autre_facturation = null;
-        if ($nb_plaque == 1) {
-            $autre_facturation = DB::table('autre_facturation')
-                ->where('id', 2) // ID fixe pour "Changement de plaque"
-                ->where('status', 1) // Actif
-                ->first();
-        } else {
-            $autre_facturation = DB::table('autre_facturation')
-                ->where('id', 1) // ID fixe pour "Changement de plaque"
-                ->where('status', 1) // Actif
-                ->first();
+        // dd($dossier);
+        if ($dossier->id_service != '4') {
+            if (stripos($genre, "REMORQUE") !== false) {
+                $autre_facturation = DB::table('autre_facturation')
+                    ->where('id', 3) // ID pour "REMORQUE"
+                    ->where('status', 1)
+                    ->first();
+            } else if ($nb_plaque == 1) {
+                $autre_facturation = DB::table('autre_facturation')
+                    ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
+                    ->where('status', 1)
+                    ->first();
+            } else {
+                $autre_facturation = DB::table('autre_facturation')
+                    ->where('id', 1) // ID par défaut
+                    ->where('status', 1)
+                    ->first();
+            }
         }
+
+
 
         return inertia('Caisse/components/createForm', [
             'chrono' => $vin,
@@ -122,7 +144,7 @@ class CaisseController extends Controller
             'detailTypeServices' => $detailTypeServices,
             'detailTypeServices_lier' => $detailTypeServices_lier,
             'autre_facturation' => $autre_facturation,
-            'nb_plaque' => $nb_plaque
+            // nb_plaque n'est plus nécessaire côté front-end
         ]);
     }
 
@@ -162,7 +184,7 @@ class CaisseController extends Controller
             'r_dossier_services',
             'r_dossier_services.r_service_types',
             'r_dossier_transactions'
-        ]);
+        ])->where('est_lier', 0);
 
         // Filtre par les services accessibles
         if (!empty($serviceIds)) {

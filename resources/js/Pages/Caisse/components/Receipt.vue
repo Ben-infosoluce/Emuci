@@ -117,7 +117,6 @@
 <script setup>
 import BoutonRetour from "/resources/js/components/BoutonRetour.vue";
 import { Printer, KeyRound, EyeOff, CheckCircle } from 'lucide-vue-next'
-
 import { computed, ref } from 'vue';
 import dayjs from 'dayjs'
 import QrcodeVue from 'qrcode.vue';
@@ -130,44 +129,116 @@ const props = defineProps({
     dossier_lier: Object,
     detailTypeServices_lier: Object,
     autre_facturation: Object,
-
 });
-console.log('dossier_lier:', props.dossier);
 
 const zoneImpression = ref(null);
-
 const qrCodeRef = ref(null)
 
-async function imprimer() {
-    await nextTick(); // s'assure que tout est rendu
+// IDs des services déclencheurs
+const TRIGGER_SERVICE_IDS = [4, 10, 9]; // "Changement de Couleur", "Changement de zone (Code région)", "Usage"
 
-    // ✅ 1) On clone le contenu de la div
+const tableauFusionne = [...props.detailTypeServices, ...(props.detailTypeServices_lier || [])];
+
+// Vérification des services déclencheurs
+const serviceTypes = [
+    ...(props.dossier?.r_dossier_services?.r_service_types || []),
+    ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
+]
+
+// Vérification basée sur les IDs
+const hasTriggerService = tableauFusionne.some(item =>
+    TRIGGER_SERVICE_IDS.includes(item.id_type_services)
+);
+
+const items = computed(() => {
+    const result = [];
+
+    // Ajouter "Changement de Plaque" si un service déclencheur est présent
+    if (hasTriggerService) {
+        result.push({
+            name: props.autre_facturation.nom,
+            amount: parseFloat(props.autre_facturation.montant),
+        });
+    }
+
+    // Ajouter les autres éléments
+    result.push(
+        ...tableauFusionne.map(item => ({
+            name: item.element_facturation,
+            amount: parseFloat(item?.montant || 0),
+        }))
+    );
+
+    return result;
+});
+
+// Total Hors Taxes (HT)
+const totalHT = computed(() =>
+    items.value.reduce((acc, item) => acc + item.amount, 0)
+);
+
+// TVA à 18%
+const tva = computed(() => totalHT.value * 0.18);
+
+// Total TTC (HT + TVA)
+const totalTTC = computed(() => totalHT.value + tva.value);
+
+// Formatage des montants
+function formatAmount(val) {
+    return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'XOF',
+        minimumFractionDigits: 0
+    }).format(val);
+}
+
+function formatDateTime(dateString) {
+    return dayjs(dateString).format('DD/MM/YYYY HH:mm');
+}
+
+const donneeClient = {
+    Client_Numero: props.dossier.id,
+    Numero_chrono: props.dossier.num_chrono,
+    civilite: props.dossier.r_dossier_client.civilite,
+    Nom: props.dossier.r_dossier_client.nom,
+    Prenom: props.dossier.r_dossier_client.prenom,
+    Adresse: props.dossier.r_dossier_client.adresse,
+    Telephone: props.dossier.r_dossier_client.telephone,
+    Date_de_Naissance: props.dossier.r_dossier_client.date_naissance,
+    ville_de_Naissance: props.dossier.r_dossier_client.ville_naissance,
+    email: props.dossier.r_dossier_client.email,
+    Statut_Paiement: props.dossier.statut === 1 ? 'Payé' : 'Non Payé',
+    Date_de_Facturation: props.dossier.date_paiement,
+    Caissier: props.dossier.paiement_validated_by,
+};
+
+async function imprimer() {
+    await nextTick();
+
     let contenu = zoneImpression.value.innerHTML;
 
-    // ✅ 2) On remplace le canvas par une image base64
     const canvas = zoneImpression.value.querySelector('.qrcode-print');
     if (canvas && canvas.toDataURL) {
         const qrImg = `<img src="${canvas.toDataURL()}" alt="QR Code" style="width: 80px; height: 80px;" />`;
         contenu = contenu.replace(/<canvas[^>]*class="qrcode-print"[^>]*><\/canvas>/, qrImg);
     }
 
-    // ✅ 3) Séparateur pointillé entre les deux exemplaires
     const separateur = `
         <div style="
-            width: 100%; 
-            height: 3px; 
-            border-top: 3px dashed #6b7280; 
-            margin: 15px 0; 
+            width: 100%;
+            height: 3px;
+            border-top: 3px dashed #6b7280;
+            margin: 15px 0;
             position: relative;
         ">
             <span style="
-                position: absolute; 
-                top: -10px; 
-                left: 50%; 
-                transform: translateX(-50%); 
-                background: white; 
-                padding: 0 10px; 
-                font-size: 10px; 
+                position: absolute;
+                top: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: white;
+                padding: 0 10px;
+                font-size: 10px;
                 color: #6b7280;
                 font-weight: bold;
             ">
@@ -176,7 +247,6 @@ async function imprimer() {
         </div>
     `;
 
-    // ✅ 4) On crée le HTML avec 2 exemplaires (réduits à 48% pour tenir sur une page A4)
     const htmlContent = `
         <html>
             <head>
@@ -187,10 +257,10 @@ async function imprimer() {
                             size: A4 landscape;
                             margin: 5mm;
                         }
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            margin: 0; 
-                            padding: 0; 
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 0;
                             background: white;
                         }
                         .exemplaire {
@@ -213,9 +283,9 @@ async function imprimer() {
                             transform-origin: top left;
                         }
                     }
-                    body { 
-                        font-family: Arial, sans-serif; 
-                        margin: 0; 
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
                         padding: 5mm;
                         background: white;
                     }
@@ -248,23 +318,23 @@ async function imprimer() {
                         border-bottom: 1px solid #e5e7eb;
                         padding-bottom: 3px;
                     }
-                    table { 
-                        border-collapse: collapse; 
-                        width: 100%; 
+                    table {
+                        border-collapse: collapse;
+                        width: 100%;
                         font-size: 0.7rem;
                     }
-                    th, td { 
-                        border: 1px solid #ccc; 
-                        padding: 0.3rem 0.4rem; 
-                        text-align: left; 
+                    th, td {
+                        border: 1px solid #ccc;
+                        padding: 0.3rem 0.4rem;
+                        text-align: left;
                     }
-                    h2, p { 
-                        margin: 0; 
-                        padding: 0; 
+                    h2, p {
+                        margin: 0;
+                        padding: 0;
                     }
-                    .qrcode-print { 
-                        width: 60px !important; 
-                        height: 60px !important; 
+                    .qrcode-print {
+                        width: 60px !important;
+                        height: 60px !important;
                     }
                     img[src*="data:image"] {
                         width: 60px !important;
@@ -281,7 +351,7 @@ async function imprimer() {
                             ${contenu}
                         </div>
                     </div>
-                    
+
                     <!-- Exemplaire 2 -->
                     <div class="exemplaire">
                         <div class="badge-exemplaire">CAISSE / ARCHIVE</div>
@@ -290,7 +360,7 @@ async function imprimer() {
                         </div>
                     </div>
                 </div>
-                
+
                 <script>
                     window.onload = function() {
                         window.print();
@@ -301,106 +371,14 @@ async function imprimer() {
         </html>
     `;
 
-    // ✅ 5) On ouvre la fenêtre d'impression
     const printWindow = window.open('', '', 'width=1000,height=800');
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     printWindow.focus();
 }
-
-const tableauFusionne = [...props.detailTypeServices, ...(props.detailTypeServices_lier || [])];
-
-console.log('autre_facturation:', props.autre_facturation);
-
-// Vérification des services déclencheurs
-const serviceTypes = [
-    ...(props.dossier?.r_dossier_services?.r_service_types || []),
-    ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
-]
-console.log('serviceTypes:', serviceTypes)
-const triggerServices = [
-    "Changement de Couleur",
-    "Changement de zone (Code région)",
-    "Usage"
-]
-
-const hasTriggerService = tableauFusionne.some(item =>
-    triggerServices.includes(item.element_facturation)
-)
-console.log('tableauFusionne:', tableauFusionne);
-console.log('hasTriggerService', hasTriggerService);
-
-
-
-const items = computed(() => {
-    const result = []
-
-    if (hasTriggerService) {
-        result.push({
-            name: props.autre_facturation.nom,
-            amount: parseFloat(props.autre_facturation.montant),
-            // props.autre_facturation.montant,
-        })
-    }
-
-    result.push(
-        ...tableauFusionne.map(item => ({
-            name: item.element_facturation,
-            amount: parseFloat(props.dossier.r_dossier_vehicule.nb_plaque == 1
-                ? item?.montant_1_plaque
-                : item?.montant_2_plaques),
-        }))
-    )
-
-    return result
-})
-
-
-// Total Hors Taxes (HT)
-const totalHT = computed(() =>
-    items.value.reduce((acc, item) => acc + item.amount, 0)
-);
-
-// TVA à 18%
-const tva = computed(() => totalHT.value * 0.18);
-
-// 💰 Total TTC (HT + TVA)
-const totalTTC = computed(() => totalHT.value + tva.value);
-
-// 💸 Formatage
-function formatAmount(val) {
-    return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'XOF',
-        minimumFractionDigits: 0
-    }).format(val);
-}
-
-function formatDateTime(dateString) {
-    return dayjs(dateString).format('DD/MM/YYYY HH:mm');
-}
-
-const donneeClient = {
-    Client_Numero: props.dossier.id,
-    Numero_chrono: props.dossier.num_chrono,
-    civilite: props.dossier.r_dossier_client.civilite,
-    Nom: props.dossier.r_dossier_client.nom,
-    Prenom: props.dossier.r_dossier_client.prenom,
-    Adresse: props.dossier.r_dossier_client.adresse,
-    Telephone: props.dossier.r_dossier_client.telephone,
-    Date_de_Naissance: props.dossier.r_dossier_client.date_naissance,
-    ville_de_Naissance: props.dossier.r_dossier_client.ville_naissance,
-    email: props.dossier.r_dossier_client.email,
-    Statut_Paiement: props.dossier.statut === 1 ? 'Payé' : 'Non Payé',
-    Date_de_Facturation: props.dossier.date_paiement,
-    Caissier: props.dossier.paiement_validated_by,
-    //
-};
-const donneeClientString = JSON.stringify(donneeClient.value);
-console.log("Données Client :", donneeClient);
-
-// const donneesclient = computed(() => props.dossier);
 </script>
+
+
 
 <script>
 

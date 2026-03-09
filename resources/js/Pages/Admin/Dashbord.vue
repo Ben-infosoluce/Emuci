@@ -53,6 +53,14 @@
                             <div class="text-2xl font-bold">{{ stats?.['En attente'] ?? '...' }}</div>
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle class="text-sm font-medium">Genres</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="text-2xl font-bold">{{ stats?.Total ?? '...' }}</div>
+                        </CardContent>
+                    </Card>
                 </div>
             </main>
         </div>

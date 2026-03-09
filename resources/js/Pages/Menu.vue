@@ -323,6 +323,17 @@
                         </a>
                     </Link>
                 </li>
+                <li :class="{
+                    'active-page': $page.component == 'Admin/Genres/index',
+                }">
+                    <Link :href="route('genres.index')">
+                        <a
+                            class="flex items-center p-2 text-white hover:text-black rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <SquareStack />
+                            <span class="flex-1 ms-3 whitespace-nowrap">Genres</span>
+                        </a>
+                    </Link>
+                </li>
             </ul>
         </template>
 

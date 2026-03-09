@@ -25,7 +25,7 @@
                             <div class="flex items-start space-x-3 p-4 ">
                                 <Checkbox :checked="selected.includes(option)" @change="toggleSelection(option)" />
                                 <Label class="text-sm font-medium text-gray-900">
-                                    {{ option.nom_type_service }}
+                                    {{ option.element_facturation }}
                                 </Label>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
         <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <Card class="h-full flex flex-col">
                 <h5 class="pl-8 pt-8 text-[#ca7600]">Post-immatriculation : </h5>
-                <span v-for="i in selected" class="pl-8 pt-3 ">{{ i.nom_type_service }},</span>
+                <span v-for="i in selected" class="pl-8 pt-3 ">{{ i.element_facturation }},</span>
                 <!-- <span v-if="mutation" class="pl-8 pt-3 ">{{ mutation }},</span> -->
 
                 <!-- Formulaire initial -->
@@ -139,7 +139,7 @@ const props = defineProps({
     typeServices: Array
 })
 const options = computed(() => props.typeServices)
-
+console.log('options:', options.value);
 
 const vin = ref('');
 const vinStatus = ref('initial');
@@ -184,8 +184,10 @@ const mutation = ref(null);
 const toggleSelection = (option) => {
     if (selected.value.includes(option)) {
         selected.value = selected.value.filter(o => o !== option)
+        console.log('Option retirée:', option);
     } else {
         selected.value.push(option)
+        console.log('Option ajoutée:', option);
 
     }
 }
@@ -195,9 +197,9 @@ function cleanVin(vin) {
 }
 
 const getTypeService = () => {
-    // Vérifie si "Changement de propriétaire : MUTATION" est dans selected
-    if (selected.value.includes('Changement de propriétaire : MUTATION')) {
-        mutation.value = 'Changement de propriétaire : MUTATION';
+    // Vérifie si "MUTATION : modification nom du propriétaire" est dans selected
+    if (selected.value.includes('MUTATION : modification nom du propriétaire')) {
+        mutation.value = 'MUTATION : modification nom du propriétaire';
     }
     if (selected.value.length) {
         showTypeService.value = false;
