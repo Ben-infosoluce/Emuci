@@ -402,10 +402,11 @@ class ControleCaisseController extends Controller
 
     public function closeControlleurCaisse(Request $request)
     {
+        // ✅ Validation
         $request->validate([
-            'id_caisse' => 'required|integer|exists:caisse_ouvertures,id',
+            'id_caisse' => 'required|integer|exists:caisses,id',
             'montant_controlleur' => 'required|numeric|min:0',
-            'date_operation' => 'required|date', // ← ici
+            'date_operation' => 'required|date',
         ]);
 
         $date = $request->date_operation;   // ← c'est cette date qui compte

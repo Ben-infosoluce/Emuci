@@ -94,7 +94,7 @@ class RafCaisseController extends Controller
         // dd($request->all());
         // ✅ Validation
         $request->validate([
-            'id_caisse' => 'required|integer|exists:caisse_ouvertures,id',
+            'id_caisse' => 'required|integer',
             'montant_controlleur' => 'nullable|numeric|min:0',
             'is_fermeture' => 'required|boolean',
             'code_caisse' => 'nullable|string',
@@ -103,8 +103,12 @@ class RafCaisseController extends Controller
         ]);
 
         // ✅ Vérifier la caisse
-        $caisseOuverture = CaisseOuverture::find($request->id_caisse);
-        if (!$caisseOuverture) {
+        // $caisseOuverture = DB::table('caisse_ouvertures')
+        //     ->where('caisse_id', $request->id_caisse)
+        //     ->first();
+        $caisse = Caisse::find($request->id_caisse);
+
+        if (!$caisse) {
             return response()->json(['message' => 'Caisse introuvable.'], 404);
         }
 
