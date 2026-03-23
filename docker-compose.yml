@@ -1,0 +1,54 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        environment:
+            - APP_ENV=production
+            - APP_DEBUG=false
+        volumes:
+            - .env:/app/.env
+            - storage-data:/app/storage
+            - /data/downloads_partages:/app/storage/app/public/downloads
+        networks:
+            - coolify
+
+    worker:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        command: php artisan queue:work --verbose --tries=3 --timeout=90
+        environment:
+            - APP_ENV=production
+            - APP_DEBUG=false
+        volumes:
+            - .env:/app/.env
+            - storage-data:/app/storage
+            - /data/downloads_partages:/app/storage/app/public/downloads
+        networks:
+            - coolify
+
+    scheduler:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        command: php artisan schedule:work
+        environment:
+            - APP_ENV=production
+            - APP_DEBUG=false
+        volumes:
+            - .env:/app/.env
+            - storage-data:/app/storage
+            - /data/downloads_partages:/app/storage/app/public/downloads
+        networks:
+            - coolify
+
+networks:
+    coolify:
+        external: true
+
+volumes:
+    storage-data:
