@@ -52,10 +52,10 @@ class PaiementController extends Controller
             DB::beginTransaction();
 
             /*
-        |--------------------------------------------------------------------------
-        | CALCUL DES MONTANTS + TAXE 18%
-        |--------------------------------------------------------------------------
-        */
+             |--------------------------------------------------------------------------
+             | CALCUL DES MONTANTS + TAXE 18%
+             |--------------------------------------------------------------------------
+             */
 
             // Pour dossier principal
             $montant_dossier_ht = 0;
@@ -64,8 +64,9 @@ class PaiementController extends Controller
                     $montant_dossier_ht += $item['montant'];
                 }
             }
-            $montant_dossier_taxe = $montant_dossier_ht * 0.18;
-            $montant_dossier_ttc = $montant_dossier_ht + $montant_dossier_taxe;
+            // Suppression de la TVA
+            $montant_dossier_taxe = 0;
+            $montant_dossier_ttc = $montant_dossier_ht + 100; // Ajout du Timbre de 100F
 
             // Pour dossier lié
             $montant_dossier_lier_ht = 0;
@@ -74,16 +75,16 @@ class PaiementController extends Controller
                     $montant_dossier_lier_ht += $item['montant'];
                 }
             }
-            //gère ici has_changement_plaque
-            $montant_dossier_lier_taxe = $montant_dossier_lier_ht * 0.18;
-            $montant_dossier_lier_ttc = $montant_dossier_lier_ht + $montant_dossier_lier_taxe;
+            //gère ici has_changement_plaque, suppression TVA
+            $montant_dossier_lier_taxe = 0;
+            $montant_dossier_lier_ttc = $montant_dossier_lier_ht + 100; // Ajout du Timbre de 100F
 
 
             /*
-        |--------------------------------------------------------------------------
-        | GESTION DU DOSSIER LIÉ
-        |--------------------------------------------------------------------------
-        */
+             |--------------------------------------------------------------------------
+             | GESTION DU DOSSIER LIÉ
+             |--------------------------------------------------------------------------
+             */
             if (!empty($validated['chrono_lier'])) {
 
                 $dossier_lier = Dossier::where('num_chrono', $validated['chrono_lier'])->first();
@@ -123,10 +124,10 @@ class PaiementController extends Controller
 
 
             /*
-        |--------------------------------------------------------------------------
-        | GESTION DU DOSSIER PRINCIPAL
-        |--------------------------------------------------------------------------
-        */
+             |--------------------------------------------------------------------------
+             | GESTION DU DOSSIER PRINCIPAL
+             |--------------------------------------------------------------------------
+             */
 
             $dossier->update([
                 'statut_paiement' => $validated['statut_paiement'],
@@ -155,14 +156,15 @@ class PaiementController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Paiements enregistrés avec taxe 18%.',
+                'message' => 'Paiements enregistrés avec timbre de 100F.',
                 'dossier' => $dossier,
                 'montant_dossier_ht' => $montant_dossier_ht,
                 'montant_dossier_ttc' => $montant_dossier_ttc,
                 'montant_dossier_lier_ht' => $montant_dossier_lier_ht,
                 'montant_dossier_lier_ttc' => $montant_dossier_lier_ttc,
             ]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
 
             DB::rollBack();
             return response()->json([
@@ -186,6 +188,12 @@ class PaiementController extends Controller
             'detailTypeServices' => 'nullable|array',
             'detailTypeServices_lier' => 'nullable|array',
             'has_changement_plaque' => 'nullable|boolean',
+            // Demandeur info
+            'demandeur_nom' => 'nullable|string',
+            'demandeur_prenom' => 'nullable|string',
+            'demandeur_telephone' => 'nullable|string',
+            'demandeur_type_piece' => 'nullable|string',
+            'demandeur_numero_piece' => 'nullable|string',
         ]);
 
         // 2️⃣ Récupération du dossier principal
@@ -209,10 +217,10 @@ class PaiementController extends Controller
             DB::beginTransaction();
 
             /*
-        |--------------------------------------------------------------------------
-        | RECUPERATION CHANGEMENT DE PLAQUE (si applicable)
-        |--------------------------------------------------------------------------
-        */
+             |--------------------------------------------------------------------------
+             | RECUPERATION CHANGEMENT DE PLAQUE (si applicable)
+             |--------------------------------------------------------------------------
+             */
             $changementPlaqueData = null;
             $hasChangementPlaque = $validated['has_changement_plaque'] ?? false;
 
@@ -229,12 +237,14 @@ class PaiementController extends Controller
                         ->where('id', 3) // ID pour "REMORQUE"
                         ->where('status', 1)
                         ->first();
-                } else if ($nb_plaque == 1) {
+                }
+                else if ($nb_plaque == 1) {
                     $changementPlaqueData = DB::table('autre_facturation')
                         ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
                         ->where('status', 1)
                         ->first();
-                } else {
+                }
+                else {
                     $changementPlaqueData = DB::table('autre_facturation')
                         ->where('id', 1) // ID par défaut
                         ->where('status', 1)
@@ -252,10 +262,10 @@ class PaiementController extends Controller
             }
 
             /*
-        |--------------------------------------------------------------------------
-        | CALCUL DES MONTANTS + TAXE 18%
-        |--------------------------------------------------------------------------
-        */
+             |--------------------------------------------------------------------------
+             | CALCUL DES MONTANTS + TAXE 18%
+             |--------------------------------------------------------------------------
+             */
             // dd($validated['detailTypeServices'], $changementPlaqueData);
 
             // Pour dossier principal
@@ -289,8 +299,8 @@ class PaiementController extends Controller
                 ];
             }
 
-            $montant_dossier_taxe = $montant_dossier_ht * 0.18;
-            $montant_dossier_ttc = $montant_dossier_ht + $montant_dossier_taxe;
+            $montant_dossier_taxe = 0;
+            $montant_dossier_ttc = $montant_dossier_ht + 100; // Ajout Timbre
             // dd($montant_dossier_ttc, $detailServicesPrincipal);
 
             // Pour dossier lié (sans changement de plaque)
@@ -301,15 +311,15 @@ class PaiementController extends Controller
                 }
             }
 
-            $montant_dossier_lier_taxe = $montant_dossier_lier_ht * 0.18;
-            $montant_dossier_lier_ttc = $montant_dossier_lier_ht + $montant_dossier_lier_taxe;
+            $montant_dossier_lier_taxe = 0;
+            $montant_dossier_lier_ttc = $montant_dossier_lier_ht + 100; // Ajout Timbre
 
 
             /*
-        |--------------------------------------------------------------------------
-        | GESTION DU DOSSIER LIÉ
-        |--------------------------------------------------------------------------
-        */
+             |--------------------------------------------------------------------------
+             | GESTION DU DOSSIER LIÉ
+             |--------------------------------------------------------------------------
+             */
             if (!empty($validated['chrono_lier'])) {
 
                 $dossier_lier = Dossier::where('num_chrono', $validated['chrono_lier'])->first();
@@ -349,15 +359,20 @@ class PaiementController extends Controller
 
 
             /*
-        |--------------------------------------------------------------------------
-        | GESTION DU DOSSIER PRINCIPAL
-        |--------------------------------------------------------------------------
-        */
+             |--------------------------------------------------------------------------
+             | GESTION DU DOSSIER PRINCIPAL
+             |--------------------------------------------------------------------------
+             */
 
             $dossier->update([
                 'statut_paiement' => $validated['statut_paiement'],
                 'paiement_validated_by' => Auth::id(),
                 'date_paiement' => now(),
+                'demandeur_nom' => $validated['demandeur_nom'],
+                'demandeur_prenom' => $validated['demandeur_prenom'],
+                'demandeur_telephone' => $validated['demandeur_telephone'],
+                'demandeur_type_piece' => $validated['demandeur_type_piece'],
+                'demandeur_numero_piece' => $validated['demandeur_numero_piece'],
             ]);
 
             // Paiement dossier principal : montant TTC (avec changement de plaque inclus dans montant ET description)
@@ -393,7 +408,8 @@ class PaiementController extends Controller
                 //     'montant_ttc' => $changementPlaqueData->montant * 1.18,
                 // ] : null,
             ]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'status' => 'error',
@@ -441,36 +457,35 @@ class PaiementController extends Controller
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | 2️⃣ Récupérer les services du dossier principal
-        |--------------------------------------------------------------------------
-        */
+         |--------------------------------------------------------------------------
+         | 2️⃣ Récupérer les services du dossier principal
+         |--------------------------------------------------------------------------
+         */
         $details = json_decode($dossier->detail); // tableau de noms
 
         $ids = DB::table('type_services')
             ->whereIn('id', $details)
             ->pluck('id');
 
-        // if ($dossier->id_dossier_lier == null && $dossier->id_service == 4) {
-        // dd($ids);
-        $detailTypeServices = DB::table('detail_type_services')
-            ->whereIn('id', $details)
-            ->where('id_site', getIdSite())
-            ->get();
-        // } else {
-        //     // dd('ici');
-        //     $detailTypeServices = DB::table('detail_type_services')
-        //         ->whereIn('id_type_services', $ids)
-        //         ->where('id_site', getIdSite())
-        //         ->get();
-        // }
+        if ($dossier->type == 'FDS') {
+            $detailTypeServices = DB::table('detail_type_services')
+                ->whereIn('id', $details)
+                // ->where('id_site', getIdSite())
+                ->get();
+        }
+        else {
+            $detailTypeServices = DB::table('detail_type_services')
+                ->whereIn('id', $details)
+                ->where('id_site', getIdSite())
+                ->get();
+        }
 
 
         /*
-        |--------------------------------------------------------------------------
-        | 3️⃣ Récupérer le dossier lié via id_dossier_lier
-        |--------------------------------------------------------------------------
-        */
+         |--------------------------------------------------------------------------
+         | 3️⃣ Récupérer le dossier lié via id_dossier_lier
+         |--------------------------------------------------------------------------
+         */
 
         $dossier_lier = null;
         $detailTypeServices_lier = null;
@@ -507,10 +522,10 @@ class PaiementController extends Controller
 
 
         /*
-        |--------------------------------------------------------------------------
-        | 4️⃣ Caissier du dossier principal
-        |--------------------------------------------------------------------------
-        */
+         |--------------------------------------------------------------------------
+         | 4️⃣ Caissier du dossier principal
+         |--------------------------------------------------------------------------
+         */
         $caissier = DB::table('users')
             ->select('id', 'nom', 'prenom', 'id_site')
             ->where('id', $dossier->paiement_validated_by)
@@ -526,12 +541,14 @@ class PaiementController extends Controller
                 ->where('id', 3) // ID fixe pour "Changement de plaque"
                 ->where('status', 1) // Actif
                 ->first();
-        } else if ($nb_plaque == 1) {
+        }
+        else if ($nb_plaque == 1) {
             $autre_facturation = DB::table('autre_facturation')
                 ->where('id', 2) // ID fixe pour "Changement de plaque"
                 ->where('status', 1) // Actif
                 ->first();
-        } else {
+        }
+        else {
             $autre_facturation = DB::table('autre_facturation')
                 ->where('id', 1) // ID fixe pour "Changement de plaque"
                 ->where('status', 1) // Actif
@@ -540,20 +557,20 @@ class PaiementController extends Controller
 
 
         /*
-        |--------------------------------------------------------------------------
-        | 5️⃣ Retour vers Inertia
-        |--------------------------------------------------------------------------
-        */
+         |--------------------------------------------------------------------------
+         | 5️⃣ Retour vers Inertia
+         |--------------------------------------------------------------------------
+         */
 
         return inertia('Caisse/components/Receipt', [
-            'chrono'                     => $chrono,
-            'dossier'                    => $dossier,
-            'detailTypeServices'         => $detailTypeServices,
-            'caissier'                   => $caissier,
+            'chrono' => $chrono,
+            'dossier' => $dossier,
+            'detailTypeServices' => $detailTypeServices,
+            'caissier' => $caissier,
 
             // --- Dossier lié ---
-            'dossier_lier'               => $dossier_lier,
-            'detailTypeServices_lier'    => $detailTypeServices_lier,
+            'dossier_lier' => $dossier_lier,
+            'detailTypeServices_lier' => $detailTypeServices_lier,
 
             'autre_facturation' => $autre_facturation
         ]);
@@ -578,7 +595,8 @@ class PaiementController extends Controller
         // Filtre par caisse (obligatoire maintenant)
         if ($caisseId) {
             $query->where('caisse_id', $caisseId);
-        } else {
+        }
+        else {
             return response()->json([
                 'message' => 'Aucune caisse active trouvée pour cet utilisateur'
             ], 403);
@@ -636,8 +654,9 @@ class PaiementController extends Controller
                 $end = $date_end;
 
                 $query->whereBetween('date_creation', [$start, $end]);
-            } catch (\Exception $e) {
-                // Optionnel : log ou ignorer si erreur de date
+            }
+            catch (\Exception $e) {
+            // Optionnel : log ou ignorer si erreur de date
             }
         }
 
@@ -646,13 +665,13 @@ class PaiementController extends Controller
         return response()->json([
             'dossiers' => $dossiers,
             'filtres' => $request->only(
-                "filtre_per_page",
-                "statut",
-                "search_data",
-                "filtre_type",
-                "date_start",
-                "date_end"
-            )
+            "filtre_per_page",
+            "statut",
+            "search_data",
+            "filtre_type",
+            "date_start",
+            "date_end"
+        )
         ]);
     }
 

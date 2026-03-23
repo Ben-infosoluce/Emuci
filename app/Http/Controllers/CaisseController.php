@@ -63,22 +63,31 @@ class CaisseController extends Controller
         // dd($dossier_lier);
 
         /*
-    |--------------------------------------------------------------------------
-    | DetailTypeServices du dossier principal
-    |--------------------------------------------------------------------------
-    */
+         |--------------------------------------------------------------------------
+         | DetailTypeServices du dossier principal
+         |--------------------------------------------------------------------------
+         */
         $details = json_decode($dossier->detail); // tableau de noms de services
         // dd($details);
-        $ids = DB::table('type_services')
-            ->whereIn('id', $details)
-            ->pluck('id');
+        // $ids = DB::table('type_services')
+        //     ->whereIn('id', $details)
+        //     ->pluck('id');
         // dd($dossier);
         // if ($dossier->id_dossier_lier == null && $dossier->id_service == 4) {
         // dd('laba');
-        $detailTypeServices = DB::table('detail_type_services')
-            ->whereIn('id', $details)
-            ->where('id_site', getIdSite())
-            ->get();
+        if ($dossier->type == 'FDS') {
+            $detailTypeServices = DB::table('detail_type_services')
+                ->whereIn('id', $details)
+                // ->where('id_site', getIdSite())
+                ->get();
+        }
+        else {
+            $detailTypeServices = DB::table('detail_type_services')
+                ->whereIn('id', $details)
+                ->where('id_site', getIdSite())
+                ->get();
+        }
+        // dd($detailTypeServices);
 
         // dd($detailTypeServices);
         // } else {
@@ -89,10 +98,10 @@ class CaisseController extends Controller
         //         ->get();
         // }
         /*
-    |--------------------------------------------------------------------------
-    | DetailTypeServices du dossier lié (si existe)
-    |--------------------------------------------------------------------------
-    */
+         |--------------------------------------------------------------------------
+         | DetailTypeServices du dossier lié (si existe)
+         |--------------------------------------------------------------------------
+         */
         $detailTypeServices_lier = [];
 
         if ($dossier_lier) {
@@ -122,12 +131,14 @@ class CaisseController extends Controller
                     ->where('id', 3) // ID pour "REMORQUE"
                     ->where('status', 1)
                     ->first();
-            } else if ($nb_plaque == 1) {
+            }
+            else if ($nb_plaque == 1) {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
                     ->where('status', 1)
                     ->first();
-            } else {
+            }
+            else {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 1) // ID par défaut
                     ->where('status', 1)
@@ -175,16 +186,33 @@ class CaisseController extends Controller
     {
         // Récupère les IDs des services accessibles pour l'utilisateur connecté
         $serviceIds = servicesAccessibles()->toArray(); // ou ->all() si c'est une collection
+        $permissions = getUserPermissions(); // ex: [1,2,4]
+        // dd(in_array(18, $permissions));
 
-        $query = Dossier::with([
-            'r_dossier_vehicule',
-            'r_dossier_user',
-            'r_dossier_client',
-            'r_dossier_documents',
-            'r_dossier_services',
-            'r_dossier_services.r_service_types',
-            'r_dossier_transactions'
-        ])->where('est_lier', 0);
+        if (in_array(18, $permissions)) {
+            $query = Dossier::with([
+                'r_dossier_vehicule',
+                'r_dossier_user',
+                'r_dossier_client',
+                'r_dossier_documents',
+                'r_dossier_services',
+                'r_dossier_services.r_service_types',
+                'r_dossier_transactions'
+            ])->where('est_lier', 0)
+                ->where('type', 'FDS');
+        }
+        else {
+            $query = Dossier::with([
+                'r_dossier_vehicule',
+                'r_dossier_user',
+                'r_dossier_client',
+                'r_dossier_documents',
+                'r_dossier_services',
+                'r_dossier_services.r_service_types',
+                'r_dossier_transactions'
+            ])->where('est_lier', 0);
+        }
+
 
         // Filtre par les services accessibles
         if (!empty($serviceIds)) {
@@ -218,8 +246,9 @@ class CaisseController extends Controller
         if ($date_start && $date_end) {
             try {
                 $query->whereBetween('date_creation', [$date_start, $date_end]);
-            } catch (\Exception $e) {
-                // Optionnel : log ou ignorer si erreur de date
+            }
+            catch (\Exception $e) {
+            // Optionnel : log ou ignorer si erreur de date
             }
         }
 
@@ -228,13 +257,13 @@ class CaisseController extends Controller
         return response()->json([
             'dossiers' => $dossiers,
             'filtres' => $request->only(
-                "filtre_per_page",
-                "statut",
-                "search_data",
-                "filtre_type",
-                "date_start",
-                "date_end"
-            )
+            "filtre_per_page",
+            "statut",
+            "search_data",
+            "filtre_type",
+            "date_start",
+            "date_end"
+        )
         ]);
     }
 
@@ -305,7 +334,8 @@ class CaisseController extends Controller
                 'message' => 'Caisse ouverte avec succès.',
                 'data' => $ouverture,
             ], 201);
-        } catch (\Throwable $th) {
+        }
+        catch (\Throwable $th) {
             DB::rollBack();
 
             return response()->json([
@@ -369,7 +399,8 @@ class CaisseController extends Controller
                 'date_ouverture' => $ouverture->date_ouverture,
                 'caisse_id' => $ouverture->caisse_id,
             ]);
-        } else {
+        }
+        else {
             return response()->json([
                 'statut' => 'fermée',
             ]);

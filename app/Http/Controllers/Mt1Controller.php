@@ -79,12 +79,12 @@ class Mt1Controller extends Controller
         return response()->json([
             'dossiers' => $dossiers,
             'filtres' => $request->only(
-                "filtre_per_page",
-                "statut",
-                "search_data",
-                "date_start",
-                "date_end"
-            ),
+            "filtre_per_page",
+            "statut",
+            "search_data",
+            "date_start",
+            "date_end"
+        ),
         ]);
     }
 
@@ -127,18 +127,19 @@ class Mt1Controller extends Controller
         if ($log) {
             $old = json_decode($log->old_values, true);
             $new = json_decode($log->new_values, true);
-        } else {
+        }
+        else {
             $old = $new = [];
         }
 
         // 4️⃣ Retour Inertia
         return inertia('Minister/Mt1/components/createForm', [
-            'chrono'        => $vin,
-            'dossier'       => $dossier,
+            'chrono' => $vin,
+            'dossier' => $dossier,
             // 'dossier_lier'  => $dossier_lier,
-            'log'           => $log,
-            'old'           => $old,
-            'new'           => $new
+            'log' => $log,
+            'old' => $old,
+            'new' => $new
         ]);
     }
 
@@ -253,10 +254,10 @@ class Mt1Controller extends Controller
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | VALIDATION POST-IMMATRICULATION
-        |--------------------------------------------------------------------------
-        */
+         |--------------------------------------------------------------------------
+         | VALIDATION POST-IMMATRICULATION
+         |--------------------------------------------------------------------------
+         */
         if ($dossier->id_service == 3) {
             $log = ModificationLog::find($dossier->modification_log_id);
 
@@ -266,15 +267,16 @@ class Mt1Controller extends Controller
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | VALIDATION DU DOSSIER
-        |--------------------------------------------------------------------------
-        */
+         |--------------------------------------------------------------------------
+         | VALIDATION DU DOSSIER
+         |--------------------------------------------------------------------------
+         */
         $dossier->statut = '2'; // validé
 
         if ($dossier->id_service == 3 && $request->input('type_service') == true) {
             $dossier->status_pose_plaque = '2';
-        } else {
+        }
+        else {
             $dossier->status_pose_plaque = '1';
         }
 
@@ -322,7 +324,7 @@ class Mt1Controller extends Controller
                 ->where('id', $dossierPrincipal->id_dossier_lier)
                 ->first();
 
-            // 🔴 3. Si dossier lié → redirection vers selectDossier
+        // 🔴 3. Si dossier lié → redirection vers selectDossier
 
         }
         return inertia('Minister/Mt1/selectDossier', [
@@ -330,9 +332,9 @@ class Mt1Controller extends Controller
             'dossier' => $dossierPrincipal,
             'documents' => $dossierPrincipal->r_dossier_documents
         ]);
-        // return inertia('Numerisation/indexdocuments', [
-        //     'dossier' => $dossierPrincipal,
-        //     'documents' => $dossierPrincipal->r_dossier_documents
-        // ]);
+    // return inertia('Numerisation/indexdocuments', [
+    //     'dossier' => $dossierPrincipal,
+    //     'documents' => $dossierPrincipal->r_dossier_documents
+    // ]);
     }
 }

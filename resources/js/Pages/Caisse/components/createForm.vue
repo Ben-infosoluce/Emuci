@@ -226,10 +226,10 @@
                                             {{ formatMontant(FinalPrice()) }} F CFA
                                         </span>
                                     </div>
-                                    <div class="flex justify-between">
-                                        <span class="font-medium">TVA (18%) :</span>
-                                        <span class="font-bold text-gray-700">
-                                            {{ formatMontant(getTVA()) }} F CFA
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                        <span class="font-medium">Timbre :</span>
+                                        <span class="font-bold">
+                                            {{ formatMontant(100) }}
                                         </span>
                                     </div>
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2">
@@ -260,7 +260,7 @@
                     </div>
                     <div class="flex items-center space-x-2">
 
-                        <Button class="bg-[#068A06]" @click="showSummary = true">
+                        <Button class="bg-[#068A06]" @click="showDemandeurModal = true">
                             <HandCoins class="w-4 h-4 mr-2" /> Payer en cash
                         </Button>
                         <Button class="bg-[#068A06]" disabled>
@@ -268,10 +268,94 @@
                         </Button>
                     </div>
                 </div>
+                <!-- Modal Information Demandeur -->
+                <div v-if="showDemandeurModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-auto">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-2xl shadow-2xl space-y-6">
+                        <h3 class="text-2xl font-bold text-center mb-2">Informations du demandeur</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <Label for="nom">Nom</Label>
+                                <Input id="nom" v-model="demandeur.nom" placeholder="Nom du demandeur" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="prenom">Prénom</Label>
+                                <Input id="prenom" v-model="demandeur.prenom" placeholder="Prénom du demandeur" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="telephone">Téléphone</Label>
+                                <Input id="telephone" v-model="demandeur.telephone" placeholder="Téléphone" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="type_piece">Type de pièce</Label>
+                                <Select v-model="demandeur.type_piece">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner un type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="Carte consulaire">Carte consulaire</SelectItem>
+                                            <SelectItem value="CNI-Etranger">Carte d'identité (non nationaux)
+                                            </SelectItem>
+                                            <SelectItem value="CNI">Carte nationale d'identité (CNI)</SelectItem>
+                                            <SelectItem value="Attestation d'identité">Attestation d'identité
+                                            </SelectItem>
+                                            <SelectItem value="Permis de conduire">Permis de conduire</SelectItem>
+                                            <SelectItem value="Carte d'identité du réfugié">Carte d'identité du réfugié
+                                            </SelectItem>
+                                            <SelectItem value="Carte de résident">Carte de résident</SelectItem>
+                                            <SelectItem value="Passeport">Passeport</SelectItem>
+                                            <SelectItem value="Autre">Autre</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="space-y-2 md:col-span-2">
+                                <Label for="numero_piece">Numéro de pièce</Label>
+                                <Input id="numero_piece" v-model="demandeur.numero_piece"
+                                    placeholder="Numéro de pièce" />
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-4">
+                            <Button @click="showDemandeurModal = false" variant="outline">Annuler</Button>
+                            <Button @click="() => {
+                                if (!demandeur.nom || !demandeur.prenom || !demandeur.telephone || !demandeur.type_piece || !demandeur.numero_piece) {
+                                    toast.error('Veuillez remplir tous les champs du demandeur.');
+                                    return;
+                                }
+                                showDemandeurModal = false;
+                                showSummary = true;
+                            }" class="primary-color text-white">Suivant</Button>
+                        </div>
+                    </div>
+                </div>
+
                 <div v-if="showSummary"
                     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-auto">
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-4xl shadow-2xl space-y-6">
                         <h3 class="text-2xl font-bold text-center mb-2">Résumé des informations de Paiement</h3>
+
+                        <!-- Informations du demandeur (Rappel) -->
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border mb-6">
+                            <h4 class="font-bold text-sm text-gray-500 uppercase tracking-wider mb-2">Demandeur</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-400">Nom & Prénom</p>
+                                    <p class="font-medium">{{ demandeur.nom }} {{ demandeur.prenom }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400">Téléphone</p>
+                                    <p class="font-medium">{{ demandeur.telephone }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400">Pièce ({{ demandeur.type_piece }})</p>
+                                    <p class="font-medium">{{ demandeur.numero_piece }}</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Informations du propriétaire -->
                         <div class="m-8 mb-8">
 
@@ -300,19 +384,20 @@
                                 <div class="flex justify-between">
                                     <span class="font-medium">PRIX HT :</span>
                                     <span class="font-bold text-gray-700">
-                                        {{ formatMontant(getPrixHT()) }} F CFA
+                                        {{ formatMontant(FinalPrice()) }}
                                     </span>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="font-medium">TVA (18%) :</span>
-                                    <span class="font-bold text-gray-700">
-                                        {{ formatMontant(getTVA()) }} F CFA
-                                    </span>
-                                </div>
+
                                 <div class="flex justify-between font-bold text-green-800 border-t pt-2">
-                                    <span class="font-medium">PRIX TTC :</span>
+                                    <span class="font-medium">Timbre :</span>
                                     <span class="font-bold">
-                                        {{ formatMontant(getMontantTotal()) }} F CFA
+                                        {{ formatMontant(100) }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between font-bold text-green-800 border-t pt-2 text-xl">
+                                    <span class="font-medium uppercase">Total à payer :</span>
+                                    <span class="font-bold">
+                                        {{ formatMontant(getMontantTotal()) }}
                                     </span>
                                 </div>
                             </div>
@@ -339,14 +424,20 @@
                                                     <span class="font-medium">PRIX HT:</span>
                                                     <span class="font-bold">{{ formatMontant(getPrixHT()) }}F</span>
                                                 </div>
+
                                                 <div class="flex items-center justify-between mb-2">
-                                                    <span class="font-medium">TVA:</span>
-                                                    <span class="font-bold">{{ formatMontant(getTVA()) }}F</span>
-                                                </div>
-                                                <div class="flex items-center justify-between mb-6">
                                                     <span class="font-medium">PRIX TTC:</span>
-                                                    <span class="font-extrabold text-lg text-black">
-                                                        {{ formatMontant(getMontantTotal()) }}F
+                                                    <span class="font-bold">{{ formatMontant(getMontantTotal() - 100)
+                                                    }}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <span class="font-medium text-red-600">Timbre:</span>
+                                                    <span class="font-bold text-red-600">{{ formatMontant(100) }}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between mb-6 border-t pt-4">
+                                                    <span class="font-bold text-lg uppercase">Total à payer:</span>
+                                                    <span class="font-extrabold text-2xl text-black">
+                                                        {{ formatMontant(getMontantTotal()) }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -394,6 +485,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { storeToRefs } from "pinia";
 import { useCaisseStore } from "@/stores/mainStore";
 import axios from 'axios';
@@ -415,6 +516,14 @@ const props = defineProps({
 });
 console.log("Props reçus dans createForm.vue:", props.detailTypeServices_lier);
 const showSummary = ref(false);
+const showDemandeurModal = ref(false);
+const demandeur = ref({
+    nom: '',
+    prenom: '',
+    telephone: '',
+    type_piece: '',
+    numero_piece: ''
+});
 
 // IDs des services déclencheurs
 const TRIGGER_SERVICE_IDS = [4, 10, 9]; // "Changement de Couleur", "Changement de zone (Code région)", "Usage"
@@ -518,10 +627,7 @@ const FinalPrice = () => {
     return getPrixHT() + plaque_price;
 }
 
-// Calcule la TVA (par défaut à 18 %)
-const getTVA = () => {
-    return FinalPrice() * 0.18;
-};
+
 function formatMontant(val) {
     return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
@@ -532,7 +638,7 @@ function formatMontant(val) {
 
 // Calcule le total TTC
 const getMontantTotal = () => {
-    return FinalPrice() + getTVA();
+    return FinalPrice() + 100;
 };
 
 const formatedMontant = (items = []) => {
@@ -583,6 +689,12 @@ async function validerPaiement() {
                 caisse_ouverture_id: store.caisseOpened.caisse_id,
                 id_site: props.dossier.id_site,
                 has_changement_plaque: hasTriggerService,
+                // Demandeur info
+                demandeur_nom: demandeur.value.nom,
+                demandeur_prenom: demandeur.value.prenom,
+                demandeur_telephone: demandeur.value.telephone,
+                demandeur_type_piece: demandeur.value.type_piece,
+                demandeur_numero_piece: demandeur.value.numero_piece,
             },
             {
                 headers: {

@@ -70,7 +70,326 @@ class PdcController extends Controller
             ], 500);
         }
     }
+    // -------------------OPSP-------------------//
+    private function getOrCreateId($table, $column, $value, $extra = [])
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $query = DB::table($table)->where($column, $value);
+
+        foreach ($extra as $k => $v) {
+            $query->where($k, $v);
+        }
+
+        $record = $query->first();
+
+        if ($record) {
+            return $record->id;
+        }
+
+        return DB::table($table)->insertGetId(array_merge([
+            $column => $value
+        ], $extra));
+    }
     //----------immatriculation------------//
+
+
+
+    //------Gestion FDS------------//
+    public function SaveFdsOps(Request $request)
+    {
+
+        $rules = [
+            'DateNaissance' => 'required|string',
+            'adresse' => 'required|string',
+            'carrosserie' => 'required|string',
+            'vin' => 'required|string',
+            'couleurVehicule' => 'required|string',
+            'email' => 'nullable|email',
+            'firstname' => 'required|string',
+            'genre' => 'required|string',
+            'lastname' => 'required|string',
+            'marqueVehicule' => 'required|string',
+            'modelVehicule' => 'required|string',
+            // 'nombreEssieux' => 'required|integer',
+            'phone' => 'required|string',
+            // 'placesAssises' => 'required|integer',
+            // 'ptac' => 'required|integer',
+            // 'pu' => 'required|integer',
+            // 'puissance' => 'required|string',
+            // 'pv' => 'required|string',
+            'sourcesEnergie' => 'required|string',
+            // 'typeTechnique' => 'required|string',
+            'villeNaissance' => 'required|string',
+            'anneeProduction' => 'required|string',
+            'dateCirculation' => 'required|string',
+            // 'cylindree' => 'required|string',
+        ];
+        $messages = [
+            'DateNaissance.required' => 'La date de naissance est obligatoire.',
+            'adresse.required' => 'L\'adresse est obligatoire.',
+            'carrosserie.required' => 'La carrosserie est obligatoire.',
+            'vin.required' => 'Le numéro VIN est obligatoire.',
+            'couleurVehicule.required' => 'La couleur du véhicule est obligatoire.',
+            'email.email' => 'L\'adresse email doit être valide.',
+            'firstname.required' => 'Le Nom est obligatoire.',
+            'genre.required' => 'Le genre de véhicule est obligatoire.',
+            'lastname.required' => 'Le Prénom est obligatoire.',
+            'marqueVehicule.required' => 'La marque du véhicule est obligatoire.',
+            'modelVehicule.required' => 'Le modèle du véhicule est obligatoire.',
+            'nombreEssieux.required' => 'Le nombre d\'essieux est obligatoire.',
+            'nombreEssieux.integer' => 'Le nombre d\'essieux doit être un nombre entier.',
+            'phone.required' => 'Le numéro de téléphone est obligatoire.',
+            // 'placesAssises.required' => 'Le nombre de places assises est obligatoire.',
+            // 'placesAssises.integer' => 'Le nombre de places assises doit être un nombre entier.',
+            // 'ptac.required' => 'Le PTAC est obligatoire.',
+            // 'ptac.integer' => 'Le PTAC doit être un nombre entier.',
+            // 'pu.required' => 'Le poids utile est obligatoire.',
+            // 'pu.integer' => 'Le poids utile doit être un nombre entier.',
+            // 'puissance.required' => 'La puissance est obligatoire.',
+            // 'pv.required' => 'Le poids à vide est obligatoire.',
+            'sourcesEnergie.required' => 'La source d\'énergie est obligatoire.',
+            // 'typeTechnique.required' => 'Le type technique est obligatoire.',
+            'villeNaissance.required' => 'La ville de naissance est obligatoire.',
+            'anneeProduction.required' => 'L\'année de production est obligatoire.',
+            'dateCirculation.required' => 'La date de mise en circulation est obligatoire.',
+            // 'cylindree.required' => 'La cylindrée est obligatoire.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Vérification VIN déjà en cours
+        |--------------------------------------------------------------------------
+        */
+
+        $existingDossier = Dossier::where('id_service', 1)
+            ->whereHas('r_dossier_vehicule', function ($query) use ($validated) {
+                $query->where('vin', $validated['vin']);
+            })
+            ->whereIn('statut', [1, 4])
+            ->first();
+
+        if ($existingDossier) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Une immatriculation est déjà en cours pour ce véhicule.'
+            ], 409);
+        }
+
+        try {
+
+            DB::beginTransaction();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Références (find or create)
+            |--------------------------------------------------------------------------
+            */
+
+            $marque_id = $this->getOrCreateId('marque', 'nom', $request->marqueVehicule);
+
+            $model_id = $this->getOrCreateId(
+                'model',
+                'nom',
+                $request->modelVehicule,
+                ['marque_id' => $marque_id]
+            );
+
+            // $genre_id = $this->getOrCreateId('genre', 'nom', $request->genre);
+
+            // $energie_id = $this->getOrCreateId('sources_energie', 'nom', $request->sourcesEnergie);
+
+            // $carrosserie_id = $this->getOrCreateId('carrosserie', 'nom', $request->carrosserie);
+
+            // $typeTechnique_id = $this->getOrCreateId('type_technique', 'nom', $request->typeTechnique);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Nombre de plaques
+            |--------------------------------------------------------------------------
+            */
+
+            $nbPlaque = DB::table('genre')
+                ->where('nom', $request->genre)
+                ->value('nb_plaque');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Création client
+            |--------------------------------------------------------------------------
+            */
+
+            $client = Client::create([
+                'nom' => $request->firstname,
+                'prenom' => $request->lastname,
+                'date_naissance' => $request->DateNaissance,
+                'ville_naissance' => $request->villeNaissance,
+                'adresse' => $request->adresse,
+                'telephone' => $request->phone,
+                'email' => $request->email,
+                'password' => generateStrongPassword(8),
+                'statut' => 1,
+                'validite' => Carbon::now()->addMonths(3),
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Création véhicule
+            |--------------------------------------------------------------------------
+            */
+
+            $vehicule = new Vehicule();
+
+            $vehicule->annee_production = $request->anneeProduction;
+            $vehicule->vin = $request->vin;
+            $vehicule->marque = $request->marqueVehicule;
+            $vehicule->modele = $request->modelVehicule;
+            $vehicule->couleur = $request->couleurVehicule;
+            $vehicule->source_energie = $request->sourcesEnergie;
+            $vehicule->genre_vehicule = $request->genre;
+            $vehicule->poids_total_charge = $request->ptac ?? 0;
+            $vehicule->poids_utile = $request->pu ?? 0;
+            $vehicule->poids_vide = $request->pv ?? 0;
+            $vehicule->nb_plaque = $nbPlaque ?? 0;
+            $vehicule->puissance_administrative = $request->puissance;
+            $vehicule->places_assises = intval($request->placesAssises);
+            $vehicule->nombre_essieux = intval($request->nombreEssieux);
+            $vehicule->date_mise_circulation = $request->dateCirculation;
+            // $vehicule->id_site = getIdSite();
+            $vehicule->cylindree = $request->cylindree;
+            $vehicule->carrosserie = $request->carrosserie;
+            $vehicule->type_technique = $request->typeTechnique;
+            $vehicule->usage_vehicule = 'Prive';
+            $vehicule->physique_morale = 'Physique';
+            $vehicule->model_id = $model_id;
+            $vehicule->marque_id = $marque_id;
+            // $vehicule->gage = $request->gage ? 1 : 0;
+            $vehicule->id_client = $client->id;
+
+            $vehicule->save();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Création dossier OPS
+            |--------------------------------------------------------------------------
+            */
+
+            $dossier = new Dossier();
+
+            $dossier->id_vehicule = $vehicule->id;
+            $dossier->id_client = $client->id;
+            $dossier->id_user = null;
+            // $dossier->id_site = getIdSite(); //délier le site du dossier
+            $dossier->id_service = 1;
+            $dossier->id_type_service = 1;
+            $dossier->num_chrono = $request->num_chrono ?? generateChronoNumber('OPSP');
+            $dossier->detail = '["45"]';
+            $dossier->type = 'FDS';
+            $dossier->statut = 1;
+            $dossier->date_creation = now();
+
+            $dossier->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OPS créé avec succès',
+                'data' => $dossier
+            ], 201);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateFdsOps(Request $request)
+    {
+        $request->validate([
+            'vin' => 'required|string',
+            'num_immatriculation' => 'required|string',
+            'date_immatriculation' => 'required|date',
+        ], [
+            'vin.required' => 'Le numéro VIN est obligatoire.',
+            'num_immatriculation.required' => 'Le numéro d\'immatriculation est obligatoire.',
+            'date_immatriculation.required' => 'La date d\'immatriculation est obligatoire.',
+            'date_immatriculation.date' => 'La date d\'immatriculation doit être une date valide.',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // 1️⃣ Vérifier si le véhicule existe
+            $vehicule = Vehicule::where('vin', $request->vin)->first();
+            if (!$vehicule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Véhicule non trouvé'
+                ], 404);
+            }
+
+            // 2️⃣ Mettre à jour le véhicule
+            $vehicule->num_immatriculation = $request->num_immatriculation;
+            $vehicule->date_immatriculation = Carbon::parse($request->date_immatriculation);
+            $vehicule->save();
+
+            // 3️⃣ Récupérer le dossier en cours
+            $dossier = Dossier::where('id_vehicule', $vehicule->id)
+                ->whereIn('statut', [1, 4]) // 1=En attente, 4=En cours
+                ->first();
+
+            if (!$dossier) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dossier en cours non trouvé pour ce véhicule'
+                ], 404);
+            }
+
+            // 4️⃣ Mettre à jour le dossier
+            // $dossier->statut_paiement = 2;
+            // $dossier->statut = '4'; // Passer le dossier en "En cours"
+            // $dossier->date_paiement = Carbon::parse($request->date_immatriculation)->format('Y-m-d');
+
+            $dossier->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Numéro d\'immatriculation mis à jour avec succès.',
+                'vehicule' => [
+                    'id' => $vehicule->id,
+                    'annee_production' => $vehicule->annee_production,
+                    'vin' => $vehicule->vin,
+                    'marque' => $vehicule->marque->nom ?? null,
+                    'modele' => $vehicule->modele->nom ?? null,
+                    'couleur' => $vehicule->couleur->nom ?? null,
+                    'source_energie' => $vehicule->sourceEnergie->nom ?? null,
+                    'genre_vehicule' => $vehicule->genreVehicule->nom ?? null,
+                    'num_immatriculation' => $vehicule->num_immatriculation,
+                    'date_immatriculation' => $vehicule->date_immatriculation,
+                ],
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     //show immatriculation
     public function showPdcImmatriculation()
@@ -82,9 +401,6 @@ class PdcController extends Controller
     {
         return inertia('Pdc/Immatriculation/selectService');
     }
-
-
-
 
     //get immatriculation data
     public function getPdcImmatriculationData(Request $request)
@@ -2722,18 +3038,6 @@ class PdcController extends Controller
             )
         ]);
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     //gestion sites

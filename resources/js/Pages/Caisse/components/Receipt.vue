@@ -22,15 +22,20 @@
         style="width: 148mm; min-height: 210mm;">
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+             <div style="text-align: left;">
+                <p style="font-size: 14px; margin: 0;">EXPRESS MULTI SERVICES</p>
+                <p style="font-size: 9px; margin: 0;">CC : 22 212 24 Z</p>
+                <p style="font-size: 9px; margin: 0;">RCCM : CI-ABJ-03-2022-B 13-01-452</p>
+                <p style="font-size: 9px; margin: 0;">Régime Réel Normal</p>
+                <p style="font-size: 9px; margin: 0;">Marcory Zone 4 rue du canal, 01 BP 12099 Abidjan 01</p>
+                <p style="font-size: 9px; margin: 0;">Tel : 2721202325</p>
+
+            </div>
             <div style="display: flex; flex-direction: column;">
-                <img src="/public/assets/images/logo_frame.svg" alt="Logo" style="height: 2rem">
+                <img src="/public/assets/images/logo_simple.svg" alt="Logo" style="height: 5rem">
                 <div style="display: flex; flex-direction: column;"></div>
             </div>
-            <div style="text-align: right;">
-                <p style="font-size: 14px; margin: 0;">
-                    <span style="font-weight: 500;">EMUCI</span>
-                </p>
-            </div>
+           
         </div>
         <div
             style="width: fit-content; margin-left: auto; margin-right: auto; margin-top: 1.5rem; margin-bottom: 1.5rem;">
@@ -39,27 +44,40 @@
         <!-- Title -->
         <h2 style="text-align: center; font-weight: bold; font-size: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
             REÇU DE PAIEMENT N°
-            <span style="color: #d97706;">{{ props?.dossier?.num_chrono }}</span>
+            <span style="color: #d97706;">RPABJSA{{ formatedDate(props?.dossier?.date_paiement) }}000{{ props?.dossier?.id }}</span>
         </h2>
         <!-- Info Table -->
         <div
             style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem;">
-            <div><span style="font-weight: 600;">Client N° :</span> {{ props?.dossier?.id }} </div>
+            <!-- <div><span style="font-weight: 600;">Client N° :</span> {{ props?.dossier?.id }} </div> -->
+             <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.r_dossier_client?.nom }} {{
+                props?.dossier?.r_dossier_client?.prenom }}</div>
             <div><span style="font-weight: 600;">Date de Facturation :</span> {{
                 formatDateTime(props?.dossier?.date_paiement) }}</div>
-            <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.r_dossier_client?.nom }} {{
-                props?.dossier?.r_dossier_client?.prenom }}</div>
             <div><span style="font-weight: 600;">N° Chassis :</span> {{ props?.dossier?.r_dossier_vehicule?.vin }}</div>
+            <div><span style="font-weight: 600;">Demande N° :</span> {{ props?.dossier?.num_chrono }}</div>
+
             <div><span style="font-weight: 600;">Véhicule :</span> {{ props?.dossier?.r_dossier_vehicule?.marque }} {{
                 props?.dossier?.r_dossier_vehicule?.modele }}</div>
             <div><span style="font-weight: 600;">Règlement :</span> ESPECE</div>
         </div>
 
+        <!-- Informations du Demandeur -->
+        <h3 style="font-weight: bold; font-size: 0.70rem; margin-top: 1rem; margin-bottom: 0.5rem; text-decoration: underline;">
+            Informations du Demandeur
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem; background-color: #f9fafb;">
+            <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.demandeur_nom }} {{ props?.dossier?.demandeur_prenom }}</div>
+            <div><span style="font-weight: 600;">Téléphone :</span> {{ props?.dossier?.demandeur_telephone }}</div>
+            <div><span style="font-weight: 600;">Pièce :</span> {{ props?.dossier?.demandeur_type_piece }}</div>
+            <div><span style="font-weight: 600;">N° Pièce :</span> {{ props?.dossier?.demandeur_numero_piece }}</div>
+        </div>
+
 
         <!-- Table -->
-        <div style="overflow-x: auto;">
+        <div style="overflow-x: auto;margin-top: 1rem;">
             <table style="width: 100%; border: 1px solid #d1d5db; font-size: 0.75rem; border-collapse: collapse;">
-                <thead style="background-color: #f3f4f6;">
+                <thead style="background-color: #f3f4f6; ">
                     <tr>
                         <th style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: left;">Désignation
                         </th>
@@ -79,10 +97,11 @@
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: right;">{{
                             formatAmount(totalHT) }}</td>
                     </tr>
+
                     <tr>
-                        <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">TVA (18%)</td>
+                        <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Droit de Timbre</td>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: right;">{{
-                            formatAmount(tva) }}</td>
+                            formatAmount(100) }}</td>
                     </tr>
                     <tr>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Total TTC</td>
@@ -93,22 +112,19 @@
             </table>
 
             <div
-                style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px solid #e5e7eb; padding-top: 0.8rem; font-size: 0.7rem; margin-top: 0.8rem;">
-                <!-- Partie gauche -->
-                <!-- <p style="color: #9ca3af; font-weight: bold;">
-                    Nom du caissier : {{ props?.caissier?.nom }} {{ props?.caissier?.prenom }}
-                </p> -->
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.8rem; font-size: 0.7rem; margin-top: 0.8rem;">
                 <p></p>
 
                 <!-- Partie droite -->
                 <div style="text-align: right;">
-                    <p style="font-weight: 600; text-decoration: underline;">Accès de connexion</p>
-                    <p style="color: #111827;">Numéro de téléphone : {{
-                        donneeClient.Telephone }}</p>
-                    <p style="color: #111827;">Numéro de chrono : {{
-                        props?.dossier?.num_chrono }}</p>
+                    <!-- <p style="font-weight: 600; text-decoration: underline;">Accès de connexion</p> -->
+                <p style="color: #111827;font-size: 9px;">Dont TVA (18%) : {{
+                        totalTTC * 0.18 }} FCFA</p>
+                    <!-- <p style="color: #111827;">Numéro de chrono : {{
+                        props?.dossier?.num_chrono }}</p> -->
                 </div>
             </div>
+            <p style="font-size: 10px; margin-top: 0.5rem;">Nom caissier : {{ props?.caissier?.nom }} {{ props?.caissier?.prenom }}</p>
         </div>
     </div>
 
@@ -177,11 +193,8 @@ const totalHT = computed(() =>
     items.value.reduce((acc, item) => acc + item.amount, 0)
 );
 
-// TVA à 18%
-const tva = computed(() => totalHT.value * 0.18);
-
-// Total TTC (HT + TVA)
-const totalTTC = computed(() => totalHT.value + tva.value);
+// Total TTC (HT + Timbre)
+const totalTTC = computed(() => totalHT.value + 100);
 
 // Formatage des montants
 function formatAmount(val) {
@@ -196,6 +209,14 @@ function formatDateTime(dateString) {
     return dayjs(dateString).format('DD/MM/YYYY HH:mm');
 }
 
+function formatedDate(dateStr) {
+  const date = new Date(dateStr);
+  
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  
+  return `${day}${month}`;
+}
 const donneeClient = {
     Client_Numero: props.dossier.id,
     Numero_chrono: props.dossier.num_chrono,
@@ -210,6 +231,11 @@ const donneeClient = {
     Statut_Paiement: props.dossier.statut === 1 ? 'Payé' : 'Non Payé',
     Date_de_Facturation: props.dossier.date_paiement,
     Caissier: props.dossier.paiement_validated_by,
+    Demandeur_Nom: props.dossier.demandeur_nom,
+    Demandeur_Prenom: props.dossier.demandeur_prenom,
+    Demandeur_Telephone: props.dossier.demandeur_telephone,
+    Demandeur_Piece_Type: props.dossier.demandeur_type_piece,
+    Demandeur_Piece_Numero: props.dossier.demandeur_numero_piece,
 };
 
 async function imprimer() {

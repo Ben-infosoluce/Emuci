@@ -11,22 +11,22 @@ class BossController extends Controller
     //
     public function showBossDashboard()
     {
-        return inertia('Boss/Dashbord',);
+        return inertia('Boss/Dashbord', );
     }
 
     public function showBossNewDashboard()
     {
-        return inertia('Boss/NewDashbord',);
+        return inertia('Boss/NewDashbord', );
     }
 
 
     public function showBossFinancesStatistics()
     {
-        return inertia('Boss/StatsFinances',);
+        return inertia('Boss/StatsFinances', );
     }
     public function showBossComparativeStatistics()
     {
-        return inertia('Boss/StatsComparative',);
+        return inertia('Boss/StatsComparative', );
     }
 
 
@@ -338,10 +338,10 @@ class BossController extends Controller
             ->get();
 
         return response()->json([
-            'par_jour'   => $dailyStats,
+            'par_jour' => $dailyStats,
             'par_semaine' => $weeklyStats,
-            'par_mois'   => $monthlyStats,
-            'par_annee'  => $yearlyStats
+            'par_mois' => $monthlyStats,
+            'par_annee' => $yearlyStats
         ]);
     }
 
@@ -592,22 +592,22 @@ class BossController extends Controller
         $stats = [
             'periode' => $periode,
             'sites' => (clone $baseQuery)
-                ->join('sites', 'paiements.id_site', '=', 'sites.id')
-                ->select('sites.nom_site', DB::raw('SUM(paiements.montant) as montant'))
-                ->groupBy('sites.nom_site')
-                ->get(),
+            ->join('sites', 'paiements.id_site', '=', 'sites.id')
+            ->select('sites.nom_site', DB::raw('SUM(paiements.montant) as montant'))
+            ->groupBy('sites.nom_site')
+            ->get(),
 
             'services' => (clone $baseQuery)
-                ->join('services', 'paiements.id_service', '=', 'services.id')
-                ->select('services.nom_service', DB::raw('SUM(paiements.montant) as montant'))
-                ->groupBy('services.nom_service')
-                ->get(),
+            ->join('services', 'paiements.id_service', '=', 'services.id')
+            ->select('services.nom_service', DB::raw('SUM(paiements.montant) as montant'))
+            ->groupBy('services.nom_service')
+            ->get(),
 
             'vehicules' => (clone $baseQuery)
-                ->join('vehicules', 'paiements.id_vehicule', '=', 'vehicules.id')
-                ->select('vehicules.genre_vehicule', DB::raw('SUM(paiements.montant) as montant'))
-                ->groupBy('vehicules.genre_vehicule')
-                ->get(),
+            ->join('vehicules', 'paiements.id_vehicule', '=', 'vehicules.id')
+            ->select('vehicules.genre_vehicule', DB::raw('SUM(paiements.montant) as montant'))
+            ->groupBy('vehicules.genre_vehicule')
+            ->get(),
         ];
 
         return response()->json($stats);
@@ -623,12 +623,12 @@ class BossController extends Controller
 
     public function showBossDossiersStatistics()
     {
-        return inertia('Boss/StatsDossiers',);
+        return inertia('Boss/StatsDossiers', );
     }
 
     public function showBossCaissesStatistics()
     {
-        return inertia('Boss/StatsCaisses',);
+        return inertia('Boss/StatsCaisses', );
     }
 
 
@@ -645,11 +645,14 @@ class BossController extends Controller
         // Filtrage par période
         if ($range === 'day') {
             $query->whereDate('date_paiement', Carbon::today());
-        } elseif ($range === 'week') {
+        }
+        elseif ($range === 'week') {
             $query->whereBetween('date_paiement', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-        } elseif ($range === 'month') {
+        }
+        elseif ($range === 'month') {
             $query->whereBetween('date_paiement', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-        } elseif ($range === 'custom' && $from && $to) {
+        }
+        elseif ($range === 'custom' && $from && $to) {
             $query->whereBetween('date_paiement', [$from, $to]);
         }
 

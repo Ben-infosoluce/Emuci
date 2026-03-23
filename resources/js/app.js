@@ -5,7 +5,8 @@ import { createApp, h } from "vue";
 import { createInertiaApp, Head, Link } from "@inertiajs/vue3";
 import { usePoll } from "@inertiajs/vue3";
 import { Toaster, toast } from 'vue-sonner'
-import { ZiggyVue } from "../../vendor/tightenco/ziggy";
+// import { ZiggyVue } from "../../vendor/tightenco/ziggy";
+import { ZiggyVue } from 'ziggy-js';
 import 'flowbite';
 import { createPinia } from 'pinia';
 // import Main from "./Layouts/Main.vue";

@@ -7,13 +7,13 @@
             </h4>
 
             <!-- Bouton Nouveau -->
-            <div class="flex items-center space-x-2">
+            <!-- <div class="flex items-center space-x-2">
                 <Link :href="route('show.new.caisse')">
                 <Button>
                     <Plus class=" w-4 h-4 mr-2" /> Nouveau Paiement
                 </Button>
                 </Link>
-            </div>
+            </div> -->
         </div>
 
         <div class="rounded-lg dark:border-gray-700">
@@ -26,7 +26,7 @@
                             <Input_search v-model="form.search_data" @update:modelValue="onFilterChange"
                                 placeholder="Rechercher par VIN..." class="w-full " />
                             <!-- Statut -->
-                            <Select v-model="form.statut_paiement" @update:modelValue="onFilterChange">
+                            <!-- <Select v-model="form.statut_paiement" @update:modelValue="onFilterChange">
                                 <SelectTrigger class="w-40">
                                     <SelectValue placeholder="Statut" />
                                 </SelectTrigger>
@@ -36,10 +36,9 @@
                                         <SelectItem value="0">Tous</SelectItem>
                                         <SelectItem value="1">En attente</SelectItem>
                                         <SelectItem value="2">Paiement validé</SelectItem>
-                                        <!-- <SelectItem value="3">Refusé</SelectItem> -->
                                     </SelectGroup>
                                 </SelectContent>
-                            </Select>
+                            </Select> -->
 
                             <!-- Dates -->
                             <!-- <DateRangePicker /> -->

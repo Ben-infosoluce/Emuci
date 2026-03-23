@@ -8,7 +8,7 @@
                 <div
                     class="hidden  lg:flex lg:items-center lg:justify-center bg-cover bg-center bg-no-repeat p-12 bg-white   m-1">
                     <Link :href="route('home')">
-                    <img src="../../../../public/assets/images/digi_connect.svg" alt="Image" width="264" height="191"
+                    <img src="../../../../public/assets/images/logo_frame.svg" alt="Image" width="264" height="191"
                         class="mx-auto rounded">
                     </Link>
                 </div>
