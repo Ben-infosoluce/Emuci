@@ -22,7 +22,7 @@
         style="width: 148mm; min-height: 210mm;">
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-             <div style="text-align: left;">
+            <div style="text-align: left;">
                 <p style="font-size: 14px; margin: 0;">EXPRESS MULTI SERVICES</p>
                 <p style="font-size: 9px; margin: 0;">CC : 22 212 24 Z</p>
                 <p style="font-size: 9px; margin: 0;">RCCM : CI-ABJ-03-2022-B 13-01-452</p>
@@ -35,7 +35,7 @@
                 <img src="/public/assets/images/logo_simple.svg" alt="Logo" style="height: 5rem">
                 <div style="display: flex; flex-direction: column;"></div>
             </div>
-           
+
         </div>
         <div
             style="width: fit-content; margin-left: auto; margin-right: auto; margin-top: 1.5rem; margin-bottom: 1.5rem;">
@@ -44,13 +44,14 @@
         <!-- Title -->
         <h2 style="text-align: center; font-weight: bold; font-size: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
             REÇU DE PAIEMENT N°
-            <span style="color: #d97706;">RPABJSA{{ formatedDate(props?.dossier?.date_paiement) }}000{{ props?.dossier?.id }}</span>
+            <span style="color: #d97706;">RPABJSA{{ formatedDate(props?.dossier?.date_paiement) }}000{{
+                props?.dossier?.id }}</span>
         </h2>
         <!-- Info Table -->
         <div
             style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem;">
             <!-- <div><span style="font-weight: 600;">Client N° :</span> {{ props?.dossier?.id }} </div> -->
-             <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.r_dossier_client?.nom }} {{
+            <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.r_dossier_client?.nom }} {{
                 props?.dossier?.r_dossier_client?.prenom }}</div>
             <div><span style="font-weight: 600;">Date de Facturation :</span> {{
                 formatDateTime(props?.dossier?.date_paiement) }}</div>
@@ -63,11 +64,14 @@
         </div>
 
         <!-- Informations du Demandeur -->
-        <h3 style="font-weight: bold; font-size: 0.70rem; margin-top: 1rem; margin-bottom: 0.5rem; text-decoration: underline;">
+        <h3
+            style="font-weight: bold; font-size: 0.70rem; margin-top: 1rem; margin-bottom: 0.5rem; text-decoration: underline;">
             Informations du Demandeur
         </h3>
-        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem; background-color: #f9fafb;">
-            <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.demandeur_nom }} {{ props?.dossier?.demandeur_prenom }}</div>
+        <div
+            style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem; background-color: #f9fafb;">
+            <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.demandeur_nom }} {{
+                props?.dossier?.demandeur_prenom }}</div>
             <div><span style="font-weight: 600;">Téléphone :</span> {{ props?.dossier?.demandeur_telephone }}</div>
             <div><span style="font-weight: 600;">Pièce :</span> {{ props?.dossier?.demandeur_type_piece }}</div>
             <div><span style="font-weight: 600;">N° Pièce :</span> {{ props?.dossier?.demandeur_numero_piece }}</div>
@@ -92,11 +96,11 @@
                     </tr>
                 </tbody>
                 <tfoot style="background-color: #f9fafb; font-weight: 600;">
-                    <tr>
+                    <!-- <tr>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Total Hors Taxes (HT)</td>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: right;">{{
                             formatAmount(totalHT) }}</td>
-                    </tr>
+                    </tr> -->
 
                     <tr>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Droit de Timbre</td>
@@ -118,13 +122,14 @@
                 <!-- Partie droite -->
                 <div style="text-align: right;">
                     <!-- <p style="font-weight: 600; text-decoration: underline;">Accès de connexion</p> -->
-                <p style="color: #111827;font-size: 9px;">Dont TVA (18%) : {{
+                    <p style="color: #111827;font-size: 9px;">Dont TVA (18%) : {{
                         totalTTC * 0.18 }} FCFA</p>
                     <!-- <p style="color: #111827;">Numéro de chrono : {{
                         props?.dossier?.num_chrono }}</p> -->
                 </div>
             </div>
-            <p style="font-size: 10px; margin-top: 0.5rem;">Nom caissier : {{ props?.caissier?.nom }} {{ props?.caissier?.prenom }}</p>
+            <p style="font-size: 10px; margin-top: 0.5rem;">Nom caissier : {{ props?.caissier?.nom }} {{
+                props?.caissier?.prenom }}</p>
         </div>
     </div>
 
@@ -162,15 +167,15 @@ const serviceTypes = [
 ]
 
 // Vérification basée sur les IDs
-const hasTriggerService = tableauFusionne.some(item =>
-    TRIGGER_SERVICE_IDS.includes(item.id_type_services)
+const hasTriggerService = serviceTypes.some(item =>
+    TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
 );
 
 const items = computed(() => {
     const result = [];
 
     // Ajouter "Changement de Plaque" si un service déclencheur est présent
-    if (hasTriggerService) {
+    if (hasTriggerService && props.autre_facturation) {
         result.push({
             name: props.autre_facturation.nom,
             amount: parseFloat(props.autre_facturation.montant),
@@ -210,12 +215,12 @@ function formatDateTime(dateString) {
 }
 
 function formatedDate(dateStr) {
-  const date = new Date(dateStr);
-  
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  
-  return `${day}${month}`;
+    const date = new Date(dateStr);
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+
+    return `${day}${month}`;
 }
 const donneeClient = {
     Client_Numero: props.dossier.id,

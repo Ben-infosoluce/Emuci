@@ -178,8 +178,19 @@ function initChart(el, title, data, isWide = false) {
             {
                 type: "bar",
                 data: data.map((d) => d.montant),
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: (params) => {
+                        return new Intl.NumberFormat('fr-FR').format(params.value);
+                    },
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    color: '#374151'
+                },
                 itemStyle: {
-                    color: '#4f46e5'
+                    color: '#4f46e5',
+                    borderRadius: [4, 4, 0, 0]
                 }
             },
         ],

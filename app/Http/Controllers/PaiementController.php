@@ -368,6 +368,7 @@ class PaiementController extends Controller
                 'statut_paiement' => $validated['statut_paiement'],
                 'paiement_validated_by' => Auth::id(),
                 'date_paiement' => now(),
+                'id_site' => ($dossier->type == 'FDS') ? getIdSite() : $dossier->id_site,
                 'demandeur_nom' => $validated['demandeur_nom'],
                 'demandeur_prenom' => $validated['demandeur_prenom'],
                 'demandeur_telephone' => $validated['demandeur_telephone'],
@@ -536,25 +537,28 @@ class PaiementController extends Controller
         $genre = $dossier->r_dossier_vehicule->genre_vehicule;
         //si nb_plaque == 1 
         $autre_facturation = null;
-        if (stripos($genre, "REMORQUE") !== false) {
-            $autre_facturation = DB::table('autre_facturation')
-                ->where('id', 3) // ID fixe pour "Changement de plaque"
-                ->where('status', 1) // Actif
-                ->first();
-        }
-        else if ($nb_plaque == 1) {
-            $autre_facturation = DB::table('autre_facturation')
-                ->where('id', 2) // ID fixe pour "Changement de plaque"
-                ->where('status', 1) // Actif
-                ->first();
-        }
-        else {
-            $autre_facturation = DB::table('autre_facturation')
-                ->where('id', 1) // ID fixe pour "Changement de plaque"
-                ->where('status', 1) // Actif
-                ->first();
+        if ($dossier->id_service != '4') {
+            if (stripos($genre, "REMORQUE") !== false) {
+                $autre_facturation = DB::table('autre_facturation')
+                    ->where('id', 3) // ID pour "REMORQUE"
+                    ->where('status', 1)
+                    ->first();
+            }
+            else if ($nb_plaque == 1) {
+                $autre_facturation = DB::table('autre_facturation')
+                    ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
+                    ->where('status', 1)
+                    ->first();
+            }
+            else {
+                $autre_facturation = DB::table('autre_facturation')
+                    ->where('id', 1) // ID par défaut
+                    ->where('status', 1)
+                    ->first();
+            }
         }
 
+        // dd($autre_facturation);
 
         /*
          |--------------------------------------------------------------------------

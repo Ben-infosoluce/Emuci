@@ -23,7 +23,7 @@
                         </CardHeader>
                         <CardContent>
                             <div class="text-2xl font-bold">
-                                55
+                                ...
                             </div>
                             <!-- <p class="text-xs text-muted-foreground">
                                         +20.1% from last month
@@ -39,7 +39,7 @@
                         </CardHeader>
                         <CardContent>
                             <div class="text-2xl font-bold">
-                                20
+                                ...
                             </div>
                         </CardContent>
                     </Card>
@@ -52,7 +52,7 @@
                         </CardHeader>
                         <CardContent>
                             <div class="text-2xl font-bold">
-                                35
+                                ...
                             </div>
                         </CardContent>
                     </Card>
@@ -65,7 +65,7 @@
                         </CardHeader>
                         <CardContent>
                             <div class="text-2xl font-bold">
-                                0
+                                ...
                             </div>
                         </CardContent>
                     </Card>

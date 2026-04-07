@@ -190,7 +190,10 @@ const initChart = (el, dataset) => {
             orient: "vertical",
             left: "left",
             textStyle: { fontSize: 12 },
-            formatter: (name) => name // légende montre tous les noms
+            formatter: (name) => {
+                const item = dataset.data.find(d => d.name === name);
+                return item ? `${name} (${item.value})` : name;
+            }
         },
         series: [
             {

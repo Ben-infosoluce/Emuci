@@ -100,33 +100,33 @@ class BossController extends Controller
                     WHEN statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1
                     WHEN statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) THEN 1
                     WHEN statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) THEN 1
-                    WHEN statut = 4 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1
+                    WHEN statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1
                     ELSE 0
                 END
             ) AS Total,
             SUM(CASE WHEN statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `En attente`,
             SUM(CASE WHEN statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `Valider`,
             SUM(CASE WHEN statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `Refuser`,
-            SUM(CASE WHEN statut = 4 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `En cours`,
+            SUM(CASE WHEN statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `En cours`,
             SUM(CASE WHEN (statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 1 THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
             SUM(CASE WHEN (statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 2 THEN 1 ELSE 0 END) AS `Re-immatriculation`,
             SUM(CASE WHEN (statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 3 THEN 1 ELSE 0 END) AS `Post-immatriculation`,
             SUM(CASE WHEN (statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 4 THEN 1 ELSE 0 END) AS `Duplicata`
         ')
             ->get();
@@ -306,33 +306,33 @@ class BossController extends Controller
                     WHEN statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1
                     WHEN statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) THEN 1
                     WHEN statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) THEN 1
-                    WHEN statut = 4 AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1
+                    WHEN statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1
                     ELSE 0
                 END
             ) AS Total,
             SUM(CASE WHEN statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `En attente`,
             SUM(CASE WHEN statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `Valider`,
             SUM(CASE WHEN statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `Refuser`,
-            SUM(CASE WHEN statut = 4 AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `En cours`,
+            SUM(CASE WHEN statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS `En cours`,
             SUM(CASE WHEN (statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 1 THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
             SUM(CASE WHEN (statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 2 THEN 1 ELSE 0 END) AS `Re-immatriculation`,
             SUM(CASE WHEN (statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 3 THEN 1 ELSE 0 END) AS `Post-immatriculation`,
             SUM(CASE WHEN (statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) OR
-                          statut = 4 AND YEAR(date_paiement) = YEAR(CURDATE()))
+                          statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()))
                      AND id_service = 4 THEN 1 ELSE 0 END) AS `Duplicata`
         ')
             ->get();

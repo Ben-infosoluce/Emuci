@@ -65,7 +65,7 @@
                             <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem @click="openProfile = true">
                                     <User class="mr-2 h-4 w-4" />
                                     <span>Profile</span>
                                 </DropdownMenuItem>
@@ -143,6 +143,74 @@
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+
+        <!-- Profile Dialog -->
+        <AlertDialog :open="openProfile" @update:open="openProfile = $event">
+            <AlertDialogContent class="sm:max-w-[425px] overflow-hidden p-0 rounded-xl border-none shadow-2xl">
+                
+                <div class="relative h-32 bg-gradient-to-r from-blue-600 to-indigo-700">
+                    <div class="absolute top-4 right-4">
+                        <span @click="openProfile = false">   <X class="h-4 w-4 cursor-pointer text-white" /></span>
+                    </div>
+                    <div class="absolute -bottom-12 left-1/2 -translate-x-1/2">
+                        <Avatar class="h-24 w-24 border-4 border-white shadow-lg">
+                            <AvatarFallback class="text-2xl font-bold bg-gray-100 text-blue-700">
+                                {{ getInitials() }}
+                            </AvatarFallback>
+                        </Avatar>
+                        
+                    </div>
+                </div>
+
+                <div class="pt-16 pb-8 px-6 text-center">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle class="text-2xl font-bold text-gray-900 leading-tight">
+                            {{ $page.props.auth_user?.data.nom }} {{ $page.props.auth_user?.data.prenom }}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription class="text-blue-600 font-medium flex items-center justify-center gap-1 mt-1">
+                            <span class="inline-block w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                            {{ $page.props.auth_user?.data.r_user_role?.nom_role }}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div class="mt-8 space-y-4 text-left">
+                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                                <User class="h-5 w-5 text-gray-500" />
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Email</p>
+                                <p class="text-sm font-medium text-gray-700">{{ $page.props.auth_user?.data.email }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                                <Settings class="h-5 w-5 text-gray-500" />
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Site & Région</p>
+                                <p class="text-sm font-medium text-gray-700">
+                                    {{ $page.props.auth_user?.data.r_user_site?.nom_site }} 
+                                    <span class="text-gray-400 mx-1">•</span> 
+                                    {{ $page.props.auth_user?.data.r_user_site?.region }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                                <LockKeyhole class="h-5 w-5 text-gray-500" />
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Type de Site</p>
+                                <p class="text-sm font-medium text-gray-700">{{ $page.props.auth_user?.data.r_user_site?.type_site }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>
 
@@ -157,7 +225,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User, LockKeyhole } from "lucide-vue-next";
+import { LogOut, Settings, User, LockKeyhole, X } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Menu from "./Menu.vue";
@@ -175,6 +243,13 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import { Toaster, toast } from "vue-sonner";
 
 import { useCaisseStore } from "@/stores/mainStore";
@@ -196,10 +271,13 @@ const openPassword = ref(false);
 const oldPassword = ref("");
 const newPassword = ref("");
 const confirmPassword = ref("");
+const openProfile = ref(false);
 
 const openPasswordModal = () => {
     openPassword.value = true;
 };
+
+console.log(usePage().props.auth_user)
 
 const handlePassword = async () => {
     if (!oldPassword.value || !newPassword.value || !confirmPassword.value) {
