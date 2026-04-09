@@ -432,12 +432,15 @@ const handleCreateSite = async () => {
     }
     loading.value = true
     try {
+        const formattedOuverture = heures_ouverture.value ? (heures_ouverture.value.split(':').length === 2 ? `${heures_ouverture.value}:00` : heures_ouverture.value) : '';
+        const formattedFermeture = heures_fermeture.value ? (heures_fermeture.value.split(':').length === 2 ? `${heures_fermeture.value}:00` : heures_fermeture.value) : '';
+
         await axios.post('/add/site/new', {
             nom_site: nom_site.value,
             type_site: type_site.value,
             region: region.value,
-            heures_ouverture: `${heures_ouverture.value}:00`,
-            heures_fermeture: `${heures_fermeture.value}:00`
+            heures_ouverture: formattedOuverture,
+            heures_fermeture: formattedFermeture
         })
         toast.success('Site créé avec succès')
         fetchSites()
@@ -462,13 +465,16 @@ const handleEditSite = async () => {
         return;
     }
     loading.value = true;
+    const formattedOuverture = heures_ouverture.value ? (heures_ouverture.value.split(':').length === 2 ? `${heures_ouverture.value}:00` : heures_ouverture.value) : '';
+    const formattedFermeture = heures_fermeture.value ? (heures_fermeture.value.split(':').length === 2 ? `${heures_fermeture.value}:00` : heures_fermeture.value) : '';
+
     try {
         await axios.put(`/site/update/${siteId.value}`, {
             nom_site: nom_site.value,
             type_site: type_site.value,
             region: region.value,
-            heures_ouverture: `${heures_ouverture.value}:00`,
-            heures_fermeture: `${heures_fermeture.value}:00`,
+            heures_ouverture: formattedOuverture,
+            heures_fermeture: formattedFermeture,
         });
         toast.success("Site modifié avec succès");
         fetchSites();
@@ -483,6 +489,21 @@ const handleEditSite = async () => {
     }
 };
 
+
+const handleDeleteSite = async () => {
+    if (!siteId.value) return;
+    loading.value = true;
+    try {
+        await axios.delete(`/site/delete/${siteId.value}`);
+        toast.success("Site supprimé avec succès");
+        fetchSites();
+    } catch (error) {
+        toast.error("Une erreur est survenue lors de la suppression du site");
+    } finally {
+        openDeleteModal.value = false;
+        loading.value = false;
+    }
+};
 
 
 const handleStatut = async () => {

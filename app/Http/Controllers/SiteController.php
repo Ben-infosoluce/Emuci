@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Models\Site;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SiteController extends Controller
 {
@@ -11,6 +14,19 @@ class SiteController extends Controller
     {
         $currentDateTime = now();
         return inertia('Admin/Dashbord', ['currentDateTime' => $currentDateTime]);
+    }
+
+    public function getAdminDashboardStats()
+    {
+        $stats = [
+            'sites' => Site::count(),
+            'entites' => DB::table('entites')->count(),
+            'users' => User::count(),
+            'clients' => Client::count(),
+            'facturation' => DB::table('detail_type_services')->count(),
+        ];
+
+        return response()->json($stats);
     }
 
     public function showSiteData()
@@ -70,7 +86,7 @@ class SiteController extends Controller
             'heures_fermeture' => 'required|date_format:H:i:s',
         ]);
 
-        Site::create([
+        $site = Site::create([
             'nom_site' => $validated['nom_site'],
             'type_site' => $validated['type_site'],
             'region' => $validated['region'],
@@ -79,7 +95,7 @@ class SiteController extends Controller
             'statut' => 1,
         ]);
 
-        return redirect()->back();
+        return response()->json($site, 201);
     }
 
     public function showEditSite($id)
@@ -101,14 +117,14 @@ class SiteController extends Controller
         $site = Site::findOrFail($id);
         $site->update($validated);
 
-        return redirect()->back();
+        return response()->json($site);
     }
 
     public function deleteSite($id)
     {
         $site = Site::findOrFail($id);
         $site->delete();
-        return redirect()->back();
+        return response()->json(['message' => 'Site supprimé avec succès.']);
     }
 
     public function updateStatutSite(Request $request, $id)

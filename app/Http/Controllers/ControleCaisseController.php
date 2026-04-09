@@ -36,7 +36,8 @@ class ControleCaisseController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -99,7 +100,8 @@ class ControleCaisseController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -122,7 +124,8 @@ class ControleCaisseController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -142,7 +145,8 @@ class ControleCaisseController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -161,12 +165,12 @@ class ControleCaisseController extends Controller
 
     public function showCaisseDossiersStatistics()
     {
-        return inertia('ControlleurCaisse/StatsDossiers',);
+        return inertia('ControlleurCaisse/StatsDossiers', );
     }
 
     public function showCaisseCaissesStatistics()
     {
-        return inertia('ControlleurCaisse/StatsCaisses',);
+        return inertia('ControlleurCaisse/StatsCaisses', );
     }
 
     //
@@ -182,11 +186,14 @@ class ControleCaisseController extends Controller
         // Filtrage par période
         if ($range === 'day') {
             $query->whereDate('created_at', Carbon::today());
-        } elseif ($range === 'week') {
+        }
+        elseif ($range === 'week') {
             $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-        } elseif ($range === 'month') {
+        }
+        elseif ($range === 'month') {
             $query->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-        } elseif ($range === 'custom' && $from && $to) {
+        }
+        elseif ($range === 'custom' && $from && $to) {
             $query->whereBetween('created_at', [$from, $to]);
         }
 
@@ -366,18 +373,18 @@ class ControleCaisseController extends Controller
         $today = now()->toDateString();
 
         $record = ControlleurCaisse::firstOrCreate(
-            [
-                'caisse_id' => $request->id_caisse,
-                'date' => $today,
-            ],
-            [
-                'montant_caisse' => 0,
-                'montant_controlleur' => 0,
-                'status' => 0,
-                'status_raf' => 0,
-                'code_caisse' => $request->code_caisse,
-                'id_site' => $request->id_site,
-            ]
+        [
+            'caisse_id' => $request->id_caisse,
+            'date' => $today,
+        ],
+        [
+            'montant_caisse' => 0,
+            'montant_controlleur' => 0,
+            'status' => 0,
+            'status_raf' => 0,
+            'code_caisse' => $request->code_caisse,
+            'id_site' => $request->id_site,
+        ]
         );
         // dd($record);
 
@@ -409,7 +416,7 @@ class ControleCaisseController extends Controller
             'date_operation' => 'required|date',
         ]);
 
-        $date = $request->date_operation;   // ← c'est cette date qui compte
+        $date = $request->date_operation; // ← c'est cette date qui compte
         $today = now()->toDateString();
         $yesterday = now()->subDay()->toDateString();
 

@@ -1,4 +1,7 @@
 <template>
+    <!-- Header fixe en haut de la page -->
+
+
     <div class="p-6 space-y-8">
         <!-- Sélecteur de période -->
         <div class="bg-white  rounded p-4">
@@ -69,15 +72,33 @@ const fetchStats = async () => {
         const response = await axios.get(`/get/boss/paiement/global/stats?periode=${periode.value}`);
 
         // Mapper les données
+        const mappedServices = response.data.services
+            .filter(service => service.nom_service !== "Immatriculation spéciale")
+            .map(service => ({
+                name: service.nom_service,
+                montant: parseFloat(service.montant)
+            }));
+
+        // Ajouter les deux versions de l'immatriculation spéciale
+        if (response.data.montantServiceNonFDS !== undefined) {
+            mappedServices.push({
+                name: "Immatriculation Spéciale",
+                montant: parseFloat(response.data.montantServiceNonFDS) || 0
+            });
+        }
+        if (response.data.montantServiceFDS !== undefined) {
+            mappedServices.push({
+                name: "Opération FDS",
+                montant: parseFloat(response.data.montantServiceFDS) || 0
+            });
+        }
+
         stats.value = {
             sites: response.data.sites.map(site => ({
                 name: site.nom_site,
                 montant: parseFloat(site.montant)
             })),
-            services: response.data.services.map(service => ({
-                name: service.nom_service,
-                montant: parseFloat(service.montant)
-            })),
+            services: mappedServices,
             vehicules: response.data.vehicules.map(vehicule => ({
                 name: vehicule.genre_vehicule || "Inconnu",
                 montant: parseFloat(vehicule.montant) || 0
@@ -145,8 +166,19 @@ function initChart(el, title, data, isWide = false) {
             {
                 type: "bar",
                 data: data.map((d) => d.montant),
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: (params) => {
+                        return new Intl.NumberFormat('fr-FR').format(params.value);
+                    },
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    color: '#374151'
+                },
                 itemStyle: {
-                    color: '#4f46e5'
+                    color: '#4f46e5',
+                    borderRadius: [4, 4, 0, 0]
                 }
             },
         ],
@@ -167,13 +199,25 @@ watch(periode, async () => {
     initCharts();
 });
 
+const handleLogout = async () => {
+    try {
+        await axios.post("/logout");
+        router.visit("/");
+    } catch (error) {
+        console.error("Erreur lors de la déconnexion:", error);
+        router.visit("/");
+    }
+};
+
+
 usePoll(3600 * 10, {
     onStart() {
         fetchStats().then(() => {
             initCharts()
         })
     }
-});
+})
+
 </script>
 
 

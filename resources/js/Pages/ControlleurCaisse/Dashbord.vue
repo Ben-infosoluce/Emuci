@@ -63,20 +63,68 @@ const stats = ref({
 const loading = ref(true);
 
 // Fonction pour récupérer les statistiques
+// const fetchStats = async () => {
+//     try {
+//         loading.value = true;
+//         const response = await axios.get(`/get/controller/paiement/global/stats?periode=${periode.value}`);
+//         // Mapper les données
+//         stats.value = {
+//             sites: response.data.sites.map(site => ({
+//                 name: site.nom_site,
+//                 montant: parseFloat(site.montant)
+//             })),
+//             services: response.data.services.map(service => ({
+//                 name: service.nom_service,
+//                 montant: parseFloat(service.montant)
+//             })),
+//             vehicules: response.data.vehicules.map(vehicule => ({
+//                 name: vehicule.genre_vehicule || "Inconnu",
+//                 montant: parseFloat(vehicule.montant) || 0
+//             }))
+//         };
+
+//         console.log("Stats fetched:", stats.value);
+//     } catch (e) {
+//         console.error("Erreur lors de la récupération des statistiques:", e);
+//     } finally {
+//         loading.value = false;
+//     }
+// };
+
+
 const fetchStats = async () => {
     try {
         loading.value = true;
         const response = await axios.get(`/get/controller/paiement/global/stats?periode=${periode.value}`);
+
         // Mapper les données
+        const mappedServices = response.data.services
+            .filter(service => service.nom_service !== "Immatriculation spéciale")
+            .map(service => ({
+                name: service.nom_service,
+                montant: parseFloat(service.montant)
+            }));
+
+        // Ajouter les deux versions de l'immatriculation spéciale
+        if (response.data.montantServiceNonFDS !== undefined) {
+            mappedServices.push({
+                name: "Immatriculation Spéciale",
+                montant: parseFloat(response.data.montantServiceNonFDS) || 0
+            });
+        }
+        if (response.data.montantServiceFDS !== undefined) {
+            mappedServices.push({
+                name: "Opération FDS",
+                montant: parseFloat(response.data.montantServiceFDS) || 0
+            });
+        }
+
         stats.value = {
             sites: response.data.sites.map(site => ({
                 name: site.nom_site,
                 montant: parseFloat(site.montant)
             })),
-            services: response.data.services.map(service => ({
-                name: service.nom_service,
-                montant: parseFloat(service.montant)
-            })),
+            services: mappedServices,
             vehicules: response.data.vehicules.map(vehicule => ({
                 name: vehicule.genre_vehicule || "Inconnu",
                 montant: parseFloat(vehicule.montant) || 0

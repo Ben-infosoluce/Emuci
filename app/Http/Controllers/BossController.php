@@ -43,7 +43,8 @@ class BossController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -74,7 +75,8 @@ class BossController extends Controller
             COUNT(*) as Total,
             COUNT(CASE WHEN statut = 2 THEN 1 END) AS `Terminer`,
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -112,7 +114,14 @@ class BossController extends Controller
                           statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) OR
                           statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
-                     AND id_service = 1 THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
+                     AND id_service = 1 AND type is null THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
+
+            SUM(CASE WHEN (statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) OR
+                          statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) OR
+                          statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) OR
+                          statut_paiement = 2 AND MONTH(date_paiement) = MONTH(CURDATE()) AND YEAR(date_paiement) = YEAR(CURDATE()))
+                     AND id_service = 1 AND type = "FDS" THEN 1 ELSE 0 END) AS `Operation-FDS`,
+
             SUM(CASE WHEN (statut = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND MONTH(date_validation) = MONTH(CURDATE()) AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND MONTH(date_rejet) = MONTH(CURDATE()) AND YEAR(date_rejet) = YEAR(CURDATE()) OR
@@ -173,9 +182,20 @@ class BossController extends Controller
                 OR statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1)
                 OR statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1)
             )
-            AND id_service = 1
+             AND type is null
             THEN 1 ELSE 0 END
         ) AS `Immatriculation-Special`,
+
+        SUM(CASE 
+            WHEN (
+                statut = 1 AND YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 2 AND YEARWEEK(date_validation,1) = YEARWEEK(CURDATE(),1)
+                OR statut = 3 AND YEARWEEK(date_rejet,1) = YEARWEEK(CURDATE(),1)
+                OR statut_paiement = 2 AND YEARWEEK(date_paiement,1) = YEARWEEK(CURDATE(),1)
+            )
+            AND type = "FDS"
+            THEN 1 ELSE 0 END
+        ) AS `Operation-FDS`,
 
         SUM(CASE 
             WHEN (
@@ -258,9 +278,20 @@ class BossController extends Controller
                 OR statut = 3 AND DATE(date_rejet) = CURDATE()
                 OR statut_paiement = 2 AND DATE(date_paiement) = CURDATE()
             )
-            AND id_service = 1
+            AND id_service = 1 AND type is null
             THEN 1 ELSE 0 END
         ) AS `Immatriculation-Special`,
+
+         SUM(CASE 
+            WHEN (
+                statut = 1 AND DATE(created_at) = CURDATE()
+                OR statut = 2 AND DATE(date_validation) = CURDATE()
+                OR statut = 3 AND DATE(date_rejet) = CURDATE()
+                OR statut_paiement = 2 AND DATE(date_paiement) = CURDATE()
+            )
+            AND id_service = 1 AND type = "FDS"
+            THEN 1 ELSE 0 END
+        ) AS `Operation-FDS`,
 
         SUM(CASE 
             WHEN (
@@ -318,7 +349,12 @@ class BossController extends Controller
                           statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) OR
                           statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()))
-                     AND id_service = 1 THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
+                     AND id_service = 1 AND type is null THEN 1 ELSE 0 END) AS `Immatriculation-Special`,
+                     SUM(CASE WHEN (statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) OR
+                          statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) OR
+                          statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) OR
+                          statut_paiement = 2 AND YEAR(date_paiement) = YEAR(CURDATE()))
+                     AND id_service = 1 AND type = "FDS" THEN 1 ELSE 0 END) AS `Operation-FDS`,
             SUM(CASE WHEN (statut = 1 AND YEAR(created_at) = YEAR(CURDATE()) OR
                           statut = 2 AND YEAR(date_validation) = YEAR(CURDATE()) OR
                           statut = 3 AND YEAR(date_rejet) = YEAR(CURDATE()) OR
@@ -395,6 +431,20 @@ class BossController extends Controller
             ->get()
             ->toArray();
 
+        $montantServiceNonFDS = (clone $baseQuery)
+            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id') // Remplacez id_dossier par la clé correcte
+            ->where('paiements.id_service', 1)
+            ->where('dossiers.type', '=', null)
+            ->select(DB::raw('SUM(paiements.montant) as montant'))
+            ->value('montant');
+
+        $montantServiceFDS = (clone $baseQuery)
+            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id') // Remplacez id_dossier par la clé correcte
+            ->where('paiements.id_service', 1)
+            ->where('dossiers.type', '=', 'FDS')
+            ->select(DB::raw('SUM(paiements.montant) as montant'))
+            ->value('montant');
+
         // Montant par genre de véhicule
         $montantParGenreVehicule = (clone $baseQuery)
             ->join('vehicules', 'paiements.id_vehicule', '=', 'vehicules.id')
@@ -409,6 +459,8 @@ class BossController extends Controller
             'sites' => $montantParSite,
             'services' => $montantParService,
             'vehicules' => $montantParGenreVehicule,
+            'montantServiceNonFDS' => $montantServiceNonFDS,
+            'montantServiceFDS' => $montantServiceFDS,
         ]);
     }
 
@@ -602,6 +654,20 @@ class BossController extends Controller
             ->select('services.nom_service', DB::raw('SUM(paiements.montant) as montant'))
             ->groupBy('services.nom_service')
             ->get(),
+
+            'montantServiceNonFDS' => (clone $baseQuery)
+            ->join('services', 'paiements.id_service', '=', 'services.id')
+            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id') // Remplacez id_dossier par la clé correcte
+            ->where('paiements.id_service', 1)
+            ->where('dossiers.type', '=', null)
+            ->value(DB::raw('SUM(paiements.montant) as montant')),
+
+            'montantServiceFDS' => (clone $baseQuery)
+            ->join('services', 'paiements.id_service', '=', 'services.id')
+            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id') // Remplacez id_dossier par la clé correcte
+            ->where('paiements.id_service', 1)
+            ->where('dossiers.type', '=', 'FDS')
+            ->value(DB::raw('SUM(paiements.montant) as montant')),
 
             'vehicules' => (clone $baseQuery)
             ->join('vehicules', 'paiements.id_vehicule', '=', 'vehicules.id')

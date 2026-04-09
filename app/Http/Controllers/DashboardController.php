@@ -85,7 +85,8 @@ class DashboardController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -147,7 +148,8 @@ class DashboardController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -170,7 +172,8 @@ class DashboardController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`
@@ -190,7 +193,8 @@ class DashboardController extends Controller
             COUNT(CASE WHEN statut = 1 THEN 1 END) AS `En attente`,
             COUNT(CASE WHEN statut = 3 THEN 1 END) AS `Rejeter`,
             COUNT(CASE WHEN statut = 4 THEN 1 END) AS `En cours de traitement`,
-            COUNT(CASE WHEN id_service = 1 THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type is null THEN 1 END) AS `Immatriculation-Special`,
+            COUNT(CASE WHEN id_service = 1 AND type = "FDS" THEN 1 END) AS `Operation-FDS`,
             COUNT(CASE WHEN id_service = 2 THEN 1 END) AS `Re-immatriculation`,
             COUNT(CASE WHEN id_service = 3 THEN 1 END) AS `Post-immatriculation`,
             COUNT(CASE WHEN id_service = 4 THEN 1 END) AS `Duplicata`

@@ -15,7 +15,7 @@
                             <DollarSign class="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div class="text-2xl font-bold">{{ stats?.Total ?? '...' }}</div>
+                            <div class="text-2xl font-bold">{{ stats?.sites ?? '...' }}</div>
                         </CardContent>
                     </Card>
 
@@ -25,7 +25,7 @@
                             <Users class="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div class="text-2xl font-bold">{{ stats?.['Terminer'] ?? '...' }}</div>
+                            <div class="text-2xl font-bold">{{ stats?.facturation ?? '...' }}</div>
                         </CardContent>
                     </Card>
 
@@ -34,7 +34,7 @@
                             <CardTitle class="text-sm font-medium">Entités</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div class="text-2xl font-bold">{{ stats?.['En attente'] ?? '...' }}</div>
+                            <div class="text-2xl font-bold">{{ stats?.entites ?? '...' }}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -42,7 +42,7 @@
                             <CardTitle class="text-sm font-medium">Utilisateurs</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div class="text-2xl font-bold">{{ stats?.['En attente'] ?? '...' }}</div>
+                            <div class="text-2xl font-bold">{{ stats?.users ?? '...' }}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -50,17 +50,10 @@
                             <CardTitle class="text-sm font-medium">Clients</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div class="text-2xl font-bold">{{ stats?.['En attente'] ?? '...' }}</div>
+                            <div class="text-2xl font-bold">{{ stats?.clients ?? '...' }}</div>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle class="text-sm font-medium">Genres</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="text-2xl font-bold">{{ stats?.Total ?? '...' }}</div>
-                        </CardContent>
-                    </Card>
+
                 </div>
             </main>
         </div>
@@ -71,71 +64,26 @@
 </template>
 
 <script setup>
-// 🧩 UI components
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-    DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AreaChart } from '@/components/ui/chart-area'
-import DateRangePicker from '@/components/ui/DateRangePicker.vue'
-import CustomChartTooltip from '@/components/ui/CustomChartTooltip.vue'
-import UserNav from '@/components/ui/UserNav.vue'
 
-// 🛠 Libs & utils
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import axios from 'axios'
 import { ref, watch, onMounted } from 'vue'
 import { DollarSign, Users, Activity } from 'lucide-vue-next'
 
-// ⏰ Props
 defineProps({
     currentDateTime: String,
 })
 
 // 📊 Références réactives
 const stats = ref(null)
-const data = ref([]) // pour le graphique
-const dateRange = ref({ from: null, to: null })
-
-// 🔁 Agrégation
-function aggregate(data) {
-    return data.reduce((acc, item) => {
-        for (const key in item) {
-            if (key !== 'name') {
-                acc[key] = (acc[key] || 0) + item[key]
-            }
-        }
-        return acc
-    }, {})
-}
 
 // 📥 Récupération des statistiques (avec ou sans date)
 async function fetchStats() {
+    let response
     try {
-        const { start, end } = dateRange.value
-
-        let response
-        if (start && end) {
-            const startDate = new Date(start.year, start.month - 1, start.day)
-            const endDate = new Date(end.year, end.month - 1, end.day)
-
-            const startStr = startDate.toISOString().slice(0, 10)
-            const endStr = endDate.toISOString().slice(0, 10)
-
-            response = await axios.get('/admin/dashboard/stats/by/date', {
-                params: {
-                    start_date: startStr,
-                    end_date: endStr,
-                },
-            })
-        } else {
-            response = await axios.get('/admin/dashboard/stats')
-        }
-
-        stats.value = aggregate(response.data)
-        data.value = response.data // données pour le graphique aussi
+        response = await axios.get('/get/admin/stats')
+        stats.value = response.data // données pour le graphique aussi
+        console.log('Stats:', stats.value)
     } catch (err) {
         console.error('Erreur lors de la récupération des statistiques', err)
     }
@@ -143,7 +91,7 @@ async function fetchStats() {
 
 // 🔄 Appels automatiques
 onMounted(fetchStats)
-watch(dateRange, fetchStats, { deep: true })
+watch(fetchStats, { deep: true })
 </script>
 
 <script>

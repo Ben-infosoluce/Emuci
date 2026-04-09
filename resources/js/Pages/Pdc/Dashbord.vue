@@ -54,6 +54,13 @@
 
                     <Card>
                         <CardHeader>
+                            <CardTitle>Operation FDS</CardTitle>
+                        </CardHeader>
+                        <CardContent>{{ stats['Operation-FDS'] ?? 0 }}</CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
                             <CardTitle>Re-immatriculations</CardTitle>
                         </CardHeader>
                         <CardContent>{{ stats['Re-immatriculation'] ?? 0 }}</CardContent>

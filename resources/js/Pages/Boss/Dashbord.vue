@@ -81,12 +81,13 @@ const statusKeys = [
 
 const serviceKeys = [
     "Immatriculation-Special",
+    "Operation-FDS",
     "Re-immatriculation",
     "Post-immatriculation",
     "Duplicata"
 ]
 
-const colors = ["#91CC75", "#FAC858", "#EE6666", "#5470C6"] // pour les statuts et services
+const colors = ["#91CC75", "#FAC858", "#EE6666", "#5470C6", "#5470C6"] // pour les statuts et services
 const titre = [
     "Statuts des dossiers du jour",
     "Statistiques des services du jour",
