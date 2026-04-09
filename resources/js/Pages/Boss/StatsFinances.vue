@@ -82,6 +82,9 @@ const siteChart = ref(null);
 const serviceChart = ref(null);
 const vehiculeChart = ref(null);
 
+// Palette de couleurs
+const colors = ["#A2B296", "#B17A50", "#A47764", "#F7E8D3", "#8F3D37"];
+
 // État pour la période sélectionnée
 const periode = ref("today");
 
@@ -207,7 +210,9 @@ function initChart(el, title, data, isWide = false) {
                     color: '#374151'
                 },
                 itemStyle: {
-                    color: '#4f46e5',
+                    color: function (params) {
+                        return colors[params.dataIndex % colors.length];
+                    },
                     borderRadius: [4, 4, 0, 0]
                 }
             },

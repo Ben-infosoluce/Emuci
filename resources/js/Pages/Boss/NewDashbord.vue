@@ -87,7 +87,9 @@ const serviceKeys = [
     "Duplicata"
 ]
 
-const colors = ["#5470C6", "#33BECC", "#91CC75", "#FAC858", "#EE6666"];
+// const colors = ["#5470C6", "#33BECC", "#91CC75", "#FAC858", "#EE6666"];
+const colors = ["#A2B296", "#B17A50", "#A47764", "#F7E8D3", "#8F3D37"];
+
 // pour les statuts et services
 const titre = [
     "Statuts des dossiers du jour",

@@ -470,129 +470,121 @@ class BossController extends Controller
      */
     public function getComparativeStats(Request $request)
     {
-        // Récupérer la date actuelle
-        $now = now();
-
         // Données pour le comparatif journalier (Aujourd'hui vs Hier)
+        $today = now()->toDateString();
+        $yesterday = now()->subDay()->toDateString();
+
         $todayStats = DB::table('paiements')
-            ->whereDate('created_at', $now->toDateString())
+            ->whereDate('created_at', $today)
             ->select(DB::raw('HOUR(created_at) as hour'), DB::raw('SUM(montant) as montant'))
             ->groupBy('hour')
             ->pluck('montant', 'hour')
             ->toArray();
 
         $yesterdayStats = DB::table('paiements')
-            ->whereDate('created_at', $now->subDay()->toDateString())
+            ->whereDate('created_at', $yesterday)
             ->select(DB::raw('HOUR(created_at) as hour'), DB::raw('SUM(montant) as montant'))
             ->groupBy('hour')
             ->pluck('montant', 'hour')
             ->toArray();
 
-        // Préparer les données pour le graphique journalier (8h-18h)
-        $hours = range(8, 22); // De 8h à 22h
-        $todayValues = array_map(function ($hour) use ($todayStats) {
-            return $todayStats[$hour] ?? 0;
-        }, $hours);
-
-        $yesterdayValues = array_map(function ($hour) use ($yesterdayStats) {
-            return $yesterdayStats[$hour] ?? 0;
-        }, $hours);
+        // Préparer les données pour le graphique journalier (8h-22h)
+        $hours = range(8, 22);
+        $todayValues = array_map(fn($h) => $todayStats[$h] ?? 0, $hours);
+        $yesterdayValues = array_map(fn($h) => $yesterdayStats[$h] ?? 0, $hours);
 
         // Données pour le comparatif hebdomadaire (Cette semaine vs Semaine dernière)
         $weekLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        
+        $currentWeekStart = now()->startOfWeek();
+        $currentWeekEnd = now()->endOfWeek();
+        $previousWeekStart = now()->subWeek()->startOfWeek();
+        $previousWeekEnd = now()->subWeek()->endOfWeek();
+
         $currentWeekStats = DB::table('paiements')
-            ->whereBetween('created_at', [$now->startOfWeek(), $now->endOfWeek()])
-            ->select(DB::raw('DAYOFWEEK(created_at) as day'), DB::raw('SUM(montant) as montant'))
+            ->whereBetween('created_at', [$currentWeekStart, $currentWeekEnd])
+            ->select(DB::raw('WEEKDAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
             ->groupBy('day')
             ->pluck('montant', 'day')
             ->toArray();
 
         $previousWeekStats = DB::table('paiements')
-            ->whereBetween('created_at', [$now->subWeek()->startOfWeek(), $now->subWeek()->endOfWeek()])
-            ->select(DB::raw('DAYOFWEEK(created_at) as day'), DB::raw('SUM(montant) as montant'))
+            ->whereBetween('created_at', [$previousWeekStart, $previousWeekEnd])
+            ->select(DB::raw('WEEKDAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
             ->groupBy('day')
             ->pluck('montant', 'day')
             ->toArray();
 
-        $weekCurrent = array_map(function ($day) use ($currentWeekStats) {
-            return $currentWeekStats[$day] ?? 0;
-        }, range(2, 8)); // 2=Lundi, 8=Dimanche
-
-        $weekPrevious = array_map(function ($day) use ($previousWeekStats) {
-            return $previousWeekStats[$day] ?? 0;
-        }, range(2, 8));
+        $weekCurrentValues = array_map(fn($d) => $currentWeekStats[$d] ?? 0, range(0, 6)); // 0=Lundi, 6=Dimanche
+        $weekPreviousValues = array_map(fn($d) => $previousWeekStats[$d] ?? 0, range(0, 6));
 
         // Données pour le comparatif mensuel (Ce mois vs Mois dernier)
-        $monthLabels = range(1, $now->daysInMonth);
+        $monthLabels = range(1, now()->daysInMonth);
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+        $prevMonthObj = now()->subMonth();
+        
         $currentMonthStats = DB::table('paiements')
-            ->whereYear('created_at', $now->year)
-            ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $currentYear)
+            ->whereMonth('created_at', $currentMonth)
             ->select(DB::raw('DAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
             ->groupBy('day')
             ->pluck('montant', 'day')
             ->toArray();
 
         $previousMonthStats = DB::table('paiements')
-            ->whereYear('created_at', $now->subMonth()->year)
-            ->whereMonth('created_at', $now->subMonth()->month)
+            ->whereYear('created_at', $prevMonthObj->year)
+            ->whereMonth('created_at', $prevMonthObj->month)
             ->select(DB::raw('DAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
             ->groupBy('day')
             ->pluck('montant', 'day')
             ->toArray();
 
-        $monthCurrent = array_map(function ($day) use ($currentMonthStats) {
-            return $currentMonthStats[$day] ?? 0;
-        }, $monthLabels);
-
-        $monthPrevious = array_map(function ($day) use ($previousMonthStats) {
-            return $previousMonthStats[$day] ?? 0;
-        }, $monthLabels);
+        $monthCurrentValues = array_map(fn($d) => $currentMonthStats[$d] ?? 0, $monthLabels);
+        $monthPreviousValues = array_map(fn($d) => $previousMonthStats[$d] ?? 0, $monthLabels);
 
         // Données pour le comparatif annuel (Cette année vs Année dernière)
         $yearLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+        $currentYear = now()->year;
+        $previousYear = now()->subYear()->year;
+
         $currentYearStats = DB::table('paiements')
-            ->whereYear('created_at', $now->year)
+            ->whereYear('created_at', $currentYear)
             ->select(DB::raw('MONTH(created_at) as month'), DB::raw('SUM(montant) as montant'))
             ->groupBy('month')
             ->pluck('montant', 'month')
             ->toArray();
 
         $previousYearStats = DB::table('paiements')
-            ->whereYear('created_at', $now->subYear()->year)
+            ->whereYear('created_at', $previousYear)
             ->select(DB::raw('MONTH(created_at) as month'), DB::raw('SUM(montant) as montant'))
             ->groupBy('month')
             ->pluck('montant', 'month')
             ->toArray();
 
-        $yearCurrent = array_map(function ($month) use ($currentYearStats) {
-            return $currentYearStats[$month] ?? 0;
-        }, range(1, 12));
+        $yearCurrentValues = array_map(fn($m) => $currentYearStats[$m] ?? 0, range(1, 12));
+        $yearPreviousValues = array_map(fn($m) => $previousYearStats[$m] ?? 0, range(1, 12));
 
-        $yearPrevious = array_map(function ($month) use ($previousYearStats) {
-            return $previousYearStats[$month] ?? 0;
-        }, range(1, 12));
-
-        // Retourner les données
         return response()->json([
             'day' => [
                 'labels' => $hours,
-                'current' => array_values($todayValues),
-                'previous' => array_values($yesterdayValues),
+                'current' => $todayValues,
+                'previous' => $yesterdayValues,
             ],
             'week' => [
                 'labels' => $weekLabels,
-                'current' => array_values($weekCurrent),
-                'previous' => array_values($weekPrevious),
+                'current' => $weekCurrentValues,
+                'previous' => $weekPreviousValues,
             ],
             'month' => [
                 'labels' => $monthLabels,
-                'current' => array_values($monthCurrent),
-                'previous' => array_values($monthPrevious),
+                'current' => $monthCurrentValues,
+                'previous' => $monthPreviousValues,
             ],
             'year' => [
                 'labels' => $yearLabels,
-                'current' => array_values($yearCurrent),
-                'previous' => array_values($yearPrevious),
+                'current' => $yearCurrentValues,
+                'previous' => $yearPreviousValues,
             ],
         ]);
     }

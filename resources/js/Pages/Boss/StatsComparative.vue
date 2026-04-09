@@ -64,6 +64,9 @@ import { Link } from '@inertiajs/vue3';
 import { LogOut } from 'lucide-vue-next';
 import { usePage, router } from "@inertiajs/vue3";
 
+// Palette de couleurs
+const colors = ["#A2B296", "#B17A50", "#A47764", "#F7E8D3", "#8F3D37"];
+
 const handleLogout = async () => {
     try {
         await axios.post("/logout");
@@ -98,8 +101,22 @@ const buildChart = (refEl, labels, current, previous, title) => {
         xAxis: { type: "category", data: labels },
         yAxis: { type: "value" },
         series: [
-            { name: "Actuel", type: "line", smooth: true, data: current },
-            { name: "Précédent", type: "line", smooth: true, data: previous },
+            {
+                name: "Actuel",
+                type: "line",
+                smooth: true,
+                data: current,
+                itemStyle: { color: colors[0] },
+                lineStyle: { width: 3 }
+            },
+            {
+                name: "Précédent",
+                type: "line",
+                smooth: true,
+                data: previous,
+                itemStyle: { color: colors[1] },
+                lineStyle: { width: 3 }
+            },
         ],
     });
     window.addEventListener("resize", () => chart.resize());
