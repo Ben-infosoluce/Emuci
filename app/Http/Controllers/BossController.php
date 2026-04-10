@@ -488,14 +488,14 @@ class BossController extends Controller
             ->pluck('montant', 'hour')
             ->toArray();
 
-        // Préparer les données pour le graphique journalier (8h-22h)
-        $hours = range(8, 22);
+        // Préparer les données pour le graphique journalier (0h-23h)
+        $hours = range(0, 23);
         $todayValues = array_map(fn($h) => $todayStats[$h] ?? 0, $hours);
         $yesterdayValues = array_map(fn($h) => $yesterdayStats[$h] ?? 0, $hours);
 
         // Données pour le comparatif hebdomadaire (Cette semaine vs Semaine dernière)
         $weekLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-        
+
         $currentWeekStart = now()->startOfWeek();
         $currentWeekEnd = now()->endOfWeek();
         $previousWeekStart = now()->subWeek()->startOfWeek();
@@ -523,7 +523,7 @@ class BossController extends Controller
         $currentMonth = now()->month;
         $currentYear = now()->year;
         $prevMonthObj = now()->subMonth();
-        
+
         $currentMonthStats = DB::table('paiements')
             ->whereYear('created_at', $currentYear)
             ->whereMonth('created_at', $currentMonth)

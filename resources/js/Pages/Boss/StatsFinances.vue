@@ -186,12 +186,19 @@ function initChart(el, title, data, isWide = false) {
             bottom: '10%',
             containLabel: true
         },
+        
         xAxis: {
             type: "category",
             data: data.map((d) => d.name),
             axisLabel: {
                 interval: 0,
-                rotate: isWide ? 45 : 0
+                rotate: isWide ? 45 : 0,
+                formatter: function (value) {
+                    if (!isWide && value.length > 15) {
+                        return value.substring(0, 15) + '..';
+                    }
+                    return value;
+                }
             }
         },
         yAxis: { type: "value" },

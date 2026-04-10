@@ -127,8 +127,8 @@ const initCharts = () => {
     }
 
     // Initialiser les graphiques
-    initChart(siteChart.value, "Montants par Site", stats.value.sites);
-    initChart(serviceChart.value, "Montants par Service", stats.value.services);
+    initChart(siteChart.value, "", stats.value.sites);
+    initChart(serviceChart.value, "", stats.value.services);
     initChart(
         vehiculeChart.value,
         "Montants par Type de Véhicule",
@@ -158,7 +158,13 @@ function initChart(el, title, data, isWide = false) {
             data: data.map((d) => d.name),
             axisLabel: {
                 interval: 0,
-                rotate: isWide ? 45 : 0
+                rotate: isWide ? 45 : 0,
+                formatter: function (value) {
+                    if (!isWide && value.length > 13) {
+                        return value.substring(0, 13) + '..';
+                    }
+                    return value;
+                }
             }
         },
         yAxis: { type: "value" },
@@ -177,7 +183,10 @@ function initChart(el, title, data, isWide = false) {
                     color: '#374151'
                 },
                 itemStyle: {
-                    color: '#4f46e5',
+                    color: function(params) {
+                        const colors = ["#A2B296", "#B17A50", "#A47764", "#F7E8D3", "#8F3D37"];
+                        return colors[params.dataIndex % colors.length];
+                    },
                     borderRadius: [4, 4, 0, 0]
                 }
             },
