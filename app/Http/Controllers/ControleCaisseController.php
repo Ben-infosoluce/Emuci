@@ -165,12 +165,12 @@ class ControleCaisseController extends Controller
 
     public function showCaisseDossiersStatistics()
     {
-        return inertia('ControlleurCaisse/StatsDossiers', );
+        return inertia('ControlleurCaisse/StatsDossiers',);
     }
 
     public function showCaisseCaissesStatistics()
     {
-        return inertia('ControlleurCaisse/StatsCaisses', );
+        return inertia('ControlleurCaisse/StatsCaisses',);
     }
 
     //
@@ -186,14 +186,11 @@ class ControleCaisseController extends Controller
         // Filtrage par période
         if ($range === 'day') {
             $query->whereDate('created_at', Carbon::today());
-        }
-        elseif ($range === 'week') {
+        } elseif ($range === 'week') {
             $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-        }
-        elseif ($range === 'month') {
+        } elseif ($range === 'month') {
             $query->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-        }
-        elseif ($range === 'custom' && $from && $to) {
+        } elseif ($range === 'custom' && $from && $to) {
             $query->whereBetween('created_at', [$from, $to]);
         }
 
@@ -341,12 +338,18 @@ class ControleCaisseController extends Controller
             ->whereDate('date_ouverture_controlleur', $date)
             ->first();
 
+        // ✅ Récupérer la clôture de la caissière pour cette date
+        $caisseOuverture = CaisseOuverture::where('caisse_id', $caisse->id)
+            ->whereDate('date_ouverture', $date)
+            ->first();
+
         return response()->json([
             'caisse' => $caisse,
             'site_id' => $idSite,
             'date_cible' => $date,
             'ouverture_du_jour' => $ouvertureCible,
             'ouverture_non_fermee' => $ouvertureNonFermee,
+            'caisse_ouverture' => $caisseOuverture,
         ]);
     }
 
@@ -373,18 +376,18 @@ class ControleCaisseController extends Controller
         $today = now()->toDateString();
 
         $record = ControlleurCaisse::firstOrCreate(
-        [
-            'caisse_id' => $request->id_caisse,
-            'date' => $today,
-        ],
-        [
-            'montant_caisse' => 0,
-            'montant_controlleur' => 0,
-            'status' => 0,
-            'status_raf' => 0,
-            'code_caisse' => $request->code_caisse,
-            'id_site' => $request->id_site,
-        ]
+            [
+                'caisse_id' => $request->id_caisse,
+                'date' => $today,
+            ],
+            [
+                'montant_caisse' => 0,
+                'montant_controlleur' => 0,
+                'status' => 0,
+                'status_raf' => 0,
+                'code_caisse' => $request->code_caisse,
+                'id_site' => $request->id_site,
+            ]
         );
         // dd($record);
 
@@ -450,6 +453,40 @@ class ControleCaisseController extends Controller
             'montant_controlleur' => $request->montant_controlleur,
             'status' => 0,
         ]);
+
+        // ✅ Mettre à jour la billetterie et les écarts dans caisse_ouvertures
+        $updateData = [];
+        if ($request->has('billetterie')) {
+            $updateData['billetterie'] = json_encode($request->billetterie);
+        }
+        if ($request->has('billetterie_controlleur')) {
+            $updateData['billetterie_controlleur'] = json_encode($request->billetterie_controlleur);
+        }
+        if ($request->has('perte')) {
+            $updateData['perte'] = $request->perte;
+        }
+        if ($request->has('surplus')) {
+            $updateData['surplus'] = $request->surplus;
+        }
+        if ($request->has('commentaire')) {
+            $updateData['commentaire'] = $request->commentaire;
+        }
+        //metre ajours 	montant_controlleur , id_controlleur et date_fermeture_controlleur dans controlleur_caisse 
+        if ($request->has('montant_controlleur')) {
+            $updateData['montant_controlleur'] = $request->montant_controlleur;
+        }
+        if ($request->has('id_controlleur')) {
+            $updateData['id_controlleur'] = getConnectedUserId();
+        }
+        if ($request->has('date_fermeture_controlleur')) {
+            $updateData['date_fermeture_controlleur'] = now();
+        }
+
+        if (!empty($updateData)) {
+            CaisseOuverture::where('caisse_id', $request->id_caisse)
+                ->whereDate('date_ouverture', $date)
+                ->update($updateData);
+        }
 
         return response()->json([
             'message' => 'Fermeture contrôleur enregistrée.',

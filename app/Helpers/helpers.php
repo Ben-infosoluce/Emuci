@@ -8,6 +8,8 @@ use App\Models\Caisse;
 use App\Models\DetailTypeService;
 use App\Models\Service;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 
 function generateImmatriculation($prefix = 'CI', $length = 8)
@@ -156,4 +158,88 @@ function servicesAccessibles()
     return DetailTypeService::where('id_site', $user->id_site)
         ->distinct()         // sélectionne seulement les valeurs uniques
         ->pluck('id_service');
+}
+
+
+// update numérisation site_id
+
+function updateFdsSite($num_chrono, $site_id)
+{
+    try {
+        // Mapping des site_id
+        $siteMapping = [
+            8 => 1,
+            7 => 2,
+            9 => 3,
+        ];
+
+        // Conversion du site_id selon le mapping
+        $mappedSiteId = $siteMapping[$site_id] ?? $site_id;
+
+        // Si le site_id n'est pas dans le mapping, on garde la valeur originale
+        // ou vous pouvez lever une erreur selon vos besoins
+
+        $token = '511|trMIwkcCAMbfia2sg7ZMPMcx1Ybtrdn4TxyGGRXt6307e6da';
+
+        // 🔍 LOG AVANT ENVOI
+        Log::info('API REQUEST - updateFdsSite', [
+            'url' => 'https://placenett.net/api/fds/ops/update/site',
+            'original_site_id' => $site_id,
+            'mapped_site_id' => $mappedSiteId,
+            'payload' => [
+                'num_chrono' => $num_chrono,
+                'site_id' => $mappedSiteId,
+            ]
+        ]);
+
+        $response = Http::timeout(10)
+            ->withToken($token)
+            ->acceptJson()
+            ->post(
+                'https://placenett.net/api/fds/ops/update/site',
+                [
+                    'num_chrono' => $num_chrono,
+                    'site_id' => $mappedSiteId,
+                ]
+            );
+
+        // 🔍 LOG RÉPONSE
+        Log::info('API RESPONSE - updateFdsSite', [
+            'status' => $response->status(),
+            'body' => $response->json(),
+        ]);
+
+        // ❌ Si erreur API
+        if (!$response->successful()) {
+            Log::error('API ERROR - updateFdsSite', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [
+                'success' => false,
+                'status' => $response->status(),
+                'message' => 'Erreur API distante',
+                'data' => $response->json()
+            ];
+        }
+
+        // ✅ SUCCESS
+        return [
+            'success' => true,
+            'status' => $response->status(),
+            'data' => $response->json()
+        ];
+    } catch (\Exception $e) {
+
+        // ❌ EXCEPTION
+        Log::error('API EXCEPTION - updateFdsSite', [
+            'message' => $e->getMessage(),
+        ]);
+
+        return [
+            'success' => false,
+            'message' => 'Erreur connexion API',
+        ];
+    }
 }

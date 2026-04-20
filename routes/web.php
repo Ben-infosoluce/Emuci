@@ -422,6 +422,8 @@ Route::group([
     Route::get('/boss/statistics/global', [BossController::class, "getMontantTotal"])->name('get.boss.statistics.global');
     Route::get('/boss/statistics/finances', [BossController::class, "showBossFinancesStatistics"])->name('show.boss.statistics.finances');
     Route::get('/boss/statistics/comparative', [BossController::class, "showBossComparativeStatistics"])->name('show.boss.statistics.comparative');
+    Route::get('/boss/statistics/validations', [CaisseController::class, "showBossValidationsStatistics"])->name('show.boss.statistics.validations');
+    Route::get('/get/boss/validations/history', [CaisseController::class, "getValidationsHistory"])->name('get.boss.validations.history');
 });
 
 //Route controoleur de caisse
@@ -438,6 +440,8 @@ Route::group(
         Route::get('/caisse/controller/statistics/dossiers', [ControleCaisseController::class, "showCaisseDossiersStatistics"])->name('show.caisse.controller.statistics.dossiers');
         Route::get('/caisse/controller/statistics/caisses', [ControleCaisseController::class, "showCaisseCaissesStatistics"])->name('show.caisse.controller.statistics.caisses');
         Route::get('/caisse/controller/statistics/global', [ControleCaisseController::class, "getMontantTotal"])->name('get.caisse.controller.statistics.global');
+        Route::get('/caisse/controller/validations', [CaisseController::class, "showControllerValidationsStatistics"])->name('show.caisse.controller.validations');
+        Route::get('/get/caisse/controller/validations/history', [CaisseController::class, "getControllerValidationsHistory"])->name('get.caisse.controller.validations.history');
         Route::post('/caisse/controller/validate', [ControleCaisseController::class, 'validateMontant'])->name('caisse.controller.validate');
         Route::post('/verification/validate/caisse/controller/montant', [ControleCaisseController::class, 'validateCotrolleurMontant'])->name('verification.validate.caisse.controller.montant');
         Route::get('/caisse/liste', [ControleCaisseController::class, 'getCaisses']);
@@ -463,6 +467,8 @@ Route::group(
         // Statistiques paiements RAF
         Route::get('/raf/paiement/data/stat', [RafCaisseController::class, 'getRafPaiementDataStat']);
         Route::get('/raf/controller/statistics/global', [ControleCaisseController::class, "getMontantTotal"])->name('get.raf.caisse.controller.statistics.global');
+        Route::get('/raf/validations', [CaisseController::class, "showRafValidationsStatistics"])->name('show.raf.validations');
+        Route::get('/get/raf/validations/history', [CaisseController::class, "getRafValidationsHistory"])->name('get.raf.validations.history');
     }
 );
 

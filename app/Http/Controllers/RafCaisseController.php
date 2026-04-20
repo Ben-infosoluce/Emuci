@@ -75,11 +75,18 @@ class RafCaisseController extends Controller
             ->whereNotNull('date_ouverture_raf')
             ->first();
 
+        // 3) Infos de clôture caissière (billetterie, perte, surplus, commentaire)
+        $caisseOuverture = DB::table('caisse_ouvertures')
+            ->where('caisse_id', $caisseId)
+            ->whereDate('date_ouverture', $date)
+            ->first();
+
         return response()->json([
             'caisse_id' => $caisseId,
             'date_cible' => $date,
             'ouverture_raf_du_jour' => $ouvertureRafDuJour,
             'ouverture_raf_non_fermee' => $ouvertureRafNonFermee,
+            'caisse_ouverture' => $caisseOuverture,
             'status_raf' => $ouvertureRafNonFermee ? 'ouverte' : 'fermée',
         ]);
     }
@@ -230,7 +237,7 @@ class RafCaisseController extends Controller
         $caisseId = $request->query('caisse_id');
         $date = $request->query('date', now()->toDateString());
 
-        $query = DB::table('paiements')
+        $query = \App\Models\Paiement::query()
             ->whereDate('created_at', $date);
 
         // Si caisseId existe, on applique le filtre
@@ -238,6 +245,12 @@ class RafCaisseController extends Controller
             $query->where('caisse_id', $caisseId);
         }
 
-        return response()->json($query->get());
+        $paiements = $query->with([
+            'dossier.r_dossier_vehicule',
+            'dossier.r_dossier_user',
+            'dossier.r_dossier_client'
+        ])->get();
+
+        return response()->json($paiements);
     }
 }

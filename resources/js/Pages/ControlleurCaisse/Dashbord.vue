@@ -1,16 +1,21 @@
 <template>
     <div class="p-6 space-y-8">
         <!-- Sélecteur de période -->
-        <div class="bg-white  rounded p-4">
+        <div class="bg-white rounded p-4">
             <h2 class="text-xl font-semibold my-8">Filtrer par période</h2>
-            <Tabs default-value="today" v-model="periode">
-                <TabsList>
-                    <TabsTrigger value="today">Aujourd'hui</TabsTrigger>
-                    <TabsTrigger value="week">Cette semaine</TabsTrigger>
-                    <TabsTrigger value="month">Ce mois</TabsTrigger>
-                    <TabsTrigger value="year">Cette année</TabsTrigger>
-                </TabsList>
-            </Tabs>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <Tabs default-value="today" v-model="periode">
+                    <TabsList>
+                        <TabsTrigger value="today">Aujourd'hui</TabsTrigger>
+                        <TabsTrigger value="week">Cette semaine</TabsTrigger>
+                        <TabsTrigger value="month">Ce mois</TabsTrigger>
+                        <TabsTrigger value="year">Cette année</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                <DateRangePicker v-model="form.dateRange"
+                    @update:start="val => { form.date_start = val; onFilterChange(); }"
+                    @update:end="val => { form.date_end = val; onFilterChange(); }" />
+            </div>
         </div>
 
         <!-- Grille pour les deux premiers graphiques -->
@@ -39,11 +44,13 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import * as echarts from "echarts";
-import { usePage, router } from "@inertiajs/vue3";
+import axios from "axios";
+import { usePage, router, useForm } from "@inertiajs/vue3";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from '@inertiajs/vue3';
 import { LogOut } from 'lucide-vue-next';
 import { usePoll } from '@inertiajs/vue3'
+import DateRangePicker from "@/components/ui/DateRangePicker.vue";
 // Références DOM
 const siteChart = ref(null);
 const serviceChart = ref(null);
@@ -58,6 +65,17 @@ const stats = ref({
     services: [],
     vehicules: [],
 });
+
+const form = useForm({
+    dateRange: null,
+    date_start: '',
+    date_end: ''
+});
+
+const onFilterChange = async () => {
+    await fetchStats();
+    initCharts();
+}
 
 // État de chargement
 const loading = ref(true);
@@ -95,7 +113,13 @@ const loading = ref(true);
 const fetchStats = async () => {
     try {
         loading.value = true;
-        const response = await axios.get(`/get/controller/paiement/global/stats?periode=${periode.value}`);
+        const response = await axios.get("/get/controller/paiement/global/stats", {
+            params: {
+                periode: periode.value,
+                date_start: form.date_start,
+                date_end: form.date_end
+            }
+        });
 
         // Mapper les données
         const mappedServices = response.data.services

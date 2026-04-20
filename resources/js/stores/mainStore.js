@@ -94,6 +94,7 @@ export const useCaisseStore = defineStore("caisseOpened", {
                     {
                         montant_fermeture: payload.montant_fermeture,
                         montant_saisie_caisse: payload.montant_saisie_caisse,
+                        billetterie: payload.billetterie,
                     }
                 );
                 console.log(res);

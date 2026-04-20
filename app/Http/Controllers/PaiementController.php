@@ -163,8 +163,7 @@ class PaiementController extends Controller
                 'montant_dossier_lier_ht' => $montant_dossier_lier_ht,
                 'montant_dossier_lier_ttc' => $montant_dossier_lier_ttc,
             ]);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
 
             DB::rollBack();
             return response()->json([
@@ -237,14 +236,12 @@ class PaiementController extends Controller
                         ->where('id', 3) // ID pour "REMORQUE"
                         ->where('status', 1)
                         ->first();
-                }
-                else if ($nb_plaque == 1) {
+                } else if ($nb_plaque == 1) {
                     $changementPlaqueData = DB::table('autre_facturation')
                         ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
                         ->where('status', 1)
                         ->first();
-                }
-                else {
+                } else {
                     $changementPlaqueData = DB::table('autre_facturation')
                         ->where('id', 1) // ID par défaut
                         ->where('status', 1)
@@ -393,6 +390,9 @@ class PaiementController extends Controller
                 'updated_at' => now(),
             ]);
 
+            //update numérisation site_id
+            updateFdsSite($dossier->num_chrono, getIdSite());
+
             DB::commit();
 
             return response()->json([
@@ -409,8 +409,7 @@ class PaiementController extends Controller
                 //     'montant_ttc' => $changementPlaqueData->montant * 1.18,
                 // ] : null,
             ]);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'status' => 'error',
@@ -473,8 +472,7 @@ class PaiementController extends Controller
                 ->whereIn('id', $details)
                 // ->where('id_site', getIdSite())
                 ->get();
-        }
-        else {
+        } else {
             $detailTypeServices = DB::table('detail_type_services')
                 ->whereIn('id', $details)
                 ->where('id_site', getIdSite())
@@ -543,14 +541,12 @@ class PaiementController extends Controller
                     ->where('id', 3) // ID pour "REMORQUE"
                     ->where('status', 1)
                     ->first();
-            }
-            else if ($nb_plaque == 1) {
+            } else if ($nb_plaque == 1) {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
                     ->where('status', 1)
                     ->first();
-            }
-            else {
+            } else {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 1) // ID par défaut
                     ->where('status', 1)
@@ -599,14 +595,17 @@ class PaiementController extends Controller
         // Filtre par caisse (obligatoire maintenant)
         if ($caisseId) {
             $query->where('caisse_id', $caisseId);
-        }
-        else {
+        } else {
             return response()->json([
                 'message' => 'Aucune caisse active trouvée pour cet utilisateur'
             ], 403);
         }
 
-        $paiements = $query->get();
+        $paiements = $query->with([
+            'dossier.r_dossier_vehicule',
+            'dossier.r_dossier_user',
+            'dossier.r_dossier_client'
+        ])->get();
 
         return response()->json($paiements);
     }
@@ -658,9 +657,8 @@ class PaiementController extends Controller
                 $end = $date_end;
 
                 $query->whereBetween('date_creation', [$start, $end]);
-            }
-            catch (\Exception $e) {
-            // Optionnel : log ou ignorer si erreur de date
+            } catch (\Exception $e) {
+                // Optionnel : log ou ignorer si erreur de date
             }
         }
 
@@ -669,13 +667,13 @@ class PaiementController extends Controller
         return response()->json([
             'dossiers' => $dossiers,
             'filtres' => $request->only(
-            "filtre_per_page",
-            "statut",
-            "search_data",
-            "filtre_type",
-            "date_start",
-            "date_end"
-        )
+                "filtre_per_page",
+                "statut",
+                "search_data",
+                "filtre_type",
+                "date_start",
+                "date_end"
+            )
         ]);
     }
 

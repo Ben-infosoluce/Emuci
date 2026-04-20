@@ -25,13 +25,10 @@
             </Tabs>
         </div>
 
-        <div class="absolute right-4 flex space-x-2 ">
-            <a @click="handleLogout"
-                class="flex flex-row items-center gap-2 text-gray-800 hover:text-amber-600 font-medium cursor-pointer">
-                <LogOut />
-                Déconnexion
-            </a>
+        <div class="absolute right-4">
+            <UserAccountNav />
         </div>
+        
     </header>
 
     <!-- Contenu principal avec marge pour éviter le chevauchement avec le header -->
@@ -62,9 +59,9 @@ import {
     TabsContent,
 } from "@/components/ui/tabs"
 import { Link } from '@inertiajs/vue3';
-import { LogOut } from 'lucide-vue-next';
 import axios from "axios"
 import { usePoll } from '@inertiajs/vue3'
+import UserAccountNav from "@/components/Caisse/UserAccountNav.vue";
 
 const stats = ref(null)
 const loading = ref(true)

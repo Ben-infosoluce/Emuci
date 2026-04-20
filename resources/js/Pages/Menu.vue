@@ -119,12 +119,12 @@
                     <Link :href="route('show.caisse.dashboard')">
                         <a
                             class="flex items-center p-2 text-white  hover:text-black  rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                            <LayoutDashboard />
-                            <span class="ms-3">Dashboard</span>
+                            <RectangleEllipsis />
+                            <span class="ms-3">Paiement</span>
                         </a>
                     </Link>
                 </li>
-                <li
+                <!-- <li
                     :class="{ 'active-page': $page.component.startsWith('Caisse/') && $page.component != 'Caisse/Dashbord' }">
                     <Link :href="route('show.caisse.data')">
                         <a
@@ -133,7 +133,7 @@
                             <span class="flex-1 ms-3 whitespace-nowrap">Paiement</span>
                         </a>
                     </Link>
-                </li>
+                </li> -->
 
             </ul>
         </template>
@@ -373,7 +373,19 @@
                         </a>
                     </Link>
                 </li>
+                <li :class="{
+                    'active-page': $page.component == 'Boss/HistoriqueValidations'
+                }">
+                    <Link :href="route('show.boss.statistics.validations')">
+                        <a
+                            class="flex items-center p-2 text-white  hover:text-black  rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <History />
+                            <span class="ms-3">Historique Validations</span>
+                        </a>
+                    </Link>
+                </li>
             </ul>
+            <!-- jute ici -->
         </template>
 
         <!-- CaisseController -->
@@ -398,6 +410,17 @@
                             class="flex items-center p-2 text-white  hover:text-black  rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <ChartSpline />
                             <span class="ms-3">Stats Caisse</span>
+                        </a>
+                    </Link>
+                </li>
+                <li :class="{
+                    'active-page': $page.component == 'ControlleurCaisse/HistoriqueValidations'
+                }">
+                    <Link :href="route('show.caisse.controller.validations')">
+                        <a
+                            class="flex items-center p-2 text-white  hover:text-black  rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <History />
+                            <span class="ms-3">Historique Validations</span>
                         </a>
                     </Link>
                 </li>
@@ -429,6 +452,17 @@
                         </a>
                     </Link>
                 </li>
+                <li :class="{
+                    'active-page': $page.component == 'Raf/HistoriqueValidations'
+                }">
+                    <Link :href="route('show.raf.validations')">
+                        <a
+                            class="flex items-center p-2 text-white  hover:text-black  rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <History />
+                            <span class="ms-3">Historique Validations</span>
+                        </a>
+                    </Link>
+                </li>
             </ul>
         </template>
     </div>
@@ -441,7 +475,7 @@ import { storeToRefs } from "pinia";
 import { useCaisseStore } from "@/stores/mainStore";
 import {
     User, UsersRound, SquareStack, Layers2, ArrowsUpFromLine, LayoutDashboard,
-    ChartColumnStacked, RectangleEllipsis, ChartSpline, Car, Columns
+    ChartColumnStacked, RectangleEllipsis, ChartSpline, Car, Columns, History
 } from 'lucide-vue-next';
 
 

@@ -18,33 +18,87 @@
                                 <LockKeyhole />
                             </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent class="sm:max-w-[600px]">
                             <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                    Font de caisse du jour</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    <div :class="{
-                                        hidden: montantRecuCheck,
-                                        'text-red-600': true,
-                                        'font-bold': true,
-                                    }">
-                                        <label for="totalMontant">Montant total attendu</label>
-                                        <Input id="totalMontant" v-model="fondDeCaisseAttendu" disabled class="my-3" />
+                                    Solde du jour</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                <!-- Billetterie Module Styled -->
+                                <div class="mt-4">
+                                    <label class="font-bold text-gray-800 text-xs uppercase tracking-tight flex items-center gap-2 mb-3">
+                                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                        Comptage physique des fonds
+                                    </label>
+                                    
+                                    <div class="bg-gray-50 border rounded-xl overflow-hidden shadow-inner">
+                                        <div class="grid grid-cols-2 bg-white/50 border-b text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                            <div class="px-4 py-2 border-r">Coupure</div>
+                                            <div class="px-4 py-2">Quantité</div>
+                                        </div>
+                                        <div class="max-h-[300px] overflow-y-auto px-1 custom-scrollbar">
+                                            <div v-for="item in billetterie" :key="item.valeur"
+                                                class="grid grid-cols-2 items-center border-b border-gray-100 last:border-0 hover:bg-white transition-colors py-1 pl-3 pr-2">
+                                                <div class="flex items-center justify-between pr-4 border-r border-gray-100">
+                                                    <span class="text-sm font-black text-gray-700">{{ item.valeur.toLocaleString('fr-FR') }}</span>
+                                                    <span class="text-[10px] text-gray-400 font-medium font-mono">x</span>
+                                                </div>
+                                                <div class="flex items-center gap-3 pl-3">
+                                                    <Input type="number" v-model.number="item.quantite" min="0"
+                                                        :disabled="isBilletterieValidated"
+                                                        placeholder="0"
+                                                        class="h-8 w-full text-right bg-white border-gray-200 focus:ring-indigo-500 font-mono text-sm pr-2 disabled:opacity-50"
+                                                        @input="isBilletterieValidated = false" />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-
-                                    <Input v-model="fondDeCaisse" class="my-8" placeholder="1 000 000" />
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter class="flex flex-row gap-2">
-                                <AlertDialogCancel> Annuler </AlertDialogCancel>
-                                <div>
-                                    <Button v-if="isOpen" @click="handleClose"
-                                        class="bg-red-800 p-4 rounded hover:bg-red-900 transition duration-300">
-                                        Valider
-                                        <span v-if="loading" class="ml-2 animate-spin">⏳</span>
-                                    </Button>
                                 </div>
-                            </AlertDialogFooter>
+
+                                <div class="mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <span class="text-sm font-bold text-indigo-900">Total Billetterie :</span>
+                                        <span class="text-lg font-black text-indigo-700">{{
+                                            totalBilletterie.toLocaleString('fr-FR') }} FCFA</span>
+                                    </div>
+                                    <Button v-if="!isBilletterieValidated" @click="validateBilletterie"
+                                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-9 text-sm">
+                                        Valider le montant
+                                    </Button>
+                                    <div v-else
+                                        class="flex items-center justify-center gap-2 text-green-600 font-bold bg-white p-2 rounded-lg border border-green-100 text-sm">
+                                        <Check class="h-4 w-4" /> Montant physique confirmé
+                                    </div>
+                                </div>
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                                <AlertDialogFooter class="flex flex-row items-center justify-end gap-3 mt-4">
+                                    <template v-if="!confirmingClose">
+                                        <AlertDialogCancel @click="resetBilletterie"> Annuler </AlertDialogCancel>
+                                        <Button v-if="isOpen" @click="confirmingClose = true"
+                                            :disabled="!isBilletterieValidated"
+                                            class="bg-red-800 p-4 rounded hover:bg-red-900 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            Arrêter la caisse
+                                            <span v-if="loading" class="ml-2 animate-spin">⏳</span>
+                                        </Button>
+                                    </template>
+                                    <template v-else>
+                                        <div
+                                            class="flex items-center gap-4 bg-red-50 p-2 rounded-lg border border-red-200 animate-in fade-in zoom-in duration-200">
+                                            <span class="text-xs font-bold text-red-700 font-sans">Confirmer
+                                                l'arrêt ?</span>
+                                            <div class="flex gap-2">
+                                                <Button size="sm" variant="outline" @click="confirmingClose = false"
+                                                    class="h-8 px-3 text-xs">
+                                                    Non
+                                                </Button>
+                                                <Button size="sm" variant="destructive" @click="handleClose"
+                                                    class="h-8 px-3 text-xs bg-red-600 hover:bg-red-700">
+                                                    Oui, Arrêter
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </AlertDialogFooter>
                             <!-- <p v-if="error" class="text-red-600 mt-2 w-full">
                                 ⚠️ {{ error }}
                             </p> -->
@@ -52,48 +106,7 @@
                     </AlertDialog>
                 </div>
 
-                <div class="flex items-center cursor-pointer">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <Avatar>
-                                <AvatarFallback>{{
-                                    getInitials()
-                                }}</AvatarFallback>
-                            </Avatar>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent class="w-56">
-                            <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuGroup>
-                                <DropdownMenuItem @click="openProfile = true">
-                                    <User class="mr-2 h-4 w-4" />
-                                    <span>Profile</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem @click="openPasswordModal">
-                                    <Settings class="mr-2 h-4 w-4" />
-                                    <span>Mot de passe</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                                <LogOut class="mr-2 h-4 w-4" />
-                                <span @click="logout">Deconnexion</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <button data-drawer-target="sidebar-multi-level-sidebar"
-                        data-drawer-toggle="sidebar-multi-level-sidebar" aria-controls="sidebar-multi-level-sidebar"
-                        type="button"
-                        class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
-                        <span class="sr-only">Open sidebar</span>
-                        <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path clip-rule="evenodd" fill-rule="evenodd"
-                                d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
-                            </path>
-                        </svg>
-                    </button>
-                </div>
+                <UserAccountNav :showSidebarToggle="true" />
             </div>
         </header>
 
@@ -112,105 +125,6 @@
                 <slot></slot>
             </div>
         </div>
-        <div class="flex items-center space-x-2">
-            <AlertDialog :open="openPassword">
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Modifier votre mot de passe
-                        </AlertDialogTitle>
-
-                        <AlertDialogDescription>
-                            <Input v-model="oldPassword" class="my-8" placeholder="Ancien mot de passe"
-                                type="password" />
-                            <Input v-model="newPassword" class="my-8" placeholder="Nouveau mot de passe"
-                                type="password" />
-                            <Input v-model="confirmPassword" class="my-8"
-                                placeholder="Confirmer le nouveau mot de passe" type="password" />
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter class="flex flex-row gap-2">
-                        <AlertDialogCancel @click="openPassword = false">
-                            Annuler
-                        </AlertDialogCancel>
-                        <div>
-                            <Button @click="handlePassword">
-                                Valider
-                                <span v-if="loading" class="ml-2 animate-spin">⏳</span>
-                            </Button>
-                        </div>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
-
-        <!-- Profile Dialog -->
-        <AlertDialog :open="openProfile" @update:open="openProfile = $event">
-            <AlertDialogContent class="sm:max-w-[425px] overflow-hidden p-0 rounded-xl border-none shadow-2xl">
-                
-                <div class="relative h-32 bg-gradient-to-r from-blue-600 to-indigo-700">
-                    <div class="absolute top-4 right-4">
-                        <span @click="openProfile = false">   <X class="h-4 w-4 cursor-pointer text-white" /></span>
-                    </div>
-                    <div class="absolute -bottom-12 left-1/2 -translate-x-1/2">
-                        <Avatar class="h-24 w-24 border-4 border-white shadow-lg">
-                            <AvatarFallback class="text-2xl font-bold bg-gray-100 text-blue-700">
-                                {{ getInitials() }}
-                            </AvatarFallback>
-                        </Avatar>
-                        
-                    </div>
-                </div>
-
-                <div class="pt-16 pb-8 px-6 text-center">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle class="text-2xl font-bold text-gray-900 leading-tight">
-                            {{ $page.props.auth_user?.data.nom }} {{ $page.props.auth_user?.data.prenom }}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription class="text-blue-600 font-medium flex items-center justify-center gap-1 mt-1">
-                            <span class="inline-block w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                            {{ $page.props.auth_user?.data.r_user_role?.nom_role }}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-
-                    <div class="mt-8 space-y-4 text-left">
-                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
-                                <User class="h-5 w-5 text-gray-500" />
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Email</p>
-                                <p class="text-sm font-medium text-gray-700">{{ $page.props.auth_user?.data.email }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
-                                <Settings class="h-5 w-5 text-gray-500" />
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Site & Région</p>
-                                <p class="text-sm font-medium text-gray-700">
-                                    {{ $page.props.auth_user?.data.r_user_site?.nom_site }} 
-                                    <span class="text-gray-400 mx-1">•</span> 
-                                    {{ $page.props.auth_user?.data.r_user_site?.region }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
-                                <LockKeyhole class="h-5 w-5 text-gray-500" />
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Type de Site</p>
-                                <p class="text-sm font-medium text-gray-700">{{ $page.props.auth_user?.data.r_user_site?.type_site }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </AlertDialogContent>
-        </AlertDialog>
     </div>
 </template>
 
@@ -225,7 +139,8 @@ import {
     DropdownMenuTrigger,
     DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User, LockKeyhole, X } from "lucide-vue-next";
+import { LogOut, Settings, User, LockKeyhole, X, Check } from "lucide-vue-next";
+import UserAccountNav from "@/components/Caisse/UserAccountNav.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Menu from "./Menu.vue";
@@ -262,93 +177,47 @@ const store = useCaisseStore();
 const { isOpen, error, loading } = storeToRefs(store);
 const { close } = store;
 const fondDeCaisse = ref("");
-const fondDeCaisseAttendu = ref(0);
+const confirmingClose = ref(false);
 const paiements = ref([]);
 const currentCaisse = ref(null);
-const montantRecuCheck = ref(true);
-const montantSaisieCaisse = ref("");
-const openPassword = ref(false);
-const oldPassword = ref("");
-const newPassword = ref("");
-const confirmPassword = ref("");
-const openProfile = ref(false);
 
-const openPasswordModal = () => {
-    openPassword.value = true;
+const billetterie = ref([
+    { valeur: 10000, quantite: null },
+    { valeur: 5000, quantite: null },
+    { valeur: 2000, quantite: null },
+    { valeur: 1000, quantite: null },
+    { valeur: 500, quantite: null },
+    { valeur: 250, quantite: null },
+    { valeur: 200, quantite: null },
+    { valeur: 100, quantite: null },
+    { valeur: 50, quantite: null },
+    { valeur: 25, quantite: null },
+    { valeur: 10, quantite: null },
+    { valeur: 5, quantite: null },
+]);
+
+const totalBilletterie = computed(() => {
+    return billetterie.value.reduce((total, item) => {
+        return total + item.valeur * (item.quantite || 0);
+    }, 0);
+});
+
+const isBilletterieValidated = ref(false);
+
+const resetBilletterie = () => {
+    billetterie.value.forEach(item => item.quantite = null);
+    isBilletterieValidated.value = false;
+    confirmingClose.value = false;
 };
 
-console.log(usePage().props.auth_user)
-
-const handlePassword = async () => {
-    if (!oldPassword.value || !newPassword.value || !confirmPassword.value) {
-        toast.error("Veuillez remplir tous les champs");
-        return;
-    }
-
-    loading.value = true;
-
-    try {
-        const userId = usePage().props.auth_user?.data.id;
-
-        await axios.post(`/users/change-password/${userId}`, {
-            old_password: oldPassword.value,
-            new_password: newPassword.value,
-            new_password_confirmation: confirmPassword.value,
-        });
-
-        toast.success("Mot de passe modifié avec succès");
-        openPassword.value = false;
-
-        // Reset champs (bonne UX)
-        oldPassword.value = "";
-        newPassword.value = "";
-        confirmPassword.value = "";
-    } catch (error) {
-        // Gestion erreurs Laravel (422)
-        if (error.response?.status === 422) {
-            const errors = error.response.data.errors;
-            const firstError = Object.values(errors)[0]?.[0];
-            toast.error(firstError);
-        } else {
-            toast.error(
-                "Une erreur est survenue lors de la modification du mot de passe"
-            );
-        }
-    } finally {
-        loading.value = false;
-    }
+const validateBilletterie = () => {
+    isBilletterieValidated.value = true;
 };
 
 const handleClose = async () => {
-    handleValidate();
-    // await close(fondDeCaisse.value);
+    fondDeCaisse.value = totalBilletterie.value;
+    await handleValidate();
 };
-
-function logout() {
-    axios
-        .post("/logout")
-        .then(() => {
-            console.log("Déconnexion réussie");
-            router.visit("/");
-            // window.location.href = '/';
-        })
-        .catch((error) => {
-            console.error("Erreur lors de la déconnexion :", error);
-        });
-}
-
-function getInitials() {
-    const user = usePage().props.auth_user?.data;
-    // Vérifier si l'objet user est défini et contient les propriétés nom et prenom
-    if (user && user.nom && user.prenom) {
-        // Extraire la première lettre du nom et du prénom et les convertir en majuscules
-        const firstInitial = user.nom.charAt(0).toUpperCase();
-        const lastInitial = user.prenom.charAt(0).toUpperCase();
-        // Retourner les initiales combinées
-        return `${firstInitial}${lastInitial}`;
-    }
-    return "";
-}
 
 // 🔹 Charger la liste des caisses
 const fetchCaisses = async () => {
@@ -426,35 +295,21 @@ const totalMontant = computed(
 );
 const currentDate = new Date().toLocaleDateString("fr-FR");
 
-// 🔹 Fonction pour valider le montant reçu
+// 🔹 Fonction pour valider le montant reçu et fermer la caisse
 const handleValidate = async () => {
-    fondDeCaisseAttendu.value = totalMontant.value;
     try {
         if (!fondDeCaisse.value) {
             toast.error("Veuillez entrer le montant reçu avant de valider.");
             return;
         }
 
-        if (totalMontant.value !== parseFloat(fondDeCaisse.value)) {
-            montantSaisieCaisse.value = fondDeCaisse.value;
-            // error.value = "Le montant reçu doit correspondre au montant total.";
-            toast.error("Le montant reçu doit correspondre au montant total.");
-            montantRecuCheck.value = false;
-            return;
-        }
-
         await close({
             montant_fermeture: fondDeCaisse.value,
-            montant_saisie_caisse:
-                montantSaisieCaisse.value !== undefined &&
-                    montantSaisieCaisse.value !== null &&
-                    montantSaisieCaisse.value !== ""
-                    ? montantSaisieCaisse.value
-                    : fondDeCaisse.value,
+            montant_saisie_caisse: fondDeCaisse.value,
+            billetterie: billetterie.value,
         });
 
         error.value = null;
-
         await fetchPaiements(); // Recharger les données si besoin
     } catch (error) {
         console.error("Erreur lors de la validation :", error);
@@ -473,5 +328,21 @@ export default {
 </script>
 
 <style scoped>
-/* Add any component-specific styles here */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
 </style>

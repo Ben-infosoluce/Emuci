@@ -80,7 +80,8 @@ class CaisseController extends Controller
                 ->whereIn('id', $details)
                 // ->where('id_site', getIdSite())
                 ->get();
-        } else {
+        }
+        else {
             $detailTypeServices = DB::table('detail_type_services')
                 ->whereIn('id', $details)
                 ->where('id_site', getIdSite())
@@ -130,12 +131,14 @@ class CaisseController extends Controller
                     ->where('id', 3) // ID pour "REMORQUE"
                     ->where('status', 1)
                     ->first();
-            } else if ($nb_plaque == 1) {
+            }
+            else if ($nb_plaque == 1) {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
                     ->where('status', 1)
                     ->first();
-            } else {
+            }
+            else {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 1) // ID par défaut
                     ->where('status', 1)
@@ -198,10 +201,11 @@ class CaisseController extends Controller
             ])->where('type', 'FDS')
                 // Ce bloc gère l'exclusion : soit MON site, soit le site 0
                 ->where(function ($query) use ($userSiteId) {
-                    $query->where('id_site', $userSiteId)
-                        ->orWhere('id_site', 0);
-                });
-        } else {
+                $query->where('id_site', $userSiteId)
+                    ->orWhere('id_site', 0);
+            });
+        }
+        else {
             $query = Dossier::with([
                 'r_dossier_vehicule',
                 'r_dossier_user',
@@ -245,9 +249,12 @@ class CaisseController extends Controller
         // Filtre par date de création (date_creation)
         if ($date_start && $date_end) {
             try {
-                $query->whereBetween('date_creation', [$date_start, $date_end]);
-            } catch (\Exception $e) {
-                // Optionnel : log ou ignorer si erreur de date
+                $start = Carbon::parse($date_start)->startOfDay();
+                $end = Carbon::parse($date_end)->endOfDay();
+                $query->whereBetween('date_paiement', [$start, $end]);
+            }
+            catch (\Exception $e) {
+            // Optionnel : log ou ignorer si erreur de date
             }
         }
 
@@ -256,13 +263,13 @@ class CaisseController extends Controller
         return response()->json([
             'dossiers' => $dossiers,
             'filtres' => $request->only(
-                "filtre_per_page",
-                "statut",
-                "search_data",
-                "filtre_type",
-                "date_start",
-                "date_end"
-            )
+            "filtre_per_page",
+            "statut",
+            "search_data",
+            "filtre_type",
+            "date_start",
+            "date_end"
+        )
         ]);
     }
 
@@ -333,7 +340,8 @@ class CaisseController extends Controller
                 'message' => 'Caisse ouverte avec succès.',
                 'data' => $ouverture,
             ], 201);
-        } catch (\Throwable $th) {
+        }
+        catch (\Throwable $th) {
             DB::rollBack();
 
             return response()->json([
@@ -351,6 +359,7 @@ class CaisseController extends Controller
             'montant_fermeture' => 'required|numeric|min:0',
             // 'observations' => 'nullable|string',
             'montant_saisie_caisse' => 'required|numeric|min:0',
+            'billetterie' => 'nullable|array',
         ]);
 
         $user = Auth::user();
@@ -366,6 +375,7 @@ class CaisseController extends Controller
             'date_fermeture' => now(),
             'montant_fermeture' => $request->montant_fermeture,
             'montant_saisie_caisse' => $request->montant_saisie_caisse,
+            'billetterie' => json_encode($request->billetterie),
             'statut' => 'fermé',
             // 'observations' => $request->observations,
         ]);
@@ -397,10 +407,152 @@ class CaisseController extends Controller
                 'date_ouverture' => $ouverture->date_ouverture,
                 'caisse_id' => $ouverture->caisse_id,
             ]);
-        } else {
+        }
+        else {
             return response()->json([
                 'statut' => 'fermée',
             ]);
         }
+    }
+
+    public function showBossValidationsStatistics()
+    {
+        $sites = DB::table('sites')->select('id', 'nom_site')->get();
+        return inertia('Boss/HistoriqueValidations', [
+            'sites' => $sites
+        ]);
+    }
+
+    public function getValidationsHistory(Request $request)
+    {
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
+        $status = $request->input('status'); // 'tout', 'perte', 'surplus', 'equilibre'
+        $siteId = $request->input('site_id');
+
+        $query = DB::table('caisse_ouvertures')
+            ->join('caisses', 'caisse_ouvertures.caisse_id', '=', 'caisses.id')
+            // ->join('users', 'caisse_ouvertures.user_id', '=', 'users.id')
+            //ajouter les dossier qui on caisse id = caisse_ouvertures.caisse_id et date_paiement = date_ouverture
+            ->select(
+            'caisse_ouvertures.*',
+            'caisses.libelle as nom_caisse',
+            // 'users.nom as nom_caissier',
+            DB::raw('(SELECT COUNT(DISTINCT dossiers.id) FROM paiements 
+                          JOIN dossiers ON paiements.id_dossier = dossiers.id
+                          WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
+                          AND DATE(dossiers.date_paiement) = DATE(caisse_ouvertures.date_ouverture)) as nb_dossiers'),
+            DB::raw('(SELECT SUM(paiements.montant) FROM paiements 
+                          JOIN dossiers ON paiements.id_dossier = dossiers.id
+                          WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
+                          AND DATE(dossiers.date_paiement) = DATE(paiements.created_at)) as total_ventes')
+        );
+        // dd($query->get());
+
+        // Filtre par site
+        if ($siteId && $siteId !== 'tout') {
+            $query->where('caisses.site_id', $siteId);
+        }
+
+        // Filtre par date
+        if ($dateStart && $dateEnd) {
+            $query->whereBetween('caisse_ouvertures.date_fermeture', [
+                Carbon::parse($dateStart)->startOfDay(),
+                Carbon::parse($dateEnd)->endOfDay()
+            ]);
+        }
+
+        // Filtre par statut
+        if ($status === 'perte') {
+            $query->where('caisse_ouvertures.perte', '>', 0);
+        }
+        elseif ($status === 'surplus') {
+            $query->where('caisse_ouvertures.surplus', '>', 0);
+        }
+        elseif ($status === 'equilibre') {
+            $query->where(function ($q) {
+                $q->where('caisse_ouvertures.perte', 0)->orWhereNull('caisse_ouvertures.perte');
+            })->where(function ($q) {
+                $q->where('caisse_ouvertures.surplus', 0)->orWhereNull('caisse_ouvertures.surplus');
+            });
+        }
+
+        $history = $query->orderBy('caisse_ouvertures.date_fermeture', 'desc')
+            ->paginate(15);
+
+        return response()->json($history);
+    }
+
+    public function showControllerValidationsStatistics()
+    {
+        return inertia('ControlleurCaisse/HistoriqueValidations');
+    }
+
+    public function getControllerValidationsHistory(Request $request)
+    {
+        $user = Auth::user();
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
+        $status = $request->input('status');
+
+        $query = DB::table('caisse_ouvertures')
+            ->join('caisses', 'caisse_ouvertures.caisse_id', '=', 'caisses.id')
+            ->join('users', 'caisse_ouvertures.user_id', '=', 'users.id')
+            ->select(
+            'caisse_ouvertures.*',
+            'caisses.libelle as nom_caisse',
+            'users.nom as nom_caissier',
+            DB::raw('(SELECT COUNT(DISTINCT dossiers.id) FROM paiements 
+                          JOIN dossiers ON paiements.id_dossier = dossiers.id
+                          WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
+                          AND DATE(dossiers.date_paiement) = DATE(caisse_ouvertures.date_ouverture)) as nb_dossiers'),
+            DB::raw('(SELECT SUM(paiements.montant) FROM paiements 
+                          JOIN dossiers ON paiements.id_dossier = dossiers.id
+                          WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
+                          AND DATE(dossiers.date_paiement) = DATE(caisse_ouvertures.date_ouverture)) as total_ventes')
+        )
+            ->where('caisses.site_id', $user->id_site); // Filtre par site du contrôleur
+
+        // Filtre par date
+        if ($dateStart && $dateEnd) {
+            $query->whereBetween('caisse_ouvertures.date_fermeture', [
+                Carbon::parse($dateStart)->startOfDay(),
+                Carbon::parse($dateEnd)->endOfDay()
+            ]);
+        }
+
+        // Filtre par statut (perte, surplus, equilibre)
+        if ($status === 'perte') {
+            $query->where('caisse_ouvertures.perte', '>', 0);
+        }
+        elseif ($status === 'surplus') {
+            $query->where('caisse_ouvertures.surplus', '>', 0);
+        }
+        elseif ($status === 'equilibre') {
+            $query->where(function ($q) {
+                $q->where('caisse_ouvertures.perte', 0)->orWhereNull('caisse_ouvertures.perte');
+            })->where(function ($q) {
+                $q->where('caisse_ouvertures.surplus', 0)->orWhereNull('caisse_ouvertures.surplus');
+            });
+        }
+
+        $history = $query->orderBy('caisse_ouvertures.date_fermeture', 'desc')
+            ->paginate(15);
+
+        return response()->json($history);
+    }
+
+    public function showRafValidationsStatistics()
+    {
+        $sites = DB::table('sites')->select('id', 'nom_site')->get();
+        return inertia('Raf/HistoriqueValidations', [
+            'sites' => $sites
+        ]);
+    }
+
+    public function getRafValidationsHistory(Request $request)
+    {
+        // Le RAF voit tout comme le Boss
+        return $this->getValidationsHistory($request);
     }
 }

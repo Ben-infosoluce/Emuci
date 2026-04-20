@@ -4,16 +4,24 @@
 
     <div class="p-6 space-y-8">
         <!-- Sélecteur de période -->
-        <div class="bg-white  rounded p-4">
+        <div class="bg-white rounded p-4">
             <h2 class="text-xl font-semibold my-8">Filtrer par période</h2>
-            <Tabs default-value="today" v-model="periode">
-                <TabsList>
-                    <TabsTrigger value="today">Aujourd'hui</TabsTrigger>
-                    <TabsTrigger value="week">Cette semaine</TabsTrigger>
-                    <TabsTrigger value="month">Ce mois</TabsTrigger>
-                    <TabsTrigger value="year">Cette année</TabsTrigger>
-                </TabsList>
-            </Tabs>
+            <div class="flex items-center justify-between">
+                <Tabs default-value="today" v-model="periode">
+                    <TabsList>
+                        <TabsTrigger value="today">Aujourd'hui</TabsTrigger>
+                        <TabsTrigger value="week">Cette semaine</TabsTrigger>
+                        <TabsTrigger value="month">Ce mois</TabsTrigger>
+                        <TabsTrigger value="year">Cette année</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
+                <div class="flex items-center space-x-4">
+                    <DateRangePicker v-model="form.dateRange"
+                        @update:start="val => { form.date_start = val; onFilterChange(); }"
+                        @update:end="val => { form.date_end = val; onFilterChange(); }" />
+                </div>
+            </div>
         </div>
 
         <!-- Grille pour les deux premiers graphiques -->
@@ -47,6 +55,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from '@inertiajs/vue3';
 import { LogOut } from 'lucide-vue-next';
 import { usePoll } from '@inertiajs/vue3'
+import DateRangePicker from "@/components/ui/DateRangePicker.vue";
+
 // Références DOM
 const siteChart = ref(null);
 const serviceChart = ref(null);
@@ -54,6 +64,13 @@ const vehiculeChart = ref(null);
 
 // État pour la période sélectionnée
 const periode = ref("today");
+
+// Form pour DateRangePicker
+const form = ref({
+    dateRange: { start: null, end: null },
+    date_start: null,
+    date_end: null
+});
 
 // État pour les statistiques
 const stats = ref({
@@ -65,11 +82,23 @@ const stats = ref({
 // État de chargement
 const loading = ref(true);
 
+const onFilterChange = () => {
+    fetchStats().then(() => {
+        initCharts();
+    });
+};
+
 // Fonction pour récupérer les statistiques
 const fetchStats = async () => {
     try {
         loading.value = true;
-        const response = await axios.get(`/get/boss/paiement/global/stats?periode=${periode.value}`);
+        let url = `/get/boss/paiement/global/stats?periode=${periode.value}`;
+        
+        if (form.value.date_start && form.value.date_end) {
+            url += `&date_start=${form.value.date_start}&date_end=${form.value.date_end}`;
+        }
+
+        const response = await axios.get(url);
 
         // Mapper les données
         const mappedServices = response.data.services
@@ -204,6 +233,11 @@ onMounted(async () => {
 
 // Recharger les statistiques lorsque la période change
 watch(periode, async () => {
+    // On vide le filtre personnalisé si on change de période prédéfinie
+    form.value.date_start = null;
+    form.value.date_end = null;
+    form.value.dateRange = { start: null, end: null };
+    
     await fetchStats();
     initCharts();
 });

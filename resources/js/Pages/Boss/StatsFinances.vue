@@ -23,12 +23,9 @@
             </Tabs>
         </div>
 
-        <div class="absolute right-4 flex space-x-2 ">
-            <a @click="handleLogout"
-                class="flex flex-row items-center gap-2 text-gray-800 hover:text-amber-600 font-medium cursor-pointer">
-                <LogOut />
-                Déconnexion
-            </a>
+        <div class="absolute right-4">
+            <UserAccountNav />
+        
         </div>
     </header>
 
@@ -77,6 +74,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from '@inertiajs/vue3';
 import { LogOut } from 'lucide-vue-next';
 import { usePoll } from '@inertiajs/vue3'
+import UserAccountNav from "@/components/Caisse/UserAccountNav.vue";
 // Références DOM
 const siteChart = ref(null);
 const serviceChart = ref(null);

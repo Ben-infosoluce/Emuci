@@ -25,12 +25,8 @@
             </Tabs>
         </div>
 
-        <div class="absolute right-4 flex space-x-2 ">
-            <a @click="handleLogout"
-                class="flex flex-row items-center gap-2 text-gray-800 hover:text-amber-600 font-medium cursor-pointer">
-                <LogOut />
-                Déconnexion
-            </a>
+        <div class="absolute right-4">
+            <UserAccountNav />
         </div>
     </header>
 
@@ -62,8 +58,8 @@ import {
     TabsContent,
 } from "@/components/ui/tabs"
 import { Link } from '@inertiajs/vue3';
-import { LogOut } from 'lucide-vue-next';
 import axios from "axios"
+import UserAccountNav from "@/components/Caisse/UserAccountNav.vue";
 import { usePoll } from '@inertiajs/vue3'
 
 const stats = ref(null)
@@ -252,16 +248,6 @@ onUnmounted(() => {
 })
 
 
-const handleLogout = async () => {
-    try {
-        await axios.post("/logout");
-        router.visit("/");
-    } catch (error) {
-        console.error("Erreur lors de la déconnexion:", error);
-        // Forcer la redirection même en cas d'erreur
-        router.visit("/");
-    }
-};
 
 
 usePoll(3600 * 2, {

@@ -388,27 +388,34 @@ class BossController extends Controller
 
         // Période
         $periode = $request->input('periode', 'today');
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
 
-        switch ($periode) {
-            case 'today':
-                $startDate = now()->startOfDay();
-                $endDate = now()->endOfDay();
-                break;
-            case 'week':
-                $startDate = now()->startOfWeek();
-                $endDate = now()->endOfWeek();
-                break;
-            case 'month':
-                $startDate = now()->startOfMonth();
-                $endDate = now()->endOfMonth();
-                break;
-            case 'year':
-                $startDate = now()->startOfYear();
-                $endDate = now()->endOfYear();
-                break;
-            default:
-                $startDate = now()->startOfDay();
-                $endDate = now()->endOfDay();
+        if ($dateStart && $dateEnd) {
+            $startDate = Carbon::parse($dateStart)->startOfDay();
+            $endDate = Carbon::parse($dateEnd)->endOfDay();
+        } else {
+            switch ($periode) {
+                case 'today':
+                    $startDate = now()->startOfDay();
+                    $endDate = now()->endOfDay();
+                    break;
+                case 'week':
+                    $startDate = now()->startOfWeek();
+                    $endDate = now()->endOfWeek();
+                    break;
+                case 'month':
+                    $startDate = now()->startOfMonth();
+                    $endDate = now()->endOfMonth();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear();
+                    $endDate = now()->endOfYear();
+                    break;
+                default:
+                    $startDate = now()->startOfDay();
+                    $endDate = now()->endOfDay();
+            }
         }
 
         // BASE QUERY (sans join)
@@ -602,27 +609,34 @@ class BossController extends Controller
         DB::statement("SET lc_time_names = 'fr_FR'");
 
         $periode = $request->input('periode', 'today');
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
 
-        switch ($periode) {
-            case 'today':
-                $startDate = now()->startOfDay();
-                $endDate = now()->endOfDay();
-                break;
-            case 'week':
-                $startDate = now()->startOfWeek();
-                $endDate = now()->endOfWeek();
-                break;
-            case 'month':
-                $startDate = now()->startOfMonth();
-                $endDate = now()->endOfMonth();
-                break;
-            case 'year':
-                $startDate = now()->startOfYear();
-                $endDate = now()->endOfYear();
-                break;
-            default:
-                $startDate = now()->startOfDay();
-                $endDate = now()->endOfDay();
+        if ($dateStart && $dateEnd) {
+            $startDate = Carbon::parse($dateStart)->startOfDay();
+            $endDate = Carbon::parse($dateEnd)->endOfDay();
+        } else {
+            switch ($periode) {
+                case 'today':
+                    $startDate = now()->startOfDay();
+                    $endDate = now()->endOfDay();
+                    break;
+                case 'week':
+                    $startDate = now()->startOfWeek();
+                    $endDate = now()->endOfWeek();
+                    break;
+                case 'month':
+                    $startDate = now()->startOfMonth();
+                    $endDate = now()->endOfMonth();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear();
+                    $endDate = now()->endOfYear();
+                    break;
+                default:
+                    $startDate = now()->startOfDay();
+                    $endDate = now()->endOfDay();
+            }
         }
 
         $idSite = getIdSite();

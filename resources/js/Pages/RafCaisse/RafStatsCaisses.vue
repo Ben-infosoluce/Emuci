@@ -63,15 +63,6 @@
                         </div>
 
                         <div class="flex items-center space-x-6 text-sm font-medium">
-                            <!-- <button class="flex items-center space-x-1 text-gray-700 hover:text-black">
-                                <i class="pi pi-print"></i>
-                                <span>Déverser dans X3</span>
-                            </button>
-                            <button class="flex items-center space-x-1 text-gray-700 hover:text-black">
-                                <i class="pi pi-upload"></i>
-                                <span>Exporter</span>
-                            </button> -->
-
                             <!-- Bouton Ouverture/Fermeture RAF -->
                             <AlertDialog v-model:open="isDialogOpen">
                                 <AlertDialogTrigger as-child v-if="shouldShowActionButton">
@@ -83,44 +74,176 @@
                                     </Button>
                                 </AlertDialogTrigger>
 
-                                <AlertDialogContent>
+                                <AlertDialogContent class="w-full max-w-[1200px]">
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>
                                             {{ dialogTitle }}
                                         </AlertDialogTitle>
 
                                         <AlertDialogDescription>
-                                            <div class="flex items-center space-x-6 my-8" v-if="isActionFermeture">
-                                                <!-- Montant à verser -->
-                                                <div class="flex flex-col w-1/2">
-                                                    <label class="text-sm font-semibold text-gray-700 mb-1">
-                                                        Montant total à valider
-                                                    </label>
-                                                    <Input class="my-2 text-xl font-bold" :placeholder="totalMontantFormatted
-                                                        " disabled />
+                                            <div v-if="isActionFermeture" class="overflow-y-auto px-1 custom-scrollbar">
+                                                <!-- Summary Cards -->
+                                                <div class="grid grid-cols-3 gap-4 my-4">
+                                                    <div
+                                                        class="flex flex-col bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                                                        <label class="text-xs font-bold text-blue-700 uppercase mb-1">
+                                                            Ventes du jour
+                                                        </label>
+                                                        <div class="text-xl font-black text-blue-800">
+                                                            {{ totalMontantFormatted }}
+                                                        </div>
+                                                    </div>
+
+                                                    <div
+                                                        class="flex flex-col bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                                                        <label class="text-xs font-bold text-blue-700 uppercase mb-1">
+                                                            Fond de caisse
+                                                        </label>
+                                                        <div class="text-xl font-black text-blue-800">
+                                                            {{ Number(caisseOuverture?.montant_ouverture ||
+                                                                0).toLocaleString() }} F
+                                                        </div>
+                                                    </div>
+
+                                                    <div
+                                                        class="flex flex-col bg-green-600 p-3 rounded-xl shadow-lg shadow-green-100 text-white">
+                                                        <label
+                                                            class="text-xs font-bold opacity-80 uppercase tracking-widest">
+                                                            Montant Total Attendu
+                                                        </label>
+                                                        <div class="text-3xl font-black">
+                                                            {{ totalAttendu.toLocaleString() }} F
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-                                                <!-- Montant RAF reçu -->
-                                                <div class="flex flex-col w-1/2">
-                                                    <label class="text-sm font-semibold text-gray-700 mb-1">
-                                                        Montant RAF validé
-                                                    </label>
-                                                    <Input v-model="montantRecu" class="my-2" placeholder="1 000 000"
-                                                        inputmode="numeric" />
+                                                <!-- Read-only Dual Billetterie -->
+                                                <div class="grid grid-cols-2 gap-8 mt-6">
+                                                    <!-- Caissière Side -->
+                                                    <div class="flex flex-col gap-3">
+                                                        <label
+                                                            class="font-bold text-gray-400 text-xs uppercase tracking-tight flex items-center gap-2">
+                                                            <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                                                            Comptage Caissière
+                                                        </label>
+                                                        <div
+                                                            class="bg-gray-50/50 border border-dashed rounded-xl overflow-hidden opacity-70">
+                                                            <div
+                                                                class="grid grid-cols-2 bg-gray-100/50 border-b text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                                                <div class="px-4 py-1.5 border-r">Coupure</div>
+                                                                <div class="px-4 py-1.5">Qté</div>
+                                                            </div>
+                                                            <div
+                                                                class="max-h-[250px] overflow-y-auto px-1 custom-scrollbar">
+                                                                <div v-for="item in billetterie" :key="item.valeur"
+                                                                    class="grid grid-cols-2 items-center border-b border-gray-100 last:border-0 py-1 pl-3 pr-2">
+                                                                    <div
+                                                                        class="flex items-center justify-between pr-4 border-r border-gray-100">
+                                                                        <span class="text-xs font-bold text-gray-500">{{
+                                                                            item.valeur.toLocaleString('fr-FR')
+                                                                        }}</span>
+                                                                        <span
+                                                                            class="text-[9px] text-gray-300 font-mono">x</span>
+                                                                    </div>
+                                                                    <div
+                                                                        class="pl-3 py-1 text-xs font-mono text-gray-500 text-right pr-4">
+                                                                        {{ item.quantite || 0 }}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="p-3 bg-gray-100/50 rounded-lg text-right">
+                                                            <span
+                                                                class="text-[10px] font-bold text-gray-400 uppercase mr-2">Total
+                                                                Caissière:</span>
+                                                            <span class="text-sm font-bold text-gray-600">{{
+                                                                totalBilletterie.toLocaleString() }} F</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Contrôleur Side -->
+                                                    <div class="flex flex-col gap-3">
+                                                        <label
+                                                            class="font-bold text-indigo-700 text-xs uppercase tracking-tight flex items-center gap-2">
+                                                            <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                                                            Validation Contrôleur
+                                                        </label>
+                                                        <div
+                                                            class="bg-indigo-50/30 border border-indigo-100 rounded-xl overflow-hidden shadow-sm">
+                                                            <div
+                                                                class="grid grid-cols-2 bg-indigo-100/50 border-b text-[10px] font-bold text-indigo-400 uppercase tracking-tighter">
+                                                                <div class="px-4 py-1.5 border-r border-indigo-200">
+                                                                    Coupure</div>
+                                                                <div class="px-4 py-1.5">Qté</div>
+                                                            </div>
+                                                            <div
+                                                                class="max-h-[250px] overflow-y-auto px-1 custom-scrollbar">
+                                                                <div v-for="item in billetterieControlleur"
+                                                                    :key="item.valeur"
+                                                                    class="grid grid-cols-2 items-center border-b border-indigo-100 last:border-0 py-1 pl-3 pr-2">
+                                                                    <div
+                                                                        class="flex items-center justify-between pr-4 border-r border-indigo-100">
+                                                                        <span
+                                                                            class="text-xs font-black text-indigo-700">{{
+                                                                                item.valeur.toLocaleString('fr-FR')
+                                                                            }}</span>
+                                                                        <span
+                                                                            class="text-[9px] text-indigo-300 font-mono">x</span>
+                                                                    </div>
+                                                                    <div
+                                                                        class="pl-3 py-1 text-xs font-mono text-indigo-600 text-right pr-4">
+                                                                        {{ item.quantite || 0 }}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="p-3 bg-indigo-600 rounded-lg text-right shadow-md">
+                                                            <span
+                                                                class="text-[10px] font-bold text-indigo-100 uppercase mr-2">Total
+                                                                Physique (Contrôleur):</span>
+                                                            <span class="text-sm font-black text-white">{{
+                                                                totalBilletterieControlleur.toLocaleString() }} F</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Reconciliation Footer -->
+                                                <div class="grid grid-cols-3 gap-4 border-t pt-6 mt-6">
+                                                    <div
+                                                        class="p-4 rounded-2xl flex flex-col gap-1 shadow-sm border border-red-100 bg-red-50"
+                                                        v-if="perte > 0">
+                                                        <span class="text-[10px] font-bold uppercase text-red-600">Perte
+                                                            (Manquant)</span>
+                                                        <span class="text-2xl font-black text-red-700">{{
+                                                            perte.toLocaleString() }} F</span>
+                                                    </div>
+                                                    <div
+                                                        class="p-4 rounded-2xl flex flex-col gap-1 shadow-sm border border-blue-100 bg-blue-50"
+                                                        v-if="surplus > 0">
+                                                        <span
+                                                            class="text-[10px] font-bold uppercase text-blue-600">Surplus
+                                                            (Excédent)</span>
+                                                        <span class="text-2xl font-black text-blue-700">{{
+                                                            surplus.toLocaleString() }} F</span>
+                                                    </div>
+                                                    <div v-if="commentaire"
+                                                        class="col-span-full p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col gap-2">
+                                                        <div class="flex items-center gap-2 text-amber-800">
+                                                            <i class="pi pi-comment text-sm"></i>
+                                                            <span class="text-[10px] font-bold uppercase">Justification
+                                                                du Contrôleur</span>
+                                                        </div>
+                                                        <p class="text-sm italic text-amber-900 leading-relaxed">{{
+                                                            commentaire }}</p>
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             <div v-else class="my-4 text-center">
                                                 <p class="text-sm text-gray-600">
-                                                    Vous allez ouvrir la session
-                                                    RAF pour
-                                                    <strong>{{
-                                                        getSelectedCaisseLabel
-                                                    }}</strong>
-                                                    le
-                                                    {{
-                                                        formatDate(selectedDate)
-                                                    }}
+                                                    Vous allez ouvrir la session RAF pour
+                                                    <strong>{{ getSelectedCaisseLabel }}</strong> le {{
+                                                        formatDate(selectedDate) }}
                                                 </p>
                                             </div>
                                         </AlertDialogDescription>
@@ -129,14 +252,13 @@
                                     <AlertDialogFooter class="flex flex-row gap-2">
                                         <AlertDialogCancel>Annuler</AlertDialogCancel>
                                         <Button @click="handleValidate" v-if="!isActionFermeture"
-                                            :disabled="loading || (isActionFermeture && !montantRecu)"> Valider RAF
+                                            :disabled="loading"> Valider Ouverture RAF
                                             <span v-if="loading" class="ml-2 animate-spin">⏳</span> </Button>
 
                                         <Button v-else @click="showConfirmValidate = true" :disabled="loading ||
-                                            (isActionFermeture &&
-                                                !montantRecu)
+                                            (isActionFermeture && (montantRecu === null || montantRecu === ''))
                                             ">
-                                            Valider RAF
+                                            Valider Clôture RAF
                                             <span v-if="loading" class="ml-2 animate-spin">⏳</span>
                                         </Button>
                                     </AlertDialogFooter>
@@ -145,117 +267,14 @@
                         </div>
                     </div>
 
-                    <!-- CONTENT BOX -->
-                    <div class="bg-white shadow rounded-xl p-4">
-                        <div class="grid grid-cols-4 divide-x divide-gray-200">
-                            <!-- EMUCI -->
-                            <div class="p-4">
-                                <h2 class="text-gray-800 text-xl font-extrabold mb-2 text-center">
-                                    {{ totals.emuci.toLocaleString() }} F
-                                </h2>
-                                <p class="text-gray-500 text-xs text-center uppercase tracking-wide mb-4">
-                                    Total EMUCI
-                                </p>
+                    <!-- CONTENT BOX: Dossier List -->
+                    <DossierListTable v-if="selectedCaisse" class="mt-6" :paiements="paiements"
+                        :selectedDate="selectedDate"
+                        :montantOuverture="Number(caisseOuverture?.montant_ouverture || 0)" />
 
-                                <div class="space-y-3">
-                                    <div v-for="(item, i) in details.emuci" :key="i"
-                                        class="border rounded-md p-2 hover:shadow transition">
-                                        <p class="text-sm font-medium text-gray-800">
-                                            {{ item.element_facturation }}
-                                        </p>
-                                        <p class="text-amber-600 font-semibold">
-                                            {{
-                                                Number(
-                                                    item.montant,
-                                                ).toLocaleString()
-                                            }}
-                                            F
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- QUIPUX -->
-                            <div class="p-4">
-                                <h2 class="text-gray-800 text-xl font-extrabold mb-2 text-center">
-                                    {{ totals.quipux.toLocaleString() }} F
-                                </h2>
-                                <p class="text-gray-500 text-xs text-center uppercase tracking-wide mb-4">
-                                    Total QUIPUX
-                                </p>
-
-                                <div class="space-y-3">
-                                    <div v-for="(item, i) in details.quipux" :key="i"
-                                        class="border rounded-md p-2 hover:shadow transition">
-                                        <p class="text-sm font-medium text-gray-800">
-                                            {{ item.element_facturation }}
-                                        </p>
-                                        <p class="text-amber-600 font-semibold">
-                                            {{
-                                                Number(
-                                                    item.montant,
-                                                ).toLocaleString()
-                                            }}
-                                            F
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- DGTT -->
-                            <div class="p-4">
-                                <h2 class="text-gray-800 text-xl font-extrabold mb-2 text-center">
-                                    {{ totals.dgtt.toLocaleString() }} F
-                                </h2>
-                                <p class="text-gray-500 text-xs text-center uppercase tracking-wide mb-4">
-                                    Total DGTT
-                                </p>
-
-                                <div class="space-y-3">
-                                    <div v-for="(item, i) in details.dgtt" :key="i"
-                                        class="border rounded-md p-2 hover:shadow transition">
-                                        <p class="text-sm font-medium text-gray-800">
-                                            {{ item.element_facturation }}
-                                        </p>
-                                        <p class="text-amber-600 font-semibold">
-                                            {{
-                                                Number(
-                                                    item.montant,
-                                                ).toLocaleString()
-                                            }}
-                                            F
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- MINISTÈRE -->
-                            <div class="p-4">
-                                <h2 class="text-gray-800 text-xl font-extrabold mb-2 text-center">
-                                    {{ totals.ministere.toLocaleString() }} F
-                                </h2>
-                                <p class="text-gray-500 text-xs text-center uppercase tracking-wide mb-4">
-                                    Total MINISTÈRE
-                                </p>
-
-                                <div class="space-y-3">
-                                    <div v-for="(item, i) in details.ministere" :key="i"
-                                        class="border rounded-md p-2 hover:shadow transition">
-                                        <p class="text-sm font-medium text-gray-800">
-                                            {{ item.element_facturation }}
-                                        </p>
-                                        <p class="text-amber-600 font-semibold">
-                                            {{
-                                                Number(
-                                                    item.montant,
-                                                ).toLocaleString()
-                                            }}
-                                            F
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Fallback -->
+                    <div v-if="!selectedCaisse" class="bg-white shadow rounded-xl p-8 text-center border-2 border-dashed">
+                        <p class="text-gray-500">Veuillez sélectionner une caisse pour voir les détails.</p>
                     </div>
                 </div>
             </Card>
@@ -292,7 +311,6 @@
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
         </div>
     </div>
 </template>
@@ -313,7 +331,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster, toast } from "vue-sonner";
-import { Shield, ShieldCheck } from "lucide-vue-next";
+import { Shield, ShieldCheck, User, Settings, LockKeyhole } from "lucide-vue-next";
+import DossierListTable from "@/components/Caisse/DossierListTable.vue";
 
 // ============================================================================
 // REFS
@@ -329,6 +348,52 @@ const montantCaisse = ref(0);
 const showConfirmValidate = ref(false);
 const caisseRafInfo = ref({});
 const ouvertureRafNonFermee = ref(null);
+const caisseOuverture = ref(null);
+const commentaire = ref("");
+const perte = ref(0);
+const surplus = ref(0);
+
+const billetterie = ref([
+    { valeur: 10000, quantite: 0 },
+    { valeur: 5000, quantite: 0 },
+    { valeur: 2000, quantite: 0 },
+    { valeur: 1000, quantite: 0 },
+    { valeur: 500, quantite: 0 },
+    { valeur: 250, quantite: 0 },
+    { valeur: 200, quantite: 0 },
+    { valeur: 100, quantite: 0 },
+    { valeur: 50, quantite: 0 },
+    { valeur: 25, quantite: 0 },
+    { valeur: 10, quantite: 0 },
+    { valeur: 5, quantite: 0 },
+]);
+
+const billetterieControlleur = ref([
+    { valeur: 10000, quantite: 0 },
+    { valeur: 5000, quantite: 0 },
+    { valeur: 2000, quantite: 0 },
+    { valeur: 1000, quantite: 0 },
+    { valeur: 500, quantite: 0 },
+    { valeur: 250, quantite: 0 },
+    { valeur: 200, quantite: 0 },
+    { valeur: 100, quantite: 0 },
+    { valeur: 50, quantite: 0 },
+    { valeur: 25, quantite: 0 },
+    { valeur: 10, quantite: 0 },
+    { valeur: 5, quantite: 0 },
+]);
+
+const totalBilletterie = computed(() => {
+    return billetterie.value.reduce((total, item) => total + (item.valeur * (item.quantite || 0)), 0);
+});
+
+const totalBilletterieControlleur = computed(() => {
+    return billetterieControlleur.value.reduce((total, item) => total + (item.valeur * (item.quantite || 0)), 0);
+});
+
+const totalAttendu = computed(() => {
+    return Number(totalMontant.value) + Number(caisseOuverture.value?.montant_ouverture || 0);
+});
 
 // ============================================================================
 // DETAILS & TOTALS
@@ -337,271 +402,171 @@ const details = computed(() => {
     const result = { emuci: [], quipux: [], dgtt: [], ministere: [] };
     paiements.value.forEach((p) => {
         if (!p || !p.description) return;
-        try {
-            const lignes =
-                typeof p.description === "string"
-                    ? JSON.parse(p.description)
-                    : p.description;
-            lignes.forEach((item) => {
-                switch (item.id_entite) {
-                    case 1: result.emuci.push(item); break;
-                    case 2: result.quipux.push(item); break;
-                    case 3: result.dgtt.push(item); break;
-                    default: result.ministere.push(item);
-                }
-            });
-        } catch (e) {
-            console.warn("Description JSON invalide pour paiement id:", p.id);
-        }
+
+        const cat = p.description.toLowerCase();
+        if (cat.includes("emuci")) result.emuci.push(p);
+        else if (cat.includes("quipux")) result.quipux.push(p);
+        else if (cat.includes("dgtt")) result.dgtt.push(p);
+        else result.ministere.push(p);
     });
     return result;
 });
 
-const totals = computed(() => ({
-    emuci: details.value.emuci.reduce((s, i) => s + Number(i.montant || 0), 0),
-    quipux: details.value.quipux.reduce((s, i) => s + Number(i.montant || 0), 0),
-    dgtt: details.value.dgtt.reduce((s, i) => s + Number(i.montant || 0), 0),
-    ministere: details.value.ministere.reduce((s, i) => s + Number(i.montant || 0), 0),
-}));
-
-const totalMontant = computed(
-    () =>
-        totals.value.emuci +
-        totals.value.quipux +
-        totals.value.dgtt +
-        totals.value.ministere,
-);
-
-const totalMontantFormatted = computed(
-    () => `${totalMontant.value.toLocaleString()} F CFA`,
-);
-
-// ============================================================================
-// DATES
-// ============================================================================
-const today = computed(() => new Date().toISOString().split("T")[0]);
-const yesterday = computed(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    return date.toISOString().split("T")[0];
+const totals = computed(() => {
+    return {
+        emuci: details.value.emuci.reduce((s, x) => s + Number(x.montant), 0),
+        quipux: details.value.quipux.reduce((s, x) => s + Number(x.montant), 0),
+        dgtt: details.value.dgtt.reduce((s, x) => s + Number(x.montant), 0),
+        ministere: details.value.ministere.reduce(
+            (s, x) => s + Number(x.montant),
+            0,
+        ),
+    };
 });
 
-const isToday = computed(() => selectedDate.value === today.value);
-const isYesterday = computed(() => selectedDate.value === yesterday.value);
+const totalMontant = computed(() => {
+    return Object.values(totals.value).reduce((s, x) => s + x, 0);
+});
 
-// 🔥 Permettre la fermeture RAF jusqu’à 5 jours en arrière
-const isWithin5Days = computed(() => {
-    const d = new Date(selectedDate.value);
-    const todayDate = new Date();
-
-    const diffTime = todayDate - d;
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-    return diffDays >= 0 && diffDays <= 5;
+const totalMontantFormatted = computed(() => {
+    return totalMontant.value.toLocaleString() + " F";
 });
 
 // ============================================================================
-// RAF STATUS
+// LOGIC: SESSIONS & VALIDATION
 // ============================================================================
-const selectedCaisseRafInfo = computed(() => {
-    if (!selectedCaisse.value) return null;
-    return caisseRafInfo.value[selectedCaisse.value] || null;
-});
-
-const ouvertureRafDuJour = computed(() => {
-    return selectedCaisseRafInfo.value?.ouverture_raf_du_jour || null;
-});
-
-const hasSessionRafPrecedenteNonFermee = computed(() => {
-    if (!ouvertureRafNonFermee.value) return false;
+const isActionFermeture = computed(() => {
     if (!selectedCaisse.value) return false;
-
-    if (String(ouvertureRafNonFermee.value.caisse_id) !== String(selectedCaisse.value))
-        return false;
-
-    if (!ouvertureRafDuJour.value) return true;
-
-    return ouvertureRafNonFermee.value.id !== ouvertureRafDuJour.value.id;
-});
-
-const isRafOuverte = computed(() => {
-    return ouvertureRafDuJour.value?.status_raf === 1;
-});
-
-const isRafFermeeAujourdhui = computed(() => {
-    return ouvertureRafDuJour.value && ouvertureRafDuJour.value.status_raf !== 1;
-});
-
-const isActionFermeture = computed(() => isRafOuverte.value);
-
-// ============================================================================
-// BUTTON LOGIC
-// ============================================================================
-const shouldShowActionButton = computed(() => {
-    if (!selectedCaisse.value) return false;
-
-    // 🔥 Nouveau comportement : fermeture possible jusqu’à 5 jours en arrière
-    if (isActionFermeture.value) {
-        return isWithin5Days.value;
-    }
-
-    // Ouverture = uniquement pour aujourd'hui
-    return isToday.value;
-});
-
-const isButtonDisabled = computed(() => {
-    if (!selectedCaisse.value) return true;
-
-    if (isRafFermeeAujourdhui.value) return true;
-
-    if (!isActionFermeture.value && hasSessionRafPrecedenteNonFermee.value)
-        return true;
-
-    // 🔥 interdire fermeture si plus vieux que 5 jours
-    if (isActionFermeture.value && !isWithin5Days.value) return true;
-
-    return false;
+    const info = caisseRafInfo.value[selectedCaisse.value];
+    return !!(info && info.ouverture_raf_du_jour);
 });
 
 const buttonLabel = computed(() => {
-    if (isButtonDisabled.value) {
-        if (isRafFermeeAujourdhui.value) return "RAF DÉJÀ CLÔTURÉ";
-        if (hasSessionRafPrecedenteNonFermee.value) return "SESSION PRÉCÉDENTE OUVERTE";
-    }
-    return isActionFermeture.value ? "CLÔTURER RAF" : "OUVRIR RAF";
+    return isActionFermeture.value ? "Fermer session RAF" : "Ouvrir session RAF";
 });
 
 const buttonVariant = computed(() => {
-    if (isButtonDisabled.value) return "secondary";
     return isActionFermeture.value ? "destructive" : "default";
 });
 
 const dialogTitle = computed(() => {
-    const action = isActionFermeture.value ? "Clôture RAF" : "Ouverture RAF";
-    const caisseLabel = getSelectedCaisseLabel.value;
-    return `${action} - ${caisseLabel} - ${formatDate(selectedDate.value)}`;
+    return isActionFermeture.value ? "Fermer la session RAF" : "Ouvrir la session RAF";
 });
 
-// ============================================================================
-// LABELS
-// ============================================================================
+const shouldShowActionButton = computed(() => {
+    if (!selectedCaisse.value) return false;
+    const info = caisseRafInfo.value[selectedCaisse.value];
+    if (info?.ouverture_raf_du_jour?.date_fermeture_raf) return false;
+    return true;
+});
+
+const isButtonDisabled = computed(() => {
+    if (!selectedCaisse.value) return true;
+    const hasActiveOther = !!ouvertureRafNonFermee.value;
+    const info = caisseRafInfo.value[selectedCaisse.value];
+    const isThisOpeningActive =
+        info?.ouverture_raf_non_fermee &&
+        String(info.ouverture_raf_non_fermee.caisse_id) === String(selectedCaisse.value);
+
+    if (!isActionFermeture.value && hasActiveOther && !isThisOpeningActive) return true;
+    return false;
+});
+
 const statusRafLabel = computed(() => {
-    if (!selectedCaisse.value) return "Aucune caisse sélectionnée";
-    if (isRafOuverte.value) return "Ouverte";
-    if (isRafFermeeAujourdhui.value) return "Fermée";
+    if (!selectedCaisse.value) return "Indéterminé";
+    const info = caisseRafInfo.value[selectedCaisse.value];
+    if (info?.ouverture_raf_du_jour?.date_fermeture_raf) return "Clôturée";
+    if (info?.ouverture_raf_du_jour) return "Ouverte";
     return "Non ouverte";
 });
 
 const statusRafClass = computed(() => {
-    if (isRafOuverte.value) return "text-blue-600";
-    if (isRafFermeeAujourdhui.value) return "text-gray-600";
-    return "text-red-600";
+    const label = statusRafLabel.value;
+    if (label === "Ouverte") return "text-green-600 font-bold italic";
+    if (label === "Clôturée") return "text-blue-600 font-bold italic";
+    return "text-orange-500 italic";
 });
 
 const getSelectedCaisseLabel = computed(() => {
-    const caisse = caisses.value.find(
-        (c) => String(c.id) === String(selectedCaisse.value),
-    );
-    return caisse ? `${caisse.libelle} (${caisse.code})` : "Caisse sélectionnée";
+    const c = caisses.value.find((x) => String(x.id) === String(selectedCaisse.value));
+    return c ? `${c.libelle} (${c.code})` : "cette caisse";
+});
+
+const hasSessionRafPrecedenteNonFermee = computed(() => {
+    return !!ouvertureRafNonFermee.value;
 });
 
 const getCaisseNonFermeeLabel = computed(() => {
     if (!ouvertureRafNonFermee.value) return "";
-    const caisse = caisses.value.find(
-        (c) => c.id === ouvertureRafNonFermee.value.caisse_id,
+    const c = caisses.value.find(
+        (x) => String(x.id) === String(ouvertureRafNonFermee.value.caisse_id)
     );
-    return caisse ? `${caisse.libelle} (${caisse.code})` : "la caisse";
+    return c ? `${c.libelle} (${c.code})` : "une autre caisse";
 });
 
-
-
 // ============================================================================
-// RAF
+// DATA FETCHING
 // ============================================================================
-
-//   Formater une date au format FR
-const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    return new Date(dateStr + "T00:00:00").toLocaleDateString("fr-FR");
-};
-
-//   Récupérer la liste des caisses liées au RAF
 const fetchCaisses = async () => {
     try {
         const { data } = await axios.get("/raf/caisse/liste");
-
-        if (!Array.isArray(data)) {
-            caisses.value = [];
-            return;
-        }
-
-        caisses.value = data.map((c) => ({
-            ...c,
-            id: c.id,
-        }));
-
-        // Charger les infos RAF pour chaque caisse
+        caisses.value = data;
         await fetchAllCaissesRafInfo();
     } catch (error) {
         console.error("Erreur lors du chargement des caisses :", error);
-        toast.error("Impossible de charger les caisses.");
     }
 };
 
-//   Récupérer les infos RAF pour toutes les caisses
 const fetchAllCaissesRafInfo = async () => {
+    ouvertureRafNonFermee.value = null;
     for (const caisse of caisses.value) {
         await fetchRafInfoForCaisse(caisse.id);
     }
-
-    // Mettre à jour les propriétés des caisses pour l'affichage
-    caisses.value = caisses.value.map((caisse) => {
-        const info = caisseRafInfo.value[caisse.id];
-        return {
-            ...caisse,
-            raf_ouvert: info?.ouverture_raf_du_jour?.status_raf === 1,
-            raf_ferme_aujourdhui:
-                info?.ouverture_raf_du_jour &&
-                info?.ouverture_raf_du_jour?.status_raf !== 1,
-        };
-    });
 };
 
-//   Récupérer les infos RAF pour une caisse spécifique
 const fetchRafInfoForCaisse = async (caisseId) => {
     try {
         const { data } = await axios.get("/raf/caisse/info", {
-            params: {
-                date: selectedDate.value,
-                caisse_id: caisseId,
-            },
+            params: { date: selectedDate.value, caisse_id: caisseId },
         });
 
-        // Stocker les infos pour cette caisse
         caisseRafInfo.value[caisseId] = {
             ouverture_raf_du_jour: data.ouverture_raf_du_jour || null,
             ouverture_raf_non_fermee: data.ouverture_raf_non_fermee || null,
         };
 
-        // Si cette caisse a une session non fermée, la stocker globalement
+        if (String(caisseId) === String(selectedCaisse.value)) {
+            caisseOuverture.value = data.caisse_ouverture || null;
+            perte.value = data.caisse_ouverture?.perte || 0;
+            surplus.value = data.caisse_ouverture?.surplus || 0;
+            commentaire.value = data.caisse_ouverture?.commentaire || "";
+            montantRecu.value = data.caisse_ouverture?.montant_controlleur || "";
+
+            // Hydrater billetteries
+            const hydrate = (dest, sourceStr) => {
+                if (sourceStr) {
+                    const source = typeof sourceStr === 'string' ? JSON.parse(sourceStr) : sourceStr;
+                    dest.value.forEach(item => {
+                        const saved = source.find(s => s.valeur === item.valeur);
+                        item.quantite = saved ? (saved.quantite || 0) : 0;
+                    });
+                } else {
+                    dest.value.forEach(item => item.quantite = 0);
+                }
+            };
+            hydrate(billetterie, data.caisse_ouverture?.billetterie);
+            hydrate(billetterieControlleur, data.caisse_ouverture?.billetterie_controlleur);
+        }
+
         if (data.ouverture_raf_non_fermee) {
             ouvertureRafNonFermee.value = data.ouverture_raf_non_fermee;
         }
     } catch (error) {
-        console.error(
-            `Erreur lors du chargement des infos RAF pour caisse ${caisseId} :`,
-            error,
-        );
+        console.error(`Erreur RAF info caisse ${caisseId}:`, error);
     }
 };
 
-//   Récupérer les paiements pour la caisse sélectionnée
 const fetchPaiements = async () => {
-    // if (!selectedCaisse.value) {
-    //     paiements.value = [];
-    //     return;
-    // }
-
     try {
         const { data } = await axios.get("/raf/paiement/data/stat", {
             params: {
@@ -609,123 +574,75 @@ const fetchPaiements = async () => {
                 caisse_id: selectedCaisse.value,
             },
         });
-
         paiements.value = Array.isArray(data) ? data : [];
-
         await fetchRafInfoForCaisse(selectedCaisse.value);
         await fetchAllCaissesRafInfo();
     } catch (error) {
-        console.error("Erreur lors du chargement des paiements :", error);
+        console.error("Erreur paiements :", error);
         toast.error("Impossible de charger les paiements.");
     }
 };
 
-//   Handler when user changes caisse select
 const onCaisseChange = async () => {
     await fetchPaiements();
 };
 
-//  * Validation de l'ouverture/fermeture RAF
+// ============================================================================
+// VALIDATION
+// ============================================================================
 const handleValidate = async () => {
     if (!selectedCaisse.value) {
         toast.error("Veuillez sélectionner une caisse.");
         return;
     }
 
-    // Convertir correctement le montant reçu en nombre
-    const parseMoney = (v) =>
-        Number(String(v).replace(/\s+/g, "").replace(/,/g, "."));
+    const parseMoney = (v) => Number(String(v).replace(/\s+/g, "").replace(/,/g, "."));
 
-    // Si fermeture → contrôler montant reçu obligatoire
-    if (isActionFermeture.value && !montantRecu.value) {
-        toast.error("Veuillez saisir le montant RAF validé.");
+    if (isActionFermeture.value && (montantRecu.value === null || montantRecu.value === "")) {
+        toast.error("Le montant de la session n'est pas encore validé par le contrôleur.");
         return;
     }
 
-    // Comparaison des montants : convertir en nombre
     if (isActionFermeture.value) {
-        const montantRecuNum = parseMoney(montantRecu.value);
-        const totalMontantNum = Number(totalMontant.value);
-
-        if (montantRecuNum !== totalMontantNum) {
-            toast.error(
-                "Le montant reçu doit correspondre au montant total des paiements."
-            );
-            return;
-        }
-
-        montantCaisse.value = montantRecuNum;
+        montantCaisse.value = parseMoney(montantRecu.value);
     }
 
-    // Récupérer info de la caisse sélectionnée
-    const selectedInfo = caisses.value.find(
-        (c) => String(c.id) === String(selectedCaisse.value)
-    );
-
-    // Payload envoyé à l’API
+    const selectedInfo = caisses.value.find((c) => String(c.id) === String(selectedCaisse.value));
     const payload = {
-        montant_controlleur: isActionFermeture.value
-            ? parseMoney(montantRecu.value)
-            : 0,
-
+        montant_controlleur: isActionFermeture.value ? parseMoney(montantRecu.value) : 0,
         id_caisse: Number(selectedCaisse.value),
         code_caisse: selectedInfo?.code ?? "",
         id_site: selectedInfo?.site_id ?? null,
         is_fermeture: isActionFermeture.value ? 1 : 0,
-
-        // IMPORTANT : tu l’envoies toujours !
         date_operation: selectedDate.value,
     };
 
     try {
         loading.value = true;
-
-        const res = await axios.post(
-            "/raf/caisse/controller/validate",
-            payload
-        );
-
+        const res = await axios.post("/raf/caisse/controller/validate", payload);
         toast.success(res.data?.message || "Opération RAF réussie");
-
-        // Fermer la modal
         isDialogOpen.value = false;
-
-        // Rafraîchir données
         await fetchCaisses();
         await fetchPaiements();
-
-        // Reset montant reçu si fermeture
-        if (isActionFermeture.value) {
-            montantRecu.value = "";
-        }
-
+        if (isActionFermeture.value) montantRecu.value = "";
     } catch (error) {
-        console.error("Erreur lors de la validation RAF :", error);
-
-        const msg =
-            error?.response?.data?.message ||
-            (error?.response?.data?.errors
-                ? formatErrors(error.response.data.errors)
-                : "Une erreur est survenue lors de la validation RAF.");
-
+        console.error("Erreur validation RAF :", error);
+        const msg = error?.response?.data?.message || "Une erreur est survenue lors de la validation RAF.";
         toast.error(msg);
     } finally {
         loading.value = false;
     }
 };
 
-
-//   Formater les erreurs Laravel
-function formatErrors(errs) {
-    if (!errs) return "Erreur serveur";
-    if (typeof errs === "string") return errs;
-    const messages = [];
-    for (const k of Object.keys(errs)) {
-        if (Array.isArray(errs[k])) messages.push(...errs[k]);
-        else messages.push(String(errs[k]));
-    }
-    return messages.join(" — ");
-}
+// ============================================================================
+// UTILS
+// ============================================================================
+const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-");
+    const months = ["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"];
+    return `${d} ${months[parseInt(m) - 1]} ${y}`;
+};
 
 onMounted(async () => {
     await fetchCaisses();
@@ -735,8 +652,5 @@ onMounted(async () => {
 
 <script>
 import Main from "/resources/js/Pages/Main.vue";
-
-export default {
-    layout: Main,
-};
+export default { layout: Main };
 </script>
