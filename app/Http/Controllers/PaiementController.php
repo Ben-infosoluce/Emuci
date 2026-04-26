@@ -40,6 +40,14 @@ class PaiementController extends Controller
             ], 404);
         }
 
+        // Vérifier si le dossier est déjà payé
+        if ($dossier->statut_paiement == 2) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ce dossier a déjà été payé.',
+            ], 422);
+        }
+
         // 3️⃣ Vérification du rôle
         if (Auth::user()->id_role != 4) {
             return response()->json([
@@ -202,6 +210,14 @@ class PaiementController extends Controller
                 'status' => 'error',
                 'message' => 'Dossier introuvable.',
             ], 404);
+        }
+
+        // Vérifier si le dossier est déjà payé
+        if ($dossier->statut_paiement == 2) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ce dossier a déjà été payé.',
+            ], 422);
         }
 
         // 3️⃣ Vérification du rôle

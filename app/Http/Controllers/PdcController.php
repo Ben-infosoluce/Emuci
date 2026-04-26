@@ -28,7 +28,7 @@ class PdcController extends Controller
     //dashbord
     public function showPdcDashboard()
     {
-        return inertia('Pdc/Dashbord',);
+        return inertia('Pdc/Dashbord', );
     }
     //verifie vin
     public function verifieVin($vin)
@@ -315,50 +315,135 @@ class PdcController extends Controller
 
     public function updateFdsOps(Request $request)
     {
-        $request->validate([
+        $rules = [
+            'num_chrono' => 'required|string',
             'vin' => 'required|string',
             'num_immatriculation' => 'required|string',
             'date_immatriculation' => 'required|date',
-        ], [
+            'DateNaissance' => 'required|string',
+            'adresse' => 'required|string',
+            'carrosserie' => 'required|string',
+            'couleurVehicule' => 'required|string',
+            'email' => 'nullable|email',
+            'firstname' => 'required|string',
+            'genre' => 'required|string',
+            'lastname' => 'required|string',
+            'marqueVehicule' => 'required|string',
+            'modelVehicule' => 'required|string',
+            'phone' => 'required|string',
+            'sourcesEnergie' => 'required|string',
+            'villeNaissance' => 'required|string',
+            'anneeProduction' => 'required|string',
+            'dateCirculation' => 'required|string',
+        ];
+
+        $messages = [
+            'num_chrono.required' => 'Le numéro de dossier (Chrono) est obligatoire.',
             'vin.required' => 'Le numéro VIN est obligatoire.',
             'num_immatriculation.required' => 'Le numéro d\'immatriculation est obligatoire.',
             'date_immatriculation.required' => 'La date d\'immatriculation est obligatoire.',
             'date_immatriculation.date' => 'La date d\'immatriculation doit être une date valide.',
-        ]);
+            'DateNaissance.required' => 'La date de naissance est obligatoire.',
+            'adresse.required' => 'L\'adresse est obligatoire.',
+            'carrosserie.required' => 'La carrosserie est obligatoire.',
+            'couleurVehicule.required' => 'La couleur du véhicule est obligatoire.',
+            'email.email' => 'L\'adresse email doit être valide.',
+            'firstname.required' => 'Le Nom est obligatoire.',
+            'genre.required' => 'Le genre de véhicule est obligatoire.',
+            'lastname.required' => 'Le Prénom est obligatoire.',
+            'marqueVehicule.required' => 'La marque du véhicule est obligatoire.',
+            'modelVehicule.required' => 'Le modèle du véhicule est obligatoire.',
+            'phone.required' => 'Le numéro de téléphone est obligatoire.',
+            'sourcesEnergie.required' => 'La source d\'énergie est obligatoire.',
+            'villeNaissance.required' => 'La ville de naissance est obligatoire.',
+            'anneeProduction.required' => 'L\'année de production est obligatoire.',
+            'dateCirculation.required' => 'La date de mise en circulation est obligatoire.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
 
         try {
             DB::beginTransaction();
 
-            // 1️⃣ Vérifier si le véhicule existe
-            $vehicule = Vehicule::where('vin', $request->vin)->first();
-            if (!$vehicule) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Véhicule non trouvé'
-                ], 404);
-            }
-
-            // 2️⃣ Mettre à jour le véhicule
-            $vehicule->num_immatriculation = $request->num_immatriculation;
-            $vehicule->date_immatriculation = Carbon::parse($request->date_immatriculation);
-            $vehicule->save();
-
-            // 3️⃣ Récupérer le dossier en cours
-            $dossier = Dossier::where('id_vehicule', $vehicule->id)
-                ->whereIn('statut', [1, 4]) // 1=En attente, 4=En cours
-                ->first();
+            // 1️⃣ Récupérer le dossier par num_chrono
+            $dossier = Dossier::where('num_chrono', $request->num_chrono)->first();
 
             if (!$dossier) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Dossier en cours non trouvé pour ce véhicule'
+                    'message' => 'Dossier non trouvé pour ce numéro chrono'
                 ], 404);
             }
 
-            // 4️⃣ Mettre à jour le dossier
-            // $dossier->statut_paiement = 2;
-            // $dossier->statut = '4'; // Passer le dossier en "En cours"
-            // $dossier->date_paiement = Carbon::parse($request->date_immatriculation)->format('Y-m-d');
+            // 2️⃣ Récupérer le véhicule et le client associés
+            $vehicule = $dossier->r_dossier_vehicule;
+            if (!$vehicule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Véhicule associé au dossier non trouvé'
+                ], 404);
+            }
+
+            // Références (find or create)
+            $marque_id = $this->getOrCreateId('marque', 'nom', $request->marqueVehicule);
+            $model_id = $this->getOrCreateId(
+                'model',
+                'nom',
+                $request->modelVehicule,
+                ['marque_id' => $marque_id]
+            );
+
+            // Nombre de plaques
+            $nbPlaque = DB::table('genre')
+                ->where('nom', $request->genre)
+                ->value('nb_plaque');
+
+            // 3️⃣ Mettre à jour le client
+            if ($vehicule->id_client) {
+                $client = Client::find($vehicule->id_client);
+                if ($client) {
+                    $client->update([
+                        'nom' => $request->firstname,
+                        'prenom' => $request->lastname,
+                        'date_naissance' => $request->DateNaissance,
+                        'ville_naissance' => $request->villeNaissance,
+                        'adresse' => $request->adresse,
+                        'telephone' => $request->phone,
+                        'email' => $request->email,
+                    ]);
+                }
+            }
+
+            // 4️⃣ Mettre à jour le véhicule
+            $vehicule->annee_production = $request->anneeProduction;
+            $vehicule->vin = $request->vin;
+            $vehicule->marque = $request->marqueVehicule;
+            $vehicule->modele = $request->modelVehicule;
+            $vehicule->couleur = $request->couleurVehicule;
+            $vehicule->source_energie = $request->sourcesEnergie;
+            $vehicule->genre_vehicule = $request->genre;
+            $vehicule->poids_total_charge = $request->ptac ?? 0;
+            $vehicule->poids_utile = $request->pu ?? 0;
+            $vehicule->poids_vide = $request->pv ?? 0;
+            $vehicule->nb_plaque = $nbPlaque ?? 0;
+            $vehicule->puissance_administrative = $request->puissance;
+            $vehicule->places_assises = intval($request->placesAssises);
+            $vehicule->nombre_essieux = intval($request->nombreEssieux);
+            $vehicule->date_mise_circulation = $request->dateCirculation;
+            $vehicule->cylindree = $request->cylindree;
+            $vehicule->carrosserie = $request->carrosserie;
+            $vehicule->type_technique = $request->typeTechnique;
+            $vehicule->model_id = $model_id;
+            $vehicule->marque_id = $marque_id;
+
+            $vehicule->num_immatriculation = $request->num_immatriculation;
+            $vehicule->date_immatriculation = Carbon::parse($request->date_immatriculation);
+            $vehicule->save();
+
+            // 5️⃣ Mettre à jour le dossier
+            $dossier->statut_paiement = 2;
+            $dossier->statut = '4'; // Passer le dossier en "En cours"
+            $dossier->date_paiement = Carbon::parse($request->date_immatriculation)->format('Y-m-d');
 
             $dossier->save();
 
@@ -366,16 +451,16 @@ class PdcController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Numéro d\'immatriculation mis à jour avec succès.',
+                'message' => 'Dossier et véhicule mis à jour avec succès.',
                 'vehicule' => [
                     'id' => $vehicule->id,
                     'annee_production' => $vehicule->annee_production,
                     'vin' => $vehicule->vin,
-                    'marque' => $vehicule->marque->nom ?? null,
-                    'modele' => $vehicule->modele->nom ?? null,
-                    'couleur' => $vehicule->couleur->nom ?? null,
-                    'source_energie' => $vehicule->sourceEnergie->nom ?? null,
-                    'genre_vehicule' => $vehicule->genreVehicule->nom ?? null,
+                    'marque' => $vehicule->marque,
+                    'modele' => $vehicule->modele,
+                    'couleur' => $vehicule->couleur,
+                    'source_energie' => $vehicule->source_energie,
+                    'genre_vehicule' => $vehicule->genre_vehicule,
                     'num_immatriculation' => $vehicule->num_immatriculation,
                     'date_immatriculation' => $vehicule->date_immatriculation,
                 ],
@@ -389,6 +474,7 @@ class PdcController extends Controller
             ], 500);
         }
     }
+
 
 
     //show immatriculation
@@ -663,8 +749,8 @@ class PdcController extends Controller
                 'email' => $request->input('email'),
                 'civilite' => $request->input('sex'),
                 'district_client' => $request->input('district'),
-                'prefecture_client'  => $request->input('prefecture_client'),
-                'sous_prefecture_client'  => $request->input('sousPrefectureClient'),
+                'prefecture_client' => $request->input('prefecture_client'),
+                'sous_prefecture_client' => $request->input('sousPrefectureClient'),
                 'password' => generateStrongPassword(8),
                 'statut' => 1,
                 'validite' => Carbon::now()->addMonths(3),
@@ -776,8 +862,8 @@ class PdcController extends Controller
                 'email' => $request->input('email'),
                 'civilite' => $request->input('sex'),
                 'district_client' => $request->input('districtClient'),
-                'prefecture_client'  => $request->input('prefecture_client'),
-                'sous_prefecture_client'  => $request->input('sousPrefectureClient'),
+                'prefecture_client' => $request->input('prefecture_client'),
+                'sous_prefecture_client' => $request->input('sousPrefectureClient'),
             ]);
 
             $modificationsEntreprise = [];
@@ -878,8 +964,8 @@ class PdcController extends Controller
                 'DateNaissance' => $client->date_naissance ?? null,
                 'villeNaissance' => $client->ville_naissance ?? null,
                 'email' => $client->email ?? null,
-                'prefecture_client'  => $client->prefecture_client ?? null,
-                'sous_prefecture_client'  => $client->sous_prefecture_client ?? null,
+                'prefecture_client' => $client->prefecture_client ?? null,
+                'sous_prefecture_client' => $client->sous_prefecture_client ?? null,
                 'district_client' => $client->district_client ?? null,
 
 
@@ -893,7 +979,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
+                'type' => $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,
@@ -919,7 +1005,7 @@ class PdcController extends Controller
                 'ProfessionRepresantant' => $entreprise->profession_representant_legal ?? null,
                 'prefecture' => $entreprise->prefecture ?? null,
                 'sousPrefecture' => $entreprise->sous_prefecture ?? null,
-                'region' =>  null,
+                'region' => null,
                 // 'marqueVehicule' => $vehicule->marque, // Adapté à votre structure
             ],
             'marques' => DB::table('marque')->get(), // Vous devrez importer le modèle Marque
@@ -960,8 +1046,8 @@ class PdcController extends Controller
                 'DateNaissance' => $client->date_naissance ?? null,
                 'villeNaissance' => $client->ville_naissance ?? null,
                 'email' => $client->email ?? null,
-                'prefecture_client'  => $client->prefecture_client ?? null,
-                'sous_prefecture_client'  => $client->sous_prefecture_client ?? null,
+                'prefecture_client' => $client->prefecture_client ?? null,
+                'sous_prefecture_client' => $client->sous_prefecture_client ?? null,
                 'district_client' => $client->district_client ?? null,
 
 
@@ -973,7 +1059,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale,
+                'type' => $vehicule->physique_morale,
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,
@@ -1385,7 +1471,7 @@ class PdcController extends Controller
             $dossier = Dossier::create([
                 'id_vehicule' => $vehicule->id,
                 'id_user' => getConnectedUserId(),
-                'num_chrono' =>  generateChronoNumber('REIM'),
+                'num_chrono' => generateChronoNumber('REIM'),
                 'id_client' => $client->id,
                 'reserverNumero' => $request->input('reserverNumero') ?? null,
                 'numeroDiplomatique' => $request->input('numeroDiplomatique') ?? null,
@@ -1474,8 +1560,8 @@ class PdcController extends Controller
                 'DateNaissance' => $client->date_naissance ?? null,
                 'villeNaissance' => $client->ville_naissance ?? null,
                 'email' => $client->email ?? null,
-                'prefecture_client'  => $client->prefecture_client ?? null,
-                'sous_prefecture_client'  => $client->sous_prefecture_client ?? null,
+                'prefecture_client' => $client->prefecture_client ?? null,
+                'sous_prefecture_client' => $client->sous_prefecture_client ?? null,
                 'district_client' => $client->district_client ?? null,
 
                 // Informations véhicule
@@ -1486,7 +1572,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale,
+                'type' => $vehicule->physique_morale,
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,
@@ -1510,7 +1596,7 @@ class PdcController extends Controller
                 'ProfessionRepresantant' => $entreprise->profession_representant_legal ?? null,
                 'prefecture' => $entreprise->prefecture ?? null,
                 'sousPrefecture' => $entreprise->sous_prefecture ?? null,
-                'region' =>  null,
+                'region' => null,
                 // 'marqueVehicule' => $vehicule->marque, // Adapté à votre structure
             ],
             'marques' => DB::table('marque')->get(), // Vous devrez importer le modèle Marque
@@ -1553,8 +1639,8 @@ class PdcController extends Controller
                 'DateNaissance' => $client->date_naissance ?? null,
                 'villeNaissance' => $client->ville_naissance ?? null,
                 'email' => $client->email ?? null,
-                'prefecture_client'  => $client->prefecture_client ?? null,
-                'sous_prefecture_client'  => $client->sous_prefecture_client ?? null,
+                'prefecture_client' => $client->prefecture_client ?? null,
+                'sous_prefecture_client' => $client->sous_prefecture_client ?? null,
                 'district_client' => $client->district_client ?? null,
 
 
@@ -1566,7 +1652,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale,
+                'type' => $vehicule->physique_morale,
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,
@@ -1630,8 +1716,8 @@ class PdcController extends Controller
                 'email' => $request->input('email'),
                 'civilite' => $request->input('sex'),
                 'district_client' => $request->input('districtClient'),
-                'prefecture_client'  => $request->input('prefecture_client'),
-                'sous_prefecture_client'  => $request->input('sousPrefectureClient'),
+                'prefecture_client' => $request->input('prefecture_client'),
+                'sous_prefecture_client' => $request->input('sousPrefectureClient'),
             ]);
 
             $modificationsEntreprise = [];
@@ -1837,7 +1923,7 @@ class PdcController extends Controller
                 'district' => $client->district_client ?? null,
                 'prefecture' => $entreprise->prefecture ?? null,
                 'sousPrefecture' => $entreprise->sous_prefecture ?? null,
-                'region' =>  null,
+                'region' => null,
 
                 // Informations véhicule
                 'vin' => $vehicule->vin,
@@ -1847,7 +1933,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
+                'type' => $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,
@@ -1940,20 +2026,20 @@ class PdcController extends Controller
         $typePersonne = $request->input('typePersonne');
 
         // Récupération des modèles
-        $vehicule   = Vehicule::findOrFail($vehiculeId);
-        $client     = $vehicule->r_vehicule_client;
+        $vehicule = Vehicule::findOrFail($vehiculeId);
+        $client = $vehicule->r_vehicule_client;
         $entreprise = $vehicule->r_vehicule_entreprise;
 
         // Préparer les données comme avant
         $donneesClient = [
-            'nom'             => $request->input('firstname'),
-            'prenom'          => $request->input('lastname'),
-            'date_naissance'  => $request->input('DateNaissance'),
+            'nom' => $request->input('firstname'),
+            'prenom' => $request->input('lastname'),
+            'date_naissance' => $request->input('DateNaissance'),
             'ville_naissance' => $request->input('villeNaissance'),
-            'adresse'         => $request->input('adresse'),
-            'telephone'       => $request->input('phone'),
-            'email'           => $request->input('email'),
-            'civilite'        => $request->input('sex'),
+            'adresse' => $request->input('adresse'),
+            'telephone' => $request->input('phone'),
+            'email' => $request->input('email'),
+            'civilite' => $request->input('sex'),
         ];
 
         $donneesEntreprise = null;
@@ -2001,8 +2087,8 @@ class PdcController extends Controller
         // Création du log
         $modification_log = ModificationLog::create([
             'model_type' => 'global',
-            'model_id'   => $vehicule->id,
-            'user_id'    => getConnectedUserId(),
+            'model_id' => $vehicule->id,
+            'user_id' => getConnectedUserId(),
             'old_values' => json_encode([
                 'vehicule' => $vehicule->toArray(),
                 'client' => $client->toArray(),
@@ -2018,20 +2104,21 @@ class PdcController extends Controller
         // Créer le dossier directement
         $selected = $request->selected ?? [];
         $mutation = $request->mutation ?? [];
-        if (!is_array($mutation)) $mutation = [$mutation];
+        if (!is_array($mutation))
+            $mutation = [$mutation];
         $detail = array_merge($selected, $mutation);
 
         $dossier = Dossier::create([
-            'id_vehicule'        => $vehicule->id,
-            'id_user'            => getConnectedUserId(),
-            'id_client'          => $client->id,
-            'id_service'         => 3, // post immatriculation
-            'detail'             => json_encode($detail, JSON_UNESCAPED_UNICODE),
-            'id_site'            => getIdSite(),
+            'id_vehicule' => $vehicule->id,
+            'id_user' => getConnectedUserId(),
+            'id_client' => $client->id,
+            'id_service' => 3, // post immatriculation
+            'detail' => json_encode($detail, JSON_UNESCAPED_UNICODE),
+            'id_site' => getIdSite(),
             'modification_log_id' => $modification_log->id,
-            'statut'             => 1, // en cours
-            'num_chrono'         => generateChronoNumber('POST'),
-            'date_creation'      => now(),
+            'statut' => 1, // en cours
+            'num_chrono' => generateChronoNumber('POST'),
+            'date_creation' => now(),
         ]);
 
         return response()->json([
@@ -2201,12 +2288,12 @@ class PdcController extends Controller
     public function savePdcDuplicataData(Request $request)
     {
         // dd($request->all());
-        $postImtData  = $request->input('postImtData');
-        $payload      = $request->input('payload') ?? [];
+        $postImtData = $request->input('postImtData');
+        $payload = $request->input('payload') ?? [];
 
-        $vehicule_id   = $payload['vehicule_id'] ?? null;
+        $vehicule_id = $payload['vehicule_id'] ?? null;
         $detailPayload = $payload['detail'] ?? [];
-        $client_id     = $payload['client_id'] ?? null;
+        $client_id = $payload['client_id'] ?? null;
 
         // récupération selected
         $selected = $request->input('selected.0.id');
@@ -2225,8 +2312,8 @@ class PdcController extends Controller
 
         $validated = $request->validate([
             'payload.vehicule_id' => 'required|integer|exists:vehicules,id',
-            'payload.detail'      => 'required|array|min:1',
-            'payload.client_id'   => 'required|integer|exists:clients,id',
+            'payload.detail' => 'required|array|min:1',
+            'payload.client_id' => 'required|integer|exists:clients,id',
         ]);
 
         // Vérifier duplicata existant
@@ -2247,7 +2334,7 @@ class PdcController extends Controller
             DB::beginTransaction();
 
             $vehicule = Vehicule::findOrFail($vehicule_id);
-            $client   = $vehicule->r_vehicule_client;
+            $client = $vehicule->r_vehicule_client;
             $entreprise = $vehicule->r_vehicule_entreprise;
 
             $dossierPost = null;
@@ -2585,7 +2672,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
+                'type' => $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,
@@ -2609,7 +2696,7 @@ class PdcController extends Controller
                 'ProfessionRepresantant' => $entreprise->profession_representant_legal ?? null,
                 'prefecture' => $entreprise->prefecture ?? null,
                 'sousPrefecture' => $entreprise->sous_prefecture ?? null,
-                'region' =>  null, //ici
+                'region' => null, //ici
                 // 'marqueVehicule' => $vehicule->marque, // Adapté à votre structure
             ],
             'marques' => DB::table('marque')->get(), // Vous devrez importer le modèle Marque
@@ -2653,7 +2740,7 @@ class PdcController extends Controller
                 'district' => $client->district_client ?? null,
                 'prefecture' => $entreprise->prefecture ?? null,
                 'sousPrefecture' => $entreprise->sous_prefecture ?? null,
-                'region' =>  null, //ici
+                'region' => null, //ici
 
                 // Informations véhicule
                 'vin' => $vehicule->vin,
@@ -2663,7 +2750,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
+                'type' => $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,
@@ -2721,7 +2808,7 @@ class PdcController extends Controller
 
         // Récupération véhicule / client
         $vehicule = $dossier->r_dossier_vehicule;
-        $client   = $dossier->r_dossier_client;
+        $client = $dossier->r_dossier_client;
 
         // Charger l’entreprise seulement si elle existe
         $entreprise = $vehicule->entreprise_id
@@ -2732,25 +2819,25 @@ class PdcController extends Controller
         $data = [
             'receipt' => [
                 'num_immatriculation' => $vehicule->num_immatriculation,
-                'vin'                 => $vehicule->vin,
-                'marqueVehicule'      => [
-                    'id'  => $vehicule->marque_id,
+                'vin' => $vehicule->vin,
+                'marqueVehicule' => [
+                    'id' => $vehicule->marque_id,
                     'nom' => $vehicule->marque,
                 ],
-                'modelVehicule'       => [
-                    'id'  => $vehicule->model_id,
+                'modelVehicule' => [
+                    'id' => $vehicule->model_id,
                     'nom' => $vehicule->modele,
                 ],
             ],
         ];
 
         return inertia('Pdc/Duplicata/components/receipt', [
-            'dossier'      => $dossier,
+            'dossier' => $dossier,
             'dossier_lier' => $dossier_lier,
-            'entreprise'   => $entreprise,
-            'vehicule'     => $vehicule,
-            'client'       => $client,
-            'data'         => $data,
+            'entreprise' => $entreprise,
+            'vehicule' => $vehicule,
+            'client' => $client,
+            'data' => $data,
         ]);
     }
 
@@ -2918,7 +3005,7 @@ class PdcController extends Controller
                 'district' => $client->district_client ?? null,
                 'prefecture' => $entreprise->prefecture ?? null,
                 'sousPrefecture' => $entreprise->sous_prefecture ?? null,
-                'region' =>  null, //ici
+                'region' => null, //ici
 
                 // Informations véhicule
                 'vin' => $vehicule->vin,
@@ -2928,7 +3015,7 @@ class PdcController extends Controller
                 'carrosserie' => $vehicule->carrosserie,
                 'typeTechnique' => $vehicule->type_technique,
                 'typePersonne' => $vehicule->physique_morale,
-                'type' =>  $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
+                'type' => $vehicule->physique_morale == 1 ? 'Physique' : 'Morale',
                 'genre' => $vehicule->genre_vehicule,
                 'ptac' => $vehicule->poids_total_charge,
                 'pu' => $vehicule->poids_utile,

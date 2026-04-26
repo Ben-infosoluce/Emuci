@@ -444,10 +444,12 @@
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogCancel :disabled="isSubmitting">Annuler</AlertDialogCancel>
                                         <AlertDialogAction class="bg-green-600 hover:bg-green-700"
-                                            @click="() => validerPaiement()">
-                                            Valider
+                                            :disabled="isSubmitting"
+                                            @click.prevent="validerPaiement">
+                                            <Loader2 v-if="isSubmitting" class="mr-2 h-4 w-4 animate-spin" />
+                                            {{ isSubmitting ? 'Validation...' : 'Valider' }}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -469,7 +471,7 @@ import { Badge } from '@/components/ui/badge'
 import { ref } from "vue";
 import { returnBack } from "/resources/js/composable/fonction.js";
 import Control from "./Control.vue";
-import { MoveRight, MoveLeft, HandCoins, CreditCard, Pen, ReceiptText } from "lucide-vue-next";
+import { MoveRight, MoveLeft, HandCoins, CreditCard, Pen, ReceiptText, Loader2 } from "lucide-vue-next";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -516,6 +518,7 @@ const props = defineProps({
 });
 console.log("Props reçus dans createForm.vue:", props.detailTypeServices_lier);
 const showSummary = ref(false);
+const isSubmitting = ref(false);
 const showDemandeurModal = ref(false);
 const demandeur = ref({
     nom: '',
@@ -662,6 +665,9 @@ const detailTypeServicesLierFormatted = computed(() =>
 )
 
 async function validerPaiement() {
+    if (isSubmitting.value) return;
+    isSubmitting.value = true;
+
     const nouveauStatut = 2;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -709,7 +715,9 @@ async function validerPaiement() {
         props.dossier.statut_paiement = nouveauStatut;
         router.visit('/paiement/receipt/' + props.dossier.num_chrono);
     } catch (error) {
-        toast.error("Une erreur s'est produite lors de la mise à jour.");
+        isSubmitting.value = false;
+        const errorMessage = error.response?.data?.message || "Une erreur s'est produite lors de la mise à jour.";
+        toast.error(errorMessage);
         console.error(error);
     }
 }
