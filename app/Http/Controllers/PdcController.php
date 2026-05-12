@@ -441,9 +441,9 @@ class PdcController extends Controller
             $vehicule->save();
 
             // 5️⃣ Mettre à jour le dossier
-            $dossier->statut_paiement = 2;
-            $dossier->statut = '4'; // Passer le dossier en "En cours"
-            $dossier->date_paiement = Carbon::parse($request->date_immatriculation)->format('Y-m-d');
+            //$dossier->statut_paiement = 2;
+            //$dossier->statut = '4'; // Passer le dossier en "En cours"
+            //$dossier->date_paiement = Carbon::parse($request->date_immatriculation)->format('Y-m-d');
 
             $dossier->save();
 
@@ -477,7 +477,7 @@ class PdcController extends Controller
 
 
 
-    //show immatriculation
+    //show immatriculation 
     public function showPdcImmatriculation()
     {
         return inertia('Pdc/Immatriculation/index');
