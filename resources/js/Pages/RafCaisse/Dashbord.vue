@@ -105,32 +105,37 @@ const fetchStats = async () => {
             .filter(service => service.nom_service !== "Immatriculation spéciale")
             .map(service => ({
                 name: service.nom_service,
-                montant: parseFloat(service.montant)
+                montant: parseFloat(service.montant),
+                nb_dossier: service.nb_dossier
             }));
 
         // Ajouter les deux versions de l'immatriculation spéciale
         if (response.data.montantServiceNonFDS !== undefined) {
             mappedServices.push({
                 name: "Immatriculation Spéciale",
-                montant: parseFloat(response.data.montantServiceNonFDS) || 0
+                montant: parseFloat(response.data.montantServiceNonFDS) || 0,
+                nb_dossier: response.data.nbDossierNonFDS || 0
             });
         }
         if (response.data.montantServiceFDS !== undefined) {
             mappedServices.push({
                 name: "Opération FDS",
-                montant: parseFloat(response.data.montantServiceFDS) || 0
+                montant: parseFloat(response.data.montantServiceFDS) || 0,
+                nb_dossier: response.data.nbDossierFDS || 0
             });
         }
 
         stats.value = {
             sites: response.data.sites.map(site => ({
                 name: site.nom_site,
-                montant: parseFloat(site.montant)
+                montant: parseFloat(site.montant),
+                nb_dossier: site.nb_dossier
             })),
             services: mappedServices,
             vehicules: response.data.vehicules.map(vehicule => ({
                 name: vehicule.genre_vehicule || "Inconnu",
-                montant: parseFloat(vehicule.montant) || 0
+                montant: parseFloat(vehicule.montant) || 0,
+                nb_dossier: vehicule.nb_dossier
             }))
         };
 
@@ -160,7 +165,7 @@ const initCharts = () => {
     initChart(serviceChart.value, "", stats.value.services);
     initChart(
         vehiculeChart.value,
-        "Montants par Type de Véhicule",
+        "",
         stats.value.vehicules,
         true
     );
@@ -174,7 +179,14 @@ function initChart(el, title, data, isWide = false) {
         title: { text: title, left: 'center' },
         tooltip: {
             trigger: 'axis',
-            axisPointer: { type: 'shadow' }
+            axisPointer: { type: 'shadow' },
+            formatter: (params) => {
+                const item = data[params[0].dataIndex];
+                const amount = new Intl.NumberFormat('fr-FR').format(item.montant);
+                return `${item.name}<br/>
+                        <span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${params[0].color};"></span>
+                        <b>${amount} F</b> (${item.nb_dossier} dossiers)`;
+            }
         },
         grid: {
             left: '3%',
@@ -205,11 +217,24 @@ function initChart(el, title, data, isWide = false) {
                     show: true,
                     position: 'top',
                     formatter: (params) => {
-                        return new Intl.NumberFormat('fr-FR').format(params.value);
+                        const item = data[params.dataIndex];
+                        const amount = new Intl.NumberFormat('fr-FR').format(params.value);
+                        return `{a|${amount} F}\n{b|(${item.nb_dossier})}`;
                     },
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                    color: '#374151'
+                    rich: {
+                        a: {
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            color: '#374151',
+                            align: 'center'
+                        },
+                        b: {
+                            fontSize: 11,
+                            color: '#6b7280',
+                            align: 'center',
+                            padding: [2, 0]
+                        }
+                    }
                 },
                 itemStyle: {
                     color: function(params) {

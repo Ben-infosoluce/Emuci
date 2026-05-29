@@ -33,14 +33,22 @@
         <!-- Sélecteur de période -->
         <div class="bg-white  rounded p-4">
             <h2 class="text-xl font-semibold my-8">Filtrer par période</h2>
-            <Tabs default-value="today" v-model="periode">
-                <TabsList>
-                    <TabsTrigger value="today">Aujourd'hui</TabsTrigger>
-                    <TabsTrigger value="week">Cette semaine</TabsTrigger>
-                    <TabsTrigger value="month">Ce mois</TabsTrigger>
-                    <TabsTrigger value="year">Cette année</TabsTrigger>
-                </TabsList>
-            </Tabs>
+            <div class="flex items-center justify-between">
+                <Tabs default-value="today" v-model="periode">
+                    <TabsList>
+                        <TabsTrigger value="today">Aujourd'hui</TabsTrigger>
+                        <TabsTrigger value="week">Cette semaine</TabsTrigger>
+                        <TabsTrigger value="month">Ce mois</TabsTrigger>
+                        <TabsTrigger value="year">Cette année</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
+                <div class="flex items-center space-x-4">
+                    <DateRangePicker v-model="form.dateRange"
+                        @update:start="val => { form.date_start = val; onFilterChange(); }"
+                        @update:end="val => { form.date_end = val; onFilterChange(); }" />
+                </div>
+            </div>
         </div>
 
         <!-- Grille pour les deux premiers graphiques -->
@@ -75,6 +83,7 @@ import { Link } from '@inertiajs/vue3';
 import { LogOut } from 'lucide-vue-next';
 import { usePoll } from '@inertiajs/vue3'
 import UserAccountNav from "@/components/Caisse/UserAccountNav.vue";
+import DateRangePicker from "@/components/ui/DateRangePicker.vue";
 // Références DOM
 const siteChart = ref(null);
 const serviceChart = ref(null);
@@ -85,6 +94,19 @@ const colors = ["#A2B296", "#B17A50", "#A47764", "#F7E8D3", "#8F3D37"];
 
 // État pour la période sélectionnée
 const periode = ref("today");
+
+// Form pour DateRangePicker
+const form = ref({
+    dateRange: { start: null, end: null },
+    date_start: null,
+    date_end: null
+});
+
+const onFilterChange = () => {
+    fetchStats().then(() => {
+        initCharts();
+    });
+};
 
 // État pour les statistiques
 const stats = ref({
@@ -100,39 +122,50 @@ const loading = ref(true);
 const fetchStats = async () => {
     try {
         loading.value = true;
-        const response = await axios.get(`/get/boss/paiement/global/stats?periode=${periode.value}`);
+        let url = `/get/boss/paiement/global/stats?periode=${periode.value}`;
+
+        if (form.value.date_start && form.value.date_end) {
+            url += `&date_start=${form.value.date_start}&date_end=${form.value.date_end}`;
+        }
+
+        const response = await axios.get(url);
 
         // Mapper les données
         const mappedServices = response.data.services
             .filter(service => service.nom_service !== "Immatriculation spéciale")
             .map(service => ({
                 name: service.nom_service,
-                montant: parseFloat(service.montant)
+                montant: parseFloat(service.montant),
+                nb_dossier: service.nb_dossier
             }));
 
         // Ajouter les deux versions de l'immatriculation spéciale
         if (response.data.montantServiceNonFDS !== undefined) {
             mappedServices.push({
                 name: "Immatriculation Spéciale",
-                montant: parseFloat(response.data.montantServiceNonFDS) || 0
+                montant: parseFloat(response.data.montantServiceNonFDS) || 0,
+                nb_dossier: response.data.nbDossierNonFDS || 0
             });
         }
         if (response.data.montantServiceFDS !== undefined) {
             mappedServices.push({
                 name: "Opération FDS",
-                montant: parseFloat(response.data.montantServiceFDS) || 0
+                montant: parseFloat(response.data.montantServiceFDS) || 0,
+                nb_dossier: response.data.nbDossierFDS || 0
             });
         }
 
         stats.value = {
             sites: response.data.sites.map(site => ({
                 name: site.nom_site,
-                montant: parseFloat(site.montant)
+                montant: parseFloat(site.montant),
+                nb_dossier: site.nb_dossier
             })),
             services: mappedServices,
             vehicules: response.data.vehicules.map(vehicule => ({
                 name: vehicule.genre_vehicule || "Inconnu",
-                montant: parseFloat(vehicule.montant) || 0
+                montant: parseFloat(vehicule.montant) || 0,
+                nb_dossier: vehicule.nb_dossier
             }))
         };
 
@@ -158,11 +191,11 @@ const initCharts = () => {
     }
 
     // Initialiser les graphiques
-    initChart(siteChart.value, "Montants par Site", stats.value.sites);
-    initChart(serviceChart.value, "Montants par Service", stats.value.services);
+    initChart(siteChart.value, " ", stats.value.sites);
+    initChart(serviceChart.value, " ", stats.value.services);
     initChart(
         vehiculeChart.value,
-        "Montants par Type de Véhicule",
+        " ",
         stats.value.vehicules,
         true
     );
@@ -176,7 +209,14 @@ function initChart(el, title, data, isWide = false) {
         title: { text: title, left: 'center' },
         tooltip: {
             trigger: 'axis',
-            axisPointer: { type: 'shadow' }
+            axisPointer: { type: 'shadow' },
+            formatter: (params) => {
+                const item = data[params[0].dataIndex];
+                const amount = new Intl.NumberFormat('fr-FR').format(item.montant);
+                return `${item.name}<br/>
+                        <span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${params[0].color};"></span>
+                        <b>${amount} F</b> (${item.nb_dossier} dossiers)`;
+            }
         },
         grid: {
             left: '3%',
@@ -208,11 +248,24 @@ function initChart(el, title, data, isWide = false) {
                     show: true,
                     position: 'top',
                     formatter: (params) => {
-                        return new Intl.NumberFormat('fr-FR').format(params.value);
+                        const item = data[params.dataIndex];
+                        const amount = new Intl.NumberFormat('fr-FR').format(params.value);
+                        return `{a|${amount} F}\n{b|(${item.nb_dossier})}`;
                     },
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                    color: '#374151'
+                    rich: {
+                        a: {
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            color: '#374151',
+                            align: 'center'
+                        },
+                        b: {
+                            fontSize: 11,
+                            color: '#6b7280',
+                            align: 'center',
+                            padding: [2, 0]
+                        }
+                    }
                 },
                 itemStyle: {
                     color: function (params) {
@@ -235,6 +288,11 @@ onMounted(async () => {
 
 // Recharger les statistiques lorsque la période change
 watch(periode, async () => {
+    // On vide le filtre personnalisé si on change de période prédéfinie
+    form.value.date_start = null;
+    form.value.date_end = null;
+    form.value.dateRange = { start: null, end: null };
+
     await fetchStats();
     initCharts();
 });

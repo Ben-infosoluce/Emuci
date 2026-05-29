@@ -28,7 +28,7 @@ class PdcController extends Controller
     //dashbord
     public function showPdcDashboard()
     {
-        return inertia('Pdc/Dashbord', );
+        return inertia('Pdc/Dashbord',);
     }
     //verifie vin
     public function verifieVin($vin)
@@ -475,6 +475,73 @@ class PdcController extends Controller
         }
     }
 
+    public function updateFdsOpsSite(Request $request)
+    {
+        $dossier = Dossier::where('num_chrono', $request->num_chrono)->first();
+
+        if (!$dossier) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dossier non trouvé',
+            ], 404);
+        }
+
+        $dossier->id_site = $request->site_id;
+        $dossier->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mise à jour du site du dossier réussie.',
+            'data' => $dossier
+        ], 200);
+    }
+
+    public function updateFdsOpsStatutPlaque(Request $request)
+    {
+        $dossier = Dossier::where('num_chrono', $request->num_chrono)->first();
+
+        if (!$dossier) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dossier non trouvé',
+            ], 404);
+        }
+
+        $dossier->status_pose_plaque = 2; // 2 : Plaque posée
+        $dossier->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mise à jour du statut plaque du dossier réussie.',
+            'data' => $dossier
+        ], 200);
+    }
+
+    public function getFdsOpsPaymentStatus(Request $request)
+    {
+        $dossier = Dossier::where('num_chrono', $request->num_chrono)->first();
+
+        if (!$dossier) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dossier non trouvé',
+            ], 404);
+        }
+        //get paiement  from payment table 
+        $paiement = Paiement::where('id_dossier', $dossier->id)->first();
+        if (!$paiement) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dossier non payé',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'statut_paiement' => $paiement->statut,
+            'date_paiement' => $paiement->date,
+        ], 200);
+    }
 
 
     //show immatriculation 

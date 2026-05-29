@@ -10,11 +10,8 @@
 
       <!-- Filters -->
       <div class="flex flex-wrap items-center gap-3">
-        <div class="flex items-center gap-2 bg-white p-1.5 rounded-lg border border-gray-200">
-          <input type="date" v-model="filters.date_start" class="text-xs border-none focus:ring-0" />
-          <span class="text-gray-400">à</span>
-          <input type="date" v-model="filters.date_end" class="text-xs border-none focus:ring-0" />
-        </div>
+        <DateRangePicker @update:start="(val) => filters.date_start = val"
+          @update:end="(val) => filters.date_end = val" />
 
         <select v-model="filters.site_id"
           class="text-xs border-gray-200 rounded-lg focus:ring-amber-500 focus:border-amber-500">
@@ -132,6 +129,7 @@ import { ref, onMounted, reactive } from 'vue';
 import { RefreshCcw } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import DateRangePicker from '@/components/ui/DateRangePicker.vue';
 import axios from 'axios';
 
 const props = defineProps({

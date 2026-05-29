@@ -92,6 +92,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/caisse/statut', [CaisseController::class, 'statut'])->name('caisse.statut');
     Route::post('/caisses/ouvertures', [CaisseController::class, 'open'])->name('caisses.ouvertures.open');
     Route::put('/caisses/ouvertures/{id}/close', [CaisseController::class, 'close'])->name('caisses.ouvertures.close');
+    Route::get('/caisse/last-closure', [CaisseController::class, 'getLastClosure'])->name('caisse.last-closure');
+    Route::put('/caisses/ouvertures/{id}/update-billetterie', [CaisseController::class, 'updateBilletterie'])->name('caisses.ouvertures.update-billetterie');
 
 
     //gestion paiement
@@ -446,6 +448,8 @@ Route::group(
         Route::post('/verification/validate/caisse/controller/montant', [ControleCaisseController::class, 'validateCotrolleurMontant'])->name('verification.validate.caisse.controller.montant');
         Route::get('/caisse/liste', [ControleCaisseController::class, 'getCaisses']);
         Route::get('/caisse/of/user', [ControleCaisseController::class, 'getCaisseOfAuthenticatedUser']);
+        Route::post('/caisses/ouvertures/{id}/authorize-edition', [ControleCaisseController::class, 'authorizeBilletageEdition'])->name('caisses.ouvertures.authorize-edition');
+
     }
 );
 

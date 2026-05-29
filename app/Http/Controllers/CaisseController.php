@@ -80,8 +80,7 @@ class CaisseController extends Controller
                 ->whereIn('id', $details)
                 // ->where('id_site', getIdSite())
                 ->get();
-        }
-        else {
+        } else {
             $detailTypeServices = DB::table('detail_type_services')
                 ->whereIn('id', $details)
                 ->where('id_site', getIdSite())
@@ -131,14 +130,12 @@ class CaisseController extends Controller
                     ->where('id', 3) // ID pour "REMORQUE"
                     ->where('status', 1)
                     ->first();
-            }
-            else if ($nb_plaque == 1) {
+            } else if ($nb_plaque == 1) {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 2) // ID pour "1 plaque et non REMORQUE"
                     ->where('status', 1)
                     ->first();
-            }
-            else {
+            } else {
                 $autre_facturation = DB::table('autre_facturation')
                     ->where('id', 1) // ID par défaut
                     ->where('status', 1)
@@ -201,11 +198,10 @@ class CaisseController extends Controller
             ])->where('type', 'FDS')
                 // Ce bloc gère l'exclusion : soit MON site, soit le site 0
                 ->where(function ($query) use ($userSiteId) {
-                $query->where('id_site', $userSiteId)
-                    ->orWhere('id_site', 0);
-            });
-        }
-        else {
+                    $query->where('id_site', $userSiteId)
+                        ->orWhere('id_site', 0);
+                });
+        } else {
             $query = Dossier::with([
                 'r_dossier_vehicule',
                 'r_dossier_user',
@@ -252,9 +248,8 @@ class CaisseController extends Controller
                 $start = Carbon::parse($date_start)->startOfDay();
                 $end = Carbon::parse($date_end)->endOfDay();
                 $query->whereBetween('date_paiement', [$start, $end]);
-            }
-            catch (\Exception $e) {
-            // Optionnel : log ou ignorer si erreur de date
+            } catch (\Exception $e) {
+                // Optionnel : log ou ignorer si erreur de date
             }
         }
 
@@ -263,13 +258,13 @@ class CaisseController extends Controller
         return response()->json([
             'dossiers' => $dossiers,
             'filtres' => $request->only(
-            "filtre_per_page",
-            "statut",
-            "search_data",
-            "filtre_type",
-            "date_start",
-            "date_end"
-        )
+                "filtre_per_page",
+                "statut",
+                "search_data",
+                "filtre_type",
+                "date_start",
+                "date_end"
+            )
         ]);
     }
 
@@ -323,6 +318,17 @@ class CaisseController extends Controller
             ], 403);
         }
 
+        // 🔹 Vérifie si une caisse a déjà été fermée aujourd'hui
+        $alreadyClosedToday = CaisseOuverture::where('caisse_id', $caisse->id)
+            ->whereDate('date_fermeture', $today)
+            ->exists();
+
+        if ($alreadyClosedToday) {
+            return response()->json([
+                'message' => "La caisse a déjà été fermée aujourd'hui. Une seule session d'ouverture par jour est autorisée.",
+            ], 403);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -340,8 +346,7 @@ class CaisseController extends Controller
                 'message' => 'Caisse ouverte avec succès.',
                 'data' => $ouverture,
             ], 201);
-        }
-        catch (\Throwable $th) {
+        } catch (\Throwable $th) {
             DB::rollBack();
 
             return response()->json([
@@ -407,8 +412,7 @@ class CaisseController extends Controller
                 'date_ouverture' => $ouverture->date_ouverture,
                 'caisse_id' => $ouverture->caisse_id,
             ]);
-        }
-        else {
+        } else {
             return response()->json([
                 'statut' => 'fermée',
             ]);
@@ -435,18 +439,18 @@ class CaisseController extends Controller
             // ->join('users', 'caisse_ouvertures.user_id', '=', 'users.id')
             //ajouter les dossier qui on caisse id = caisse_ouvertures.caisse_id et date_paiement = date_ouverture
             ->select(
-            'caisse_ouvertures.*',
-            'caisses.libelle as nom_caisse',
-            // 'users.nom as nom_caissier',
-            DB::raw('(SELECT COUNT(DISTINCT dossiers.id) FROM paiements 
+                'caisse_ouvertures.*',
+                'caisses.libelle as nom_caisse',
+                // 'users.nom as nom_caissier',
+                DB::raw('(SELECT COUNT(DISTINCT dossiers.id) FROM paiements 
                           JOIN dossiers ON paiements.id_dossier = dossiers.id
                           WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
                           AND DATE(dossiers.date_paiement) = DATE(caisse_ouvertures.date_ouverture)) as nb_dossiers'),
-            DB::raw('(SELECT SUM(paiements.montant) FROM paiements 
+                DB::raw('(SELECT SUM(paiements.montant) FROM paiements 
                           JOIN dossiers ON paiements.id_dossier = dossiers.id
                           WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
                           AND DATE(dossiers.date_paiement) = DATE(paiements.created_at)) as total_ventes')
-        );
+            );
         // dd($query->get());
 
         // Filtre par site
@@ -465,11 +469,9 @@ class CaisseController extends Controller
         // Filtre par statut
         if ($status === 'perte') {
             $query->where('caisse_ouvertures.perte', '>', 0);
-        }
-        elseif ($status === 'surplus') {
+        } elseif ($status === 'surplus') {
             $query->where('caisse_ouvertures.surplus', '>', 0);
-        }
-        elseif ($status === 'equilibre') {
+        } elseif ($status === 'equilibre') {
             $query->where(function ($q) {
                 $q->where('caisse_ouvertures.perte', 0)->orWhereNull('caisse_ouvertures.perte');
             })->where(function ($q) {
@@ -499,18 +501,18 @@ class CaisseController extends Controller
             ->join('caisses', 'caisse_ouvertures.caisse_id', '=', 'caisses.id')
             ->join('users', 'caisse_ouvertures.user_id', '=', 'users.id')
             ->select(
-            'caisse_ouvertures.*',
-            'caisses.libelle as nom_caisse',
-            'users.nom as nom_caissier',
-            DB::raw('(SELECT COUNT(DISTINCT dossiers.id) FROM paiements 
+                'caisse_ouvertures.*',
+                'caisses.libelle as nom_caisse',
+                'users.nom as nom_caissier',
+                DB::raw('(SELECT COUNT(DISTINCT dossiers.id) FROM paiements 
                           JOIN dossiers ON paiements.id_dossier = dossiers.id
                           WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
                           AND DATE(dossiers.date_paiement) = DATE(caisse_ouvertures.date_ouverture)) as nb_dossiers'),
-            DB::raw('(SELECT SUM(paiements.montant) FROM paiements 
+                DB::raw('(SELECT SUM(paiements.montant) FROM paiements 
                           JOIN dossiers ON paiements.id_dossier = dossiers.id
                           WHERE paiements.caisse_id = caisse_ouvertures.caisse_id 
                           AND DATE(dossiers.date_paiement) = DATE(caisse_ouvertures.date_ouverture)) as total_ventes')
-        )
+            )
             ->where('caisses.site_id', $user->id_site); // Filtre par site du contrôleur
 
         // Filtre par date
@@ -524,11 +526,9 @@ class CaisseController extends Controller
         // Filtre par statut (perte, surplus, equilibre)
         if ($status === 'perte') {
             $query->where('caisse_ouvertures.perte', '>', 0);
-        }
-        elseif ($status === 'surplus') {
+        } elseif ($status === 'surplus') {
             $query->where('caisse_ouvertures.surplus', '>', 0);
-        }
-        elseif ($status === 'equilibre') {
+        } elseif ($status === 'equilibre') {
             $query->where(function ($q) {
                 $q->where('caisse_ouvertures.perte', 0)->orWhereNull('caisse_ouvertures.perte');
             })->where(function ($q) {
@@ -554,5 +554,47 @@ class CaisseController extends Controller
     {
         // Le RAF voit tout comme le Boss
         return $this->getValidationsHistory($request);
+    }
+
+    public function getLastClosure()
+    {
+        $user = Auth::user();
+        $userSiteId = getIdSite();
+
+        $caisse = Caisse::where('site_id', $userSiteId)->first();
+        if (!$caisse) {
+            return response()->json(null);
+        }
+
+        $lastClosure = CaisseOuverture::where('caisse_id', $caisse->id)
+            ->where('user_id', $user->id)
+            ->where('statut', 'fermé')
+            ->latest('date_fermeture')
+            ->first();
+
+        return response()->json($lastClosure);
+    }
+
+    public function updateBilletterie(Request $request, $id)
+    {
+        $request->validate([
+            'billetterie' => 'required|array',
+            'montant_fermeture' => 'required|numeric|min:0',
+        ]);
+
+        $ouverture = CaisseOuverture::findOrFail($id);
+
+        if ($ouverture->edit_billetterie != 1) {
+            return response()->json(['message' => 'Édition non autorisée. Veuillez demander au contrôleur.'], 403);
+        }
+
+        $ouverture->update([
+            'billetterie' => json_encode($request->billetterie),
+            'montant_fermeture' => $request->montant_fermeture,
+            'montant_saisie_caisse' => $request->montant_fermeture,
+            'edit_billetterie' => 0,
+        ]);
+
+        return response()->json(['message' => 'Billetterie mise à jour avec succès.']);
     }
 }

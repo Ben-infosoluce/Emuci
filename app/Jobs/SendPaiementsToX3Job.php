@@ -57,6 +57,7 @@ class SendPaiementsToX3Job implements ShouldQueue
 
                 // Récupérer les informations du client depuis le dossier
                 $dossier = $paiementsDuDossier->first()->dossier;
+                Log::info('dossier', $dossier->toArray());
                 $client = $dossier->client;
 
                 $enteteData = [
@@ -64,6 +65,8 @@ class SendPaiementsToX3Job implements ShouldQueue
                     'DATINV' => $this->dateOperation, // Format YYYY-MM-DD
                     'BPCINV' => 'C000016', // Code client
                     'BPRNAM' => ($client ? $client->nom . ' ' . $client->prenom : 'Client'), // Nom client
+                    'TIMBRE' => 100,
+                    'TVA' => (int) round($totalTTC) - (int) round($totalHT),
                     'TOTALHT' => (int) round($totalHT), // Format entier
                     'TOTALTTC' => (int) round($totalTTC), // Format entier
                     'CUR' => 'XOF'
@@ -72,23 +75,80 @@ class SendPaiementsToX3Job implements ShouldQueue
                 $x3->createEntete($enteteData);
                 // ÉTAPE 2 : Créer les lignes de la facture
                 $linCounter = 1000;
+                $services_par_id = [
+                    "2" => "REI01",
+                    "7" => "OPS01",
+                    "10" => "POI01",
+                    "16" => "POI02",
+                    "19" => "POI03",
+                    "22" => "POI04",
+                    "25" => "POI05",
+                    "28" => "POI06",
+                    "31" => "POI07",
+                    "40" => "DUP01",
+                    "41" => "DUP02",
+                    "42" => "DUP03",
+                    "43" => "DUP04",
+                    "44" => "DUP05",
+                    "45" => "OPS02"
+                ];
+
                 foreach ($paiementsDuDossier as $paiement) {
-                    $montantHT = $paiement->montant / 1.18;
-                    // Récupérer le VIN du véhicule via la relation dossier->vehicule
+                    // 1. Récupérer le breakdown des montants depuis la description du paiement
+                    $description = json_decode($paiement->description ?? '[]', true);
+                    $breakdown = collect(is_array($description) ? $description : []);
+
+                    // 2. Identifier les services à envoyer
+                    $rawDetail = $paiement->dossier->detail;
+                    $serviceIds = is_array($rawDetail) ? $rawDetail : (json_decode($rawDetail ?? '', true) ?? []);
+
+                    $servicesAEnvoyer = [];
+                    foreach ($serviceIds as $serviceId) {
+                        if (isset($services_par_id[$serviceId])) {
+                            // Chercher le montant réel dans le breakdown
+                            $detailService = $breakdown->firstWhere('id_service', $serviceId);
+
+                            if (!$detailService) {
+                                throw new Exception("Montant introuvable pour le service [ID: $serviceId] dans le paiement [REF: {$paiement->reference}]. Échec de l'envoi pour éviter une division erronée.");
+                            }
+
+                            $servicesAEnvoyer[] = [
+                                'itmref' => $services_par_id[$serviceId],
+                                'montant_ttc' => (float) $detailService['montant']
+                            ];
+                        }
+                    }
+
+                    // Fallback si aucun service mappé n'est trouvé dans le dossier
+                    if (empty($servicesAEnvoyer)) {
+                        $servicesAEnvoyer[] = [
+                            'itmref' => "ARTICLE01",
+                            'montant_ttc' => $paiement->montant - 100
+                        ];
+                    }
+
                     $vinVehicule = $paiement->dossier->vehicule->vin ?? $numFacture;
-                    $ligneData = [
-                        'NUM' => $numFacture,
-                        'LIN' => $linCounter, // 1000, 2000, 3000...
-                        'CHRONO' => $paiement->dossier->num_chrono,
-                        'VINVEHICULE' => $vinVehicule, // Ou un autre champ pour le véhicule
-                        'QTYUS' => 1, // Entier comme dans la doc
-                        'NETPRIX' => (int) round($montantHT), // Format entier
-                        'MONTANTHTLN' => (int) round($montantHT), // Format entier
-                        'MONTANTTTCLN' => (int) round($paiement->montant), // Format entier
-                    ];
-                    Log::info('Création ligne facture X3', $ligneData);
-                    $x3->createLigne($ligneData);
-                    $linCounter += 1000;
+
+                    // 4. Création des lignes
+                    foreach ($servicesAEnvoyer as $service) {
+                        $mtHT = $service['montant_ttc'] / 1.18;
+
+                        $ligneData = [
+                            'NUM' => $numFacture,
+                            'LIN' => $linCounter,
+                            "ITMREF" => $service['itmref'],
+                            'CHRONO' => $paiement->dossier->num_chrono,
+                            'VINVEHICULE' => $vinVehicule,
+                            'QTYUS' => 1,
+                            'NETPRIX' => (int) round($mtHT),
+                            'MONTANTHTLN' => (int) round($mtHT),
+                            'MONTANTTTCLN' => (int) round($service['montant_ttc']),
+                        ];
+
+                        Log::info('Création ligne facture X3 (Montant Réel)', $ligneData);
+                        $x3->createLigne($ligneData);
+                        $linCounter += 1000;
+                    }
                 }
 
                 Log::info('Facture X3 traitée avec succès', [
@@ -113,7 +173,7 @@ class SendPaiementsToX3Job implements ShouldQueue
         ]);
     }
 
-    public function failed(Exception $exception)
+    public function failed(\Throwable $exception)
     {
         Log::critical('JOB X3 FAILED', [
             'date' => $this->dateOperation,

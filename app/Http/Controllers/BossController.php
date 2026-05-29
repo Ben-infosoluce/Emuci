@@ -425,7 +425,7 @@ class BossController extends Controller
         // Montant par site
         $montantParSite = (clone $baseQuery)
             ->join('sites', 'paiements.id_site', '=', 'sites.id')
-            ->select('sites.nom_site', DB::raw('SUM(paiements.montant) as montant'))
+            ->select('sites.nom_site', DB::raw('SUM(paiements.montant - 100) as montant'), DB::raw('COUNT(*) as nb_dossier'))
             ->groupBy('sites.nom_site')
             ->get()
             ->toArray();
@@ -433,29 +433,29 @@ class BossController extends Controller
         // Montant par service
         $montantParService = (clone $baseQuery)
             ->join('services', 'paiements.id_service', '=', 'services.id')
-            ->select('services.nom_service', DB::raw('SUM(paiements.montant) as montant'))
+            ->select('services.nom_service', DB::raw('SUM(paiements.montant - 100) as montant'), DB::raw('COUNT(*) as nb_dossier'))
             ->groupBy('services.nom_service')
             ->get()
             ->toArray();
 
-        $montantServiceNonFDS = (clone $baseQuery)
-            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id') // Remplacez id_dossier par la clé correcte
+        $montantServiceNonFDSData = (clone $baseQuery)
+            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id')
             ->where('paiements.id_service', 1)
             ->where('dossiers.type', '=', null)
-            ->select(DB::raw('SUM(paiements.montant) as montant'))
-            ->value('montant');
+            ->select(DB::raw('SUM(paiements.montant - 100) as montant'), DB::raw('COUNT(*) as nb_dossier'))
+            ->first();
 
-        $montantServiceFDS = (clone $baseQuery)
-            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id') // Remplacez id_dossier par la clé correcte
+        $montantServiceFDSData = (clone $baseQuery)
+            ->join('dossiers', 'paiements.id_dossier', '=', 'dossiers.id')
             ->where('paiements.id_service', 1)
             ->where('dossiers.type', '=', 'FDS')
-            ->select(DB::raw('SUM(paiements.montant) as montant'))
-            ->value('montant');
+            ->select(DB::raw('SUM(paiements.montant - 100) as montant'), DB::raw('COUNT(*) as nb_dossier'))
+            ->first();
 
         // Montant par genre de véhicule
         $montantParGenreVehicule = (clone $baseQuery)
             ->join('vehicules', 'paiements.id_vehicule', '=', 'vehicules.id')
-            ->select('vehicules.genre_vehicule', DB::raw('SUM(paiements.montant) as montant'))
+            ->select('vehicules.genre_vehicule', DB::raw('SUM(paiements.montant - 100) as montant'), DB::raw('COUNT(*) as nb_dossier'))
             ->groupBy('vehicules.genre_vehicule')
             ->get()
             ->toArray();
@@ -466,8 +466,10 @@ class BossController extends Controller
             'sites' => $montantParSite,
             'services' => $montantParService,
             'vehicules' => $montantParGenreVehicule,
-            'montantServiceNonFDS' => $montantServiceNonFDS,
-            'montantServiceFDS' => $montantServiceFDS,
+            'montantServiceNonFDS' => $montantServiceNonFDSData->montant ?? 0,
+            'nbDossierNonFDS' => $montantServiceNonFDSData->nb_dossier ?? 0,
+            'montantServiceFDS' => $montantServiceFDSData->montant ?? 0,
+            'nbDossierFDS' => $montantServiceFDSData->nb_dossier ?? 0,
         ]);
     }
 

@@ -60,8 +60,9 @@ const exportToCSV = () => {
 
     // Add totals
     rows.push([]);
-    rows.push(["", "TOTAL DOSSIERS", "", "", "", totalDossiers.value, "", ""]);
-    rows.push(["", "TOTAL TIMBRES", "", "", "", "", totalTimbres.value, ""]);
+    rows.push(["", "FONDS DE CAISSE", "", "", "", props.montantOuverture, "", ""]);
+    rows.push(["", "RECETTE EMUCI", "", "", "", totalDossiers.value, "", ""]);
+    rows.push(["", "RECETTE TIMBRES", "", "", "", "", totalTimbres.value, ""]);
     rows.push(["", "SOLDE GLOBAL", "", "", "", "", "", soldeCaisse.value]);
 
     const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
@@ -200,11 +201,11 @@ const exportToCSV = () => {
                     <p class="text-xl font-bold">{{ montantOuverture.toLocaleString() }} F</p>
                 </div>
                 <div class="space-y-1 border-l border-primary-foreground/20 pl-4">
-                    <p class=" uppercase opacity-70 tracking-widest">Total Recettes</p>
-                    <p class="text-xl font-bold">+ {{ totalMontant.toLocaleString() }} F</p>
+                    <p class=" uppercase opacity-70 tracking-widest">Recettes EMUCI</p>
+                    <p class="text-xl font-bold">+ {{ totalDossiers.toLocaleString() }} F</p>
                 </div>
                  <div class="space-y-1 border-l border-primary-foreground/20 pl-4">
-                    <p class=" uppercase opacity-70 tracking-widest">Total Timbre</p>
+                    <p class=" uppercase opacity-70 tracking-widest">Recettes Timbre</p>
                     <p class="text-xl font-bold">+ {{ totalTimbres.toLocaleString() }} F</p>
                 </div>
             </div>

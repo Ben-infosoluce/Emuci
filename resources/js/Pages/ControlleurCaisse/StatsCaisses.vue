@@ -155,13 +155,24 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div class="p-3 bg-gray-100/50 rounded-lg text-right">
+                                                            <div class="flex items-center justify-between ">
+                                                                    <!-- v-if="isCaisseFermeeAujourdhui" -->
+                                                                 <Button  size="sm" variant="outline" 
+                                                                        @click="authorizeEdition" 
+                                                                        :disabled="loadingAuthorization || (caisseOuverture && caisseOuverture.edit_billetterie === 1)"
+                                                                        class="ml-4 border-amber-600 text-amber-600 hover:bg-amber-50 h-8">
+                                                                    {{ caisseOuverture?.edit_billetterie === 1 ? 'Édition autorisée' : "Autoriser l'édition du billetage" }}
+                                                                </Button>
+                                                                 <div class="p-3 bg-gray-100/50 rounded-lg text-right">
+                                                              
                                                                 <span
                                                                     class="text-[10px] font-bold text-gray-400 uppercase mr-2">Total
                                                                     Caissière:</span>
                                                                 <span class="text-sm font-bold text-gray-600">{{
                                                                     totalBilletterie.toLocaleString() }} F</span>
                                                             </div>
+                                                            </div>
+                                                           
                                                         </div>
 
                                                         <!-- Contrôleur Side (Editable) -->
@@ -431,6 +442,7 @@ const montantCaisse = ref(0);
 const caisseOuverture = ref(null);
 const confirmingFinalClosure = ref(false);
 const commentaire = ref("");
+const loadingAuthorization = ref(false);
 
 const billetterie = ref([
     { valeur: 10000, quantite: 0 },
@@ -754,6 +766,20 @@ function formatErrors(errs) {
     }
     return messages.join(" — ");
 }
+
+// Authoriser l'édition du billetage
+const authorizeEdition = async () => {
+    if (!caisseOuverture.value?.id) return;
+    loadingAuthorization.value = true;
+    try {
+        await axios.post(`/caisses/ouvertures/${caisseOuverture.value.id}/authorize-edition`);
+        toast.success("L'édition du billetage a été autorisée pour cette caisse.");
+        await fetchCaisse();
+    } catch (error) { toast.error("Impossible d'autoriser l'édition."); }
+    finally { loadingAuthorization.value = false; }
+};
+
+
 
 onMounted(async () => {
     await fetchCaisse();

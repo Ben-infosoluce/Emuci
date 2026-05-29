@@ -165,12 +165,12 @@ class ControleCaisseController extends Controller
 
     public function showCaisseDossiersStatistics()
     {
-        return inertia('ControlleurCaisse/StatsDossiers',);
+        return inertia('ControlleurCaisse/StatsDossiers', );
     }
 
     public function showCaisseCaissesStatistics()
     {
-        return inertia('ControlleurCaisse/StatsCaisses',);
+        return inertia('ControlleurCaisse/StatsCaisses', );
     }
 
     //
@@ -353,6 +353,13 @@ class ControleCaisseController extends Controller
         ]);
     }
 
+    public function authorizeBilletageEdition(Request $request, $id)
+    {
+        $ouverture = CaisseOuverture::findOrFail($id);
+        $ouverture->update(['edit_billetterie' => 1]);
+
+        return response()->json(['message' => 'Édition du billetage autorisée.']);
+    }
 
 
     public function validateCotrolleurMontant(Request $request)

@@ -28,7 +28,9 @@ class X3FactureService
         return Http::withBasicAuth($this->username, $this->password)
             ->acceptJson()
             ->contentType('application/json')
-            ->timeout(30);
+            ->connectTimeout(30) // Temps max pour établir la connexion
+            ->timeout(60)        // Temps max pour la réponse totale
+            ->retry(3, 2000); 
     }
 
     public function createEntete(array $data)

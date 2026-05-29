@@ -177,11 +177,11 @@ const initCharts = () => {
     }
 
     // Initialiser les graphiques
-    initChart(siteChart.value, "Montants du Site", stats.value.sites);
-    initChart(serviceChart.value, "Montants par Service", stats.value.services);
+    initChart(siteChart.value, " ", stats.value.sites);
+    initChart(serviceChart.value, " ", stats.value.services);
     initChart(
         vehiculeChart.value,
-        "Montants par Type de Véhicule",
+        " ",
         stats.value.vehicules,
         true
     );

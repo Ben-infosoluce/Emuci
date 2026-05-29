@@ -23,11 +23,11 @@ class RafCaisseController extends Controller
 
     public function showRafDashboard()
     {
-        return inertia('RafCaisse/Dashbord',);
+        return inertia('RafCaisse/Dashbord', );
     }
     public function showRafCaisseCaissesStatistics()
     {
-        return inertia('RafCaisse/RafStatsCaisses',);
+        return inertia('RafCaisse/RafStatsCaisses', );
     }
 
 
@@ -203,11 +203,11 @@ class RafCaisseController extends Controller
                 );
 
                 // ✅ Clôture RAF
-                $record->update([
-                    'montant_controlleur' => $request->montant_controlleur,
-                    'date_fermeture_raf' => now(),
-                    'status_raf' => 0,
-                ]);
+                // $record->update([
+                //     'montant_controlleur' => $request->montant_controlleur,
+                //     'date_fermeture_raf' => now(),
+                //     'status_raf' => 0,
+                // ]);
 
                 DB::commit();
 
