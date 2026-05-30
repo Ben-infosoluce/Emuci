@@ -193,7 +193,8 @@
 
                     <Card>
                         <ScrollArea class="h-full w-full rounded-md border">
-                            <div class="m-8">
+                            <div class="m-8" v-if="dossier.type != 'RELICA-PRIMO'">
+                            
                                 <h3 class="mt-6 text-center font-bold text-lg">
                                     PANIER DE PAIEMENT
                                 </h3>
@@ -237,6 +238,69 @@
                                         <span class="font-bold">
                                             {{ formatMontant(getMontantTotal()) }} F CFA
                                         </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                             <div class="m-8" v-if="dossier.type == 'RELICA-PRIMO'">
+                                <h3 class="mt-6 text-center font-bold text-lg">
+                                    PANIER DE PAIEMENT RELICA PRIMO
+                                </h3>
+
+                                <!-- Infos site et genre -->
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 space-y-1">
+                                    <p class="text-sm text-gray-600">
+                                        <strong>Site :</strong> {{ relicaPrefix }}
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        <strong>N° Chrono :</strong> {{ dossier.num_chrono }}
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        <strong>Genre du véhicule :</strong> {{ dossier.r_dossier_vehicule.genre_vehicule }}
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        <strong>Catégorie :</strong> {{ relicaGenreLabel }}
+                                    </p>
+                                </div>
+
+                                <!-- Détail du reliquat -->
+                                <div class="space-y-2 pt-4">
+                                    <h3 class="font-semibold text-gray-700">Éléments à facturer</h3>
+
+                                    <!-- Ligne : Prix total dû -->
+                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                        <span>Prix total ({{ relicaGenreLabel }})</span>
+                                        <span class="font-medium">{{ formatMontant(relicaPrixTotal) }} F CFA</span>
+                                    </div>
+
+                                    <!-- Ligne : Déjà réglé -->
+                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                        <span>Déjà réglé (Dossiers {{ relicaPrefix }})</span>
+                                        <span class="font-medium text-red-500">− {{ formatMontant(relicaDejaRegle) }} F CFA</span>
+                                    </div>
+
+                                    <!-- Ligne : Reliquat -->
+                                    <div class="flex justify-between px-2 py-2 border-t border-b font-semibold">
+                                        <span>Reliquat à encaisser</span>
+                                        <span class="text-green-700">{{ formatMontant(relicaReliquat) }} F CFA</span>
+                                    </div>
+                                </div>
+
+                                <!-- Section récapitulative -->
+                                <div class="space-y-2 pt-2 mt-4">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">RELIQUAT HT :</span>
+                                        <span class="font-bold text-gray-700">
+                                            {{ formatMontant(relicaReliquat) }} F CFA
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                        <span class="font-medium">Timbre :</span>
+                                        <span class="font-bold">{{ formatMontant(100) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                        <span class="font-medium">TOTAL TTC :</span>
+                                        <span class="font-bold">{{ formatMontant(relicaMontantTTC) }} F CFA</span>
                                     </div>
                                 </div>
                             </div>
@@ -356,51 +420,92 @@
                             </div>
                         </div>
 
-                        <!-- Informations du propriétaire -->
+                        <!-- Résumé de facturation -->
                         <div class="m-8 mb-8">
 
-                            <!-- Section des éléments à facturer -->
-                            <div v-if="props.detailTypeServices.length" class="space-y-6 pt-4">
-                                <h3 class="font-semibold text-gray-700">Éléments à facturer</h3>
+                            <!-- CAS RELICA-PRIMO -->
+                            <template v-if="dossier.type == 'RELICA-PRIMO'">
+                                <div class="space-y-2 pt-4">
+                                    <h3 class="font-semibold text-gray-700">Éléments à facturer — RELICA PRIMO</h3>
 
-                                <div v-for="(items, idType) in groupedDetailTypeServices" :key="idType"
-                                    class="space-y-2">
-                                    <h4 class="text-black-700 font-semibold py-2">
-                                        {{ getNomTypeServiceById(parseInt(idType)) }}
-                                    </h4>
+                                    <!-- Site + genre -->
+                                    <div class="p-3 bg-blue-50 rounded-lg border border-blue-200 space-y-1 mb-3">
+                                        <p class="text-sm text-gray-600">
+                                            <strong>Site :</strong> {{ relicaPrefix }}
+                                            &nbsp;|&nbsp;
+                                            <strong>Catégorie :</strong> {{ relicaGenreLabel }}
+                                        </p>
+                                        <p class="text-sm text-gray-600">
+                                            <strong>Genre :</strong> {{ dossier.r_dossier_vehicule.genre_vehicule }}
+                                        </p>
+                                    </div>
 
-                                    <div v-for="item in items" :key="item.id"
-                                        class="flex justify-between px-2 py-1 border-b">
-                                        <span>{{ item.element_facturation }}</span>
-                                        <span class="text-right font-medium text-green-700">
-                                            {{ formatMontant(item.montant) }} F CFA
-                                        </span>
+                                    <!-- Prix total dû -->
+                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                        <span>Prix total ({{ relicaGenreLabel }})</span>
+                                        <span class="font-medium">{{ formatMontant(relicaPrixTotal) }} F CFA</span>
+                                    </div>
+
+                                    <!-- Déjà réglé -->
+                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                        <span>Déjà réglé (Dossiers {{ relicaPrefix }})</span>
+                                        <span class="font-medium text-red-500">− {{ formatMontant(relicaDejaRegle) }} F CFA</span>
+                                    </div>
+
+                                    <!-- Reliquat -->
+                                    <div class="flex justify-between px-2 py-2 border-t border-b font-semibold">
+                                        <span>Reliquat à encaisser</span>
+                                        <span class="text-green-700">{{ formatMontant(relicaReliquat) }} F CFA</span>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Section récapitulative -->
-                            <div class=" space-y-2 pt-2 mt-5">
-                                <div class="flex justify-between">
-                                    <span class="font-medium">PRIX HT :</span>
-                                    <span class="font-bold text-gray-700">
-                                        {{ formatMontant(FinalPrice()) }}
-                                    </span>
+                                <div class="space-y-2 pt-2 mt-4">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">RELIQUAT HT :</span>
+                                        <span class="font-bold text-gray-700">{{ formatMontant(relicaReliquat) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                        <span class="font-medium">Timbre :</span>
+                                        <span class="font-bold">{{ formatMontant(100) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2 text-xl">
+                                        <span class="font-medium uppercase">Total à payer :</span>
+                                        <span class="font-bold">{{ formatMontant(relicaMontantTTC) }}</span>
+                                    </div>
                                 </div>
+                            </template>
 
-                                <div class="flex justify-between font-bold text-green-800 border-t pt-2">
-                                    <span class="font-medium">Timbre :</span>
-                                    <span class="font-bold">
-                                        {{ formatMontant(100) }}
-                                    </span>
+                            <!-- CAS STANDARD -->
+                            <template v-else>
+                                <div v-if="props.detailTypeServices.length" class="space-y-6 pt-4">
+                                    <h3 class="font-semibold text-gray-700">Éléments à facturer</h3>
+                                    <div v-for="(items, idType) in groupedDetailTypeServices" :key="idType" class="space-y-2">
+                                        <h4 class="text-black-700 font-semibold py-2">
+                                            {{ getNomTypeServiceById(parseInt(idType)) }}
+                                        </h4>
+                                        <div v-for="item in items" :key="item.id" class="flex justify-between px-2 py-1 border-b">
+                                            <span>{{ item.element_facturation }}</span>
+                                            <span class="text-right font-medium text-green-700">
+                                                {{ formatMontant(item.montant) }} F CFA
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between font-bold text-green-800 border-t pt-2 text-xl">
-                                    <span class="font-medium uppercase">Total à payer :</span>
-                                    <span class="font-bold">
-                                        {{ formatMontant(getMontantTotal()) }}
-                                    </span>
+                                <div class="space-y-2 pt-2 mt-5">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">PRIX HT :</span>
+                                        <span class="font-bold text-gray-700">{{ formatMontant(FinalPrice()) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                        <span class="font-medium">Timbre :</span>
+                                        <span class="font-bold">{{ formatMontant(100) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2 text-xl">
+                                        <span class="font-medium uppercase">Total à payer :</span>
+                                        <span class="font-bold">{{ formatMontant(getMontantTotal()) }}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </template>
                         </div>
 
                         <!-- Actions -->
@@ -418,17 +523,10 @@
                                         <AlertDialogTitle>Etes-vous sur de vouloir valider le paiement?
                                         </AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            <div
-                                                class="max-w-xl mx-auto p-6 border rounded-xl shadow-sm bg-white text-gray-800">
+                                            <div class="max-w-xl mx-auto p-6 border rounded-xl shadow-sm bg-white text-gray-800">
                                                 <div class="flex items-center justify-between mb-2">
                                                     <span class="font-medium">PRIX HT:</span>
-                                                    <span class="font-bold">{{ formatMontant(getPrixHT()) }}F</span>
-                                                </div>
-
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <span class="font-medium">PRIX TTC:</span>
-                                                    <span class="font-bold">{{ formatMontant(getMontantTotal() - 100)
-                                                    }}</span>
+                                                    <span class="font-bold">{{ formatMontant(dossier.type === 'RELICA-PRIMO' ? relicaMontantHT : getPrixHT()) }} F</span>
                                                 </div>
                                                 <div class="flex items-center justify-between mb-2">
                                                     <span class="font-medium text-red-600">Timbre:</span>
@@ -437,7 +535,7 @@
                                                 <div class="flex items-center justify-between mb-6 border-t pt-4">
                                                     <span class="font-bold text-lg uppercase">Total à payer:</span>
                                                     <span class="font-extrabold text-2xl text-black">
-                                                        {{ formatMontant(getMontantTotal()) }}
+                                                        {{ formatMontant(dossier.type === 'RELICA-PRIMO' ? relicaMontantTTC : getMontantTotal()) }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -644,6 +742,59 @@ const getMontantTotal = () => {
     return FinalPrice() + 100;
 };
 
+// ── RELICA-PRIMO : table de reliquats ────────────────────────────────────────
+// Prix totaux par catégorie (colonne PRIX du tableau)
+const RELICA_PRIX = { auto: 22600, moto: 14100, remorque: 15570 };
+
+// Montants déjà réglés par catégorie + groupe de site
+const RELICA_DEJA_REGLE = {
+    auto:     { ABJ: 22317, BKE_KGO: 13300 },
+    moto:     { ABJ: 10713, BKE_KGO:  6300 },
+    remorque: { ABJ: 12620, BKE_KGO: 13300 },
+};
+
+// Reliquats = PRIX − Déjà réglé (colonne Reliquat du tableau)
+const RELICA_RELIQUAT = {
+    auto:     { ABJ:  283, BKE_KGO: 9300 },
+    moto:     { ABJ: 3387, BKE_KGO: 7800 },
+    remorque: { ABJ: 2950, BKE_KGO: 2270 },
+};
+
+// Groupe de site : ABJ ou BKE_KGO
+const relicaSiteGroup = computed(() => {
+    const chrono = props.dossier?.num_chrono || '';
+    return chrono.startsWith('ABJ') ? 'ABJ' : 'BKE_KGO';
+});
+
+// Libellé affiché du site
+const relicaPrefix = computed(() => {
+    const chrono = props.dossier?.num_chrono || '';
+    if (chrono.startsWith('ABJ')) return 'ABJ';
+    if (chrono.startsWith('BKE')) return 'BKE';
+    if (chrono.startsWith('KGO')) return 'KGO';
+    return chrono.substring(0, 3) || 'Inconnu';
+});
+
+// Catégorie genre : 'auto' | 'moto' | 'remorque'
+const relicaGenreCategory = computed(() => {
+    const genre = (props.dossier?.r_dossier_vehicule?.genre_vehicule || '').toUpperCase();
+    const nbPlaque = props.dossier?.r_dossier_vehicule?.nb_plaque;
+    if (genre.includes('REMORQUE')) return 'remorque';
+    if (genre.includes('MOTO') || nbPlaque == 1) return 'moto';
+    return 'auto';
+});
+
+// Libellé lisible de la catégorie
+const relicaGenreLabel = computed(() => {
+    return { auto: 'Auto', moto: 'Motos', remorque: 'Semi-remorques' }[relicaGenreCategory.value];
+});
+
+const relicaPrixTotal  = computed(() => RELICA_PRIX[relicaGenreCategory.value]);
+const relicaDejaRegle  = computed(() => RELICA_DEJA_REGLE[relicaGenreCategory.value][relicaSiteGroup.value]);
+const relicaReliquat   = computed(() => RELICA_RELIQUAT[relicaGenreCategory.value][relicaSiteGroup.value]);
+const relicaMontantHT  = computed(() => relicaReliquat.value);
+const relicaMontantTTC = computed(() => relicaReliquat.value + 100);
+
 const formatedMontant = (items = []) => {
     return items.map(item => {
         // always use the montant property
@@ -671,16 +822,23 @@ async function validerPaiement() {
     const nouveauStatut = 2;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+    const isRelica = props.dossier?.type === 'RELICA-PRIMO';
+
+    // Pour RELICA-PRIMO : détail = reliquat selon genre + site
+    const relicaDetail = isRelica ? [{
+        id: null,
+        element_facturation: `Reliquat RELICA PRIMO — ${relicaGenreLabel.value} (${relicaPrefix.value})`,
+        montant: relicaReliquat.value,
+        id_type_services: null,
+    }] : null;
+
     const serviceTypes = [
         ...(props.dossier?.r_dossier_services?.r_service_types || []),
         ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
     ];
-
-    // Vérification basée sur les IDs
-    const hasTriggerService = serviceTypes.some(item =>
+    const hasTriggerService = !isRelica && serviceTypes.some(item =>
         TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
     );
-
 
     try {
         const response = await axios.post(
@@ -689,9 +847,9 @@ async function validerPaiement() {
                 statut_paiement: nouveauStatut,
                 chrono: props.dossier.num_chrono,
                 chrono_lier: props.dossier_lier?.num_chrono,
-                detailTypeServices: detailTypeServicesFormatted.value,
+                detailTypeServices: isRelica ? relicaDetail : detailTypeServicesFormatted.value,
                 detailTypeServices_lier: detailTypeServicesLierFormatted.value,
-                montant_total: getMontantTotal(),
+                montant_total: isRelica ? relicaMontantTTC.value : getMontantTotal(),
                 caisse_ouverture_id: store.caisseOpened.caisse_id,
                 id_site: props.dossier.id_site,
                 has_changement_plaque: hasTriggerService,

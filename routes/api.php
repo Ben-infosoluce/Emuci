@@ -19,4 +19,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fds/ops/update', [PdcController::class, 'updateFdsOps']);
     Route::post('/fds/ops/update/statut/plaque', [PdcController::class, 'updateFdsOpsStatutPlaque']);
     Route::post('/fds/ops/payment/status', [PdcController::class, 'getFdsOpsPaymentStatus']);
+    Route::post('/relica/primo', [PdcController::class, 'SaveRelicaPrimo']);
 });

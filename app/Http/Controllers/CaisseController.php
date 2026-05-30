@@ -80,6 +80,11 @@ class CaisseController extends Controller
                 ->whereIn('id', $details)
                 // ->where('id_site', getIdSite())
                 ->get();
+        } elseif ($dossier->type == 'RELICA-PRIMO') {
+            $detailTypeServices = DB::table('detail_type_services')
+                ->whereIn('id', $details)
+                // ->where('id_site', getIdSite())
+                ->get();
         } else {
             $detailTypeServices = DB::table('detail_type_services')
                 ->whereIn('id', $details)
@@ -186,6 +191,7 @@ class CaisseController extends Controller
         $permissions = getUserPermissions(); // ex: [1,2,4]
         // dd(in_array(18, $permissions));
         $userSiteId = getIdSite();
+        // dd($userSiteId, $permissions);
         if (in_array(18, $permissions)) {
             $query = Dossier::with([
                 'r_dossier_vehicule',
@@ -196,6 +202,21 @@ class CaisseController extends Controller
                 'r_dossier_services.r_service_types',
                 'r_dossier_transactions',
             ])->where('type', 'FDS')
+                // Ce bloc gère l'exclusion : soit MON site, soit le site 0
+                ->where(function ($query) use ($userSiteId) {
+                    $query->where('id_site', $userSiteId)
+                        ->orWhere('id_site', 0);
+                });
+        } elseif (in_array(19, $permissions)) {
+            $query = Dossier::with([
+                'r_dossier_vehicule',
+                'r_dossier_user',
+                'r_dossier_client',
+                'r_dossier_documents',
+                'r_dossier_services',
+                'r_dossier_services.r_service_types',
+                'r_dossier_transactions',
+            ])->where('type', 'RELICA-PRIMO')
                 // Ce bloc gère l'exclusion : soit MON site, soit le site 0
                 ->where(function ($query) use ($userSiteId) {
                     $query->where('id_site', $userSiteId)

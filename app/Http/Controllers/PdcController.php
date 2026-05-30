@@ -28,7 +28,7 @@ class PdcController extends Controller
     //dashbord
     public function showPdcDashboard()
     {
-        return inertia('Pdc/Dashbord',);
+        return inertia('Pdc/Dashbord', );
     }
     //verifie vin
     public function verifieVin($vin)
@@ -303,6 +303,204 @@ class PdcController extends Controller
             ], 201);
         } catch (\Exception $e) {
 
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function SaveRelicaPrimo(Request $request)
+    {
+        $rules = [
+            'NUMCHRONOCIL' => 'required|string',
+            'NUMEROCHASISIS' => 'required|string',
+            'IDENTITE_CLIENT' => 'required|string',
+            'GENRE' => 'required|string',
+            'DATEOUVERTUREDOSSIER' => 'required|string',
+
+            // Optional fields (if they exist in SaveFdsOps but are optional here)
+            'DateNaissance' => 'nullable|string',
+            'adresse' => 'nullable|string',
+            'carrosserie' => 'nullable|string',
+            'couleurVehicule' => 'nullable|string',
+            'email' => 'nullable|email',
+            'marqueVehicule' => 'nullable|string',
+            'modelVehicule' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'sourcesEnergie' => 'nullable|string',
+            'villeNaissance' => 'nullable|string',
+            'anneeProduction' => 'nullable|string',
+            'dateCirculation' => 'nullable|string',
+            'ptac' => 'nullable|integer',
+            'pu' => 'nullable|integer',
+            'pv' => 'nullable|integer',
+            'puissance' => 'nullable|string',
+            'placesAssises' => 'nullable|integer',
+            'nombreEssieux' => 'nullable|integer',
+            'cylindree' => 'nullable|string',
+            'typeTechnique' => 'nullable|string',
+        ];
+
+        $messages = [
+            'NUMCHRONOCIL.required' => 'Le numéro chrono (NUMCHRONOCIL) est obligatoire.',
+            'NUMEROCHASISIS.required' => 'Le numéro de châssis (NUMEROCHASISIS) est obligatoire.',
+            'IDENTITE_CLIENT.required' => 'L’identité du client (IDENTITE_CLIENT) est obligatoire.',
+            'GENRE.required' => 'Le genre (GENRE) est obligatoire.',
+            'DATEOUVERTUREDOSSIER.required' => 'La date d’ouverture (DATEOUVERTUREDOSSIER) est obligatoire.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        try {
+            DB::beginTransaction();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Références (find or create) - met 0 pour ce qui n'est pas disponible
+            |--------------------------------------------------------------------------
+            */
+            $marqueVehicule = $request->input('marqueVehicule', '0');
+            $modelVehicule = $request->input('modelVehicule', '0');
+
+            $marque_id = $this->getOrCreateId('marque', 'nom', $marqueVehicule);
+
+            $model_id = $this->getOrCreateId(
+                'model',
+                'nom',
+                $modelVehicule,
+                ['marque_id' => $marque_id]
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Nombre de plaques
+            |--------------------------------------------------------------------------
+            */
+            $nbPlaque = DB::table('genre')
+                ->where('nom', $request->GENRE)
+                ->value('nb_plaque') ?? 0;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Split IDENTITE_CLIENT
+            |--------------------------------------------------------------------------
+            */
+            $identite = trim($request->IDENTITE_CLIENT);
+            $parts = explode(' ', $identite, 2);
+            $firstname = $parts[0] ?? '0';
+            $lastname = isset($parts[1]) && trim($parts[1]) !== '' ? trim($parts[1]) : '0';
+
+            /*
+            |--------------------------------------------------------------------------
+            | Création client
+            |--------------------------------------------------------------------------
+            */
+            $client = Client::create([
+                'nom' => $firstname,
+                'prenom' => $lastname,
+                'date_naissance' => $request->input('DateNaissance', '0'),
+                'ville_naissance' => $request->input('villeNaissance', '0'),
+                'adresse' => $request->input('adresse', '0'),
+                'telephone' => $request->input('phone', '0'),
+                'email' => $request->input('email', null),
+                'password' => generateStrongPassword(8),
+                'statut' => 1,
+                'validite' => Carbon::now()->addMonths(3),
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Création / Récupération véhicule
+            |--------------------------------------------------------------------------
+            */
+            $vehicule = Vehicule::where('vin', $request->NUMEROCHASISIS)->first();
+            if (!$vehicule) {
+                $vehicule = new Vehicule();
+                $vehicule->vin = $request->NUMEROCHASISIS;
+            }
+
+            $vehicule->annee_production = $request->input('anneeProduction', '0');
+            $vehicule->marque = $marqueVehicule;
+            $vehicule->modele = $modelVehicule;
+            $vehicule->couleur = $request->input('couleurVehicule', '0');
+            $vehicule->source_energie = $request->input('sourcesEnergie', '0');
+            $vehicule->genre_vehicule = $request->GENRE;
+            $vehicule->poids_total_charge = $request->input('ptac', 0);
+            $vehicule->poids_utile = $request->input('pu', 0);
+            $vehicule->poids_vide = $request->input('pv', 0);
+            $vehicule->nb_plaque = $nbPlaque;
+            $vehicule->puissance_administrative = $request->input('puissance', '0');
+            $vehicule->places_assises = intval($request->input('placesAssises', 0));
+            $vehicule->nombre_essieux = intval($request->input('nombreEssieux', 0));
+            $vehicule->date_mise_circulation = $request->input('dateCirculation', '0');
+            $vehicule->cylindree = $request->input('cylindree', '0');
+            $vehicule->carrosserie = $request->input('carrosserie', '0');
+            $vehicule->type_technique = $request->input('typeTechnique', '0');
+            $vehicule->usage_vehicule = 'Prive';
+            $vehicule->physique_morale = 'Physique';
+            $vehicule->model_id = $model_id;
+            $vehicule->marque_id = $marque_id;
+            $vehicule->id_client = $client->id;
+
+            $vehicule->save();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Création dossier RELICA-PRIMO
+            |--------------------------------------------------------------------------
+            */
+            $date_ouverture = $request->DATEOUVERTUREDOSSIER;
+            try {
+                $date_ouverture_parsed = Carbon::createFromFormat('Ymd', $date_ouverture)->startOfDay()->format('Y-m-d H:i:s');
+            } catch (\Exception $e) {
+                try {
+                    $date_ouverture_parsed = Carbon::parse($date_ouverture)->format('Y-m-d H:i:s');
+                } catch (\Exception $ex) {
+                    $date_ouverture_parsed = now()->format('Y-m-d H:i:s');
+                }
+            }
+
+            $dossier = new Dossier();
+
+            $dossier->id_vehicule = $vehicule->id;
+            $dossier->id_client = $client->id;
+            $dossier->id_user = null;
+
+            $num_chrono = $request->NUMCHRONOCIL;
+            $id_site = 0;
+            if (strpos($num_chrono, 'ABJ') === 0) {
+                $id_site = 1;
+            } elseif (strpos($num_chrono, 'BKE') === 0) {
+                $id_site = 10;
+            } elseif (strpos($num_chrono, 'KGO') === 0) {
+                $id_site = 11;
+            } else {
+                $id_site = $request->input('id_site', 0);
+            }
+
+            $dossier->id_site = $id_site;
+            $dossier->id_service = 0;
+            $dossier->id_type_service = 0;
+            $dossier->num_chrono = $num_chrono;
+            $dossier->detail = '0';
+            $dossier->type = 'RELICA-PRIMO';
+            $dossier->statut = 1;
+            $dossier->date_creation = $date_ouverture_parsed;
+
+            $dossier->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'RELICA-PRIMO créé avec succès',
+                'data' => $dossier
+            ], 201);
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([

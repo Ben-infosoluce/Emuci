@@ -47,6 +47,10 @@
             <span style="color: #d97706;">RPABJSA{{ formatedDate(props?.dossier?.date_paiement) }}000{{
                 props?.dossier?.id }}</span>
         </h2>
+        <!-- Sous-titre RELICA-PRIMO -->
+        <p v-if="isRelica" style="text-align: center; font-size: 0.7rem; color: #1d4ed8; font-weight: 600; margin-top: 0; margin-bottom: 1rem;">
+            RELICA PRIMO &mdash; Reliquat {{ relicaGenreLabel }} / Site {{ relicaPrefix }}
+        </p>
         <!-- Info Table -->
         <div
             style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem;">
@@ -89,10 +93,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="item in items" :key="item.name">
+                    <tr v-for="item in items" :key="item.name"
+                        :style="item.amount < 0 ? 'color: #dc2626;' : (item.isReliquat ? 'font-weight: 700; color: #15803d;' : '')">
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">{{ item.name }}</td>
-                        <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: right;">{{
-                            formatAmount(item.amount) }}</td>
+                        <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: right;">
+                            <span v-if="item.amount < 0">− {{ formatAmount(Math.abs(item.amount)) }}</span>
+                            <span v-else>{{ formatAmount(item.amount) }}</span>
+                        </td>
                     </tr>
                 </tbody>
                 <tfoot style="background-color: #f9fafb; font-weight: 600;">
@@ -156,50 +163,96 @@ const zoneImpression = ref(null);
 const qrCodeRef = ref(null)
 
 // IDs des services déclencheurs
-const TRIGGER_SERVICE_IDS = [4, 10, 9]; // "Changement de Couleur", "Changement de zone (Code région)", "Usage"
+const TRIGGER_SERVICE_IDS = [4, 10, 9];
 
 const tableauFusionne = [...props.detailTypeServices, ...(props.detailTypeServices_lier || [])];
 
-// Vérification des services déclencheurs
 const serviceTypes = [
     ...(props.dossier?.r_dossier_services?.r_service_types || []),
     ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
-]
-
-// Vérification basée sur les IDs
+];
 const hasTriggerService = serviceTypes.some(item =>
     TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
 );
 
-const items = computed(() => {
-    const result = [];
+// ── RELICA-PRIMO : table de reliquats ────────────────────────────────────────
+const RELICA_PRIX = { auto: 22600, moto: 14100, remorque: 15570 };
+const RELICA_DEJA_REGLE = {
+    auto:     { ABJ: 22317, BKE_KGO: 13300 },
+    moto:     { ABJ: 10713, BKE_KGO:  6300 },
+    remorque: { ABJ: 12620, BKE_KGO: 13300 },
+};
+const RELICA_RELIQUAT = {
+    auto:     { ABJ:  283, BKE_KGO: 9300 },
+    moto:     { ABJ: 3387, BKE_KGO: 7800 },
+    remorque: { ABJ: 2950, BKE_KGO: 2270 },
+};
 
-    // Ajouter "Changement de Plaque" si un service déclencheur est présent
+const isRelica = props.dossier?.type === 'RELICA-PRIMO';
+
+const relicaSiteGroup = computed(() => {
+    const chrono = props.dossier?.num_chrono || '';
+    return chrono.startsWith('ABJ') ? 'ABJ' : 'BKE_KGO';
+});
+const relicaPrefix = computed(() => {
+    const chrono = props.dossier?.num_chrono || '';
+    if (chrono.startsWith('ABJ')) return 'ABJ';
+    if (chrono.startsWith('BKE')) return 'BKE';
+    if (chrono.startsWith('KGO')) return 'KGO';
+    return chrono.substring(0, 3) || '???';
+});
+const relicaGenreCategory = computed(() => {
+    const genre = (props.dossier?.r_dossier_vehicule?.genre_vehicule || '').toUpperCase();
+    const nbPlaque = props.dossier?.r_dossier_vehicule?.nb_plaque;
+    if (genre.includes('REMORQUE')) return 'remorque';
+    if (genre.includes('MOTO') || nbPlaque == 1) return 'moto';
+    return 'auto';
+});
+const relicaGenreLabel = computed(() =>
+    ({ auto: 'Auto', moto: 'Motos', remorque: 'Semi-remorques' })[relicaGenreCategory.value]
+);
+const relicaPrixTotal  = computed(() => RELICA_PRIX[relicaGenreCategory.value]);
+const relicaDejaRegle  = computed(() => RELICA_DEJA_REGLE[relicaGenreCategory.value][relicaSiteGroup.value]);
+const relicaReliquat   = computed(() => RELICA_RELIQUAT[relicaGenreCategory.value][relicaSiteGroup.value]);
+
+const items = computed(() => {
+    // ── Cas RELICA-PRIMO : afficher le détail reliquat ──
+    if (isRelica) {
+        return [
+            { name: `Prix total — ${relicaGenreLabel.value}`,                                          amount:  relicaPrixTotal.value,  isReliquat: false },
+            { name: `Déjà réglé (Dossiers ${relicaPrefix.value})`,                                    amount: -relicaDejaRegle.value,   isReliquat: false },
+            { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`,        amount:  relicaReliquat.value,   isReliquat: true  },
+        ];
+    }
+
+    // ── Cas standard ──
+    const result = [];
     if (hasTriggerService && props.autre_facturation) {
         result.push({
             name: props.autre_facturation.nom,
             amount: parseFloat(props.autre_facturation.montant),
         });
     }
-
-    // Ajouter les autres éléments
     result.push(
         ...tableauFusionne.map(item => ({
             name: item.element_facturation,
             amount: parseFloat(item?.montant || 0),
         }))
     );
-
     return result;
 });
 
-// Total Hors Taxes (HT)
+// Total HT
 const totalHT = computed(() =>
     items.value.reduce((acc, item) => acc + item.amount, 0)
 );
 
-// Total TTC (HT + Timbre)
-const totalTTC = computed(() => totalHT.value + 100);
+// Total TTC :
+// - RELICA-PRIMO : uniquement reliquat + timbre (les lignes Prix total et Déjà réglé sont informatives)
+// - Standard     : somme HT + timbre
+const totalTTC = computed(() =>
+    isRelica ? relicaReliquat.value + 100 : totalHT.value + 100
+);
 
 // Formatage des montants
 function formatAmount(val) {
