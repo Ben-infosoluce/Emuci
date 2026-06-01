@@ -194,7 +194,6 @@
                     <Card>
                         <ScrollArea class="h-full w-full rounded-md border">
                             <div class="m-8" v-if="dossier.type != 'RELICA-PRIMO'">
-                            
                                 <h3 class="mt-6 text-center font-bold text-lg">
                                     PANIER DE PAIEMENT
                                 </h3>
@@ -218,7 +217,6 @@
                                         </div>
                                     </div>
                                 </div>
-
                                 <!-- Section récapitulative -->
                                 <div class=" space-y-2 pt-2 mt-5">
                                     <div class="flex justify-between">
@@ -241,7 +239,6 @@
                                     </div>
                                 </div>
                             </div>
-
                              <div class="m-8" v-if="dossier.type == 'RELICA-PRIMO'">
                                 <h3 class="mt-6 text-center font-bold text-lg">
                                     PANIER DE PAIEMENT RELICA PRIMO

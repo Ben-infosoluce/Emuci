@@ -19,6 +19,7 @@ use App\Helpers\LogHelper;
 use Dflydev\DotAccessData\Data;
 use App\Http\Requests\SavePdcReImmatriculationRequest;
 use App\Models\Correction;
+use App\Models\Paiement;
 use App\Models\Recu;
 
 class PdcController extends Controller
@@ -28,7 +29,7 @@ class PdcController extends Controller
     //dashbord
     public function showPdcDashboard()
     {
-        return inertia('Pdc/Dashbord', );
+        return inertia('Pdc/Dashbord',);
     }
     //verifie vin
     public function verifieVin($vin)
@@ -363,7 +364,7 @@ class PdcController extends Controller
             | Références (find or create) - met 0 pour ce qui n'est pas disponible
             |--------------------------------------------------------------------------
             */
-            $marqueVehicule = $request->input('marqueVehicule', '0');
+            $marqueVehicule = $request->input('marqueVehicule', $request->GENRE);
             $modelVehicule = $request->input('modelVehicule', '0');
 
             $marque_id = $this->getOrCreateId('marque', 'nom', $marqueVehicule);
@@ -473,7 +474,7 @@ class PdcController extends Controller
             $num_chrono = $request->NUMCHRONOCIL;
             $id_site = 0;
             if (strpos($num_chrono, 'ABJ') === 0) {
-                $id_site = 1;
+                $id_site = 12;
             } elseif (strpos($num_chrono, 'BKE') === 0) {
                 $id_site = 10;
             } elseif (strpos($num_chrono, 'KGO') === 0) {
@@ -483,10 +484,10 @@ class PdcController extends Controller
             }
 
             $dossier->id_site = $id_site;
-            $dossier->id_service = 0;
-            $dossier->id_type_service = 0;
+            $dossier->id_service = 5; // ID du service RELICA-PRIMO
+            $dossier->id_type_service = 18; // ID du type de service RELICA-PRIMO
             $dossier->num_chrono = $num_chrono;
-            $dossier->detail = '0';
+            $dossier->detail = json_encode(["46"]);
             $dossier->type = 'RELICA-PRIMO';
             $dossier->statut = 1;
             $dossier->date_creation = $date_ouverture_parsed;

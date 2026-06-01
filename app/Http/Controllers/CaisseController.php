@@ -217,10 +217,9 @@ class CaisseController extends Controller
                 'r_dossier_services.r_service_types',
                 'r_dossier_transactions',
             ])->where('type', 'RELICA-PRIMO')
-                // Ce bloc gère l'exclusion : soit MON site, soit le site 0
+                // Ce bloc gère l'exclusion : soit MON site
                 ->where(function ($query) use ($userSiteId) {
-                    $query->where('id_site', $userSiteId)
-                        ->orWhere('id_site', 0);
+                    $query->where('id_site', $userSiteId);
                 });
         } else {
             $query = Dossier::with([

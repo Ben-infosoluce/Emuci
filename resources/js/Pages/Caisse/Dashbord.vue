@@ -97,7 +97,7 @@
                                         <TableCell>{{ dossier.id }}</TableCell>
                                         <TableCell>{{ dossier?.r_dossier_vehicule?.vin || '—' }}</TableCell>
                                         <TableCell>{{ dossier?.r_dossier_vehicule?.marque || '—' }}</TableCell>
-                                        <!-- <TableCell>
+                                        <TableCell>
                                             <template v-if="dossier.detail && Array.isArray(dossier.detail)">
                                                 {{ dossier.detail.slice(0, 2).join(', ') }}<span
                                                     v-if="dossier.detail.length > 2">...</span>
@@ -108,7 +108,7 @@
                                                     JSON.parse(dossier.detail).slice(0, 2).join(', ')
                                                 }}<span v-if="JSON.parse(dossier.detail).length > 2">...</span>
                                             </template>
-                                        </TableCell> -->
+                                        </TableCell>
                                         <TableCell>{{ dossier?.num_chrono || '—' }}</TableCell>
                                         <TableCell>{{ dossier?.date_creation || '—' }}</TableCell>
 
