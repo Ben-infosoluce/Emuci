@@ -352,6 +352,7 @@ const caisseOuverture = ref(null);
 const commentaire = ref("");
 const perte = ref(0);
 const surplus = ref(0);
+const rafConfig = ref(0);
 
 const billetterie = ref([
     { valeur: 10000, quantite: 0 },
@@ -462,13 +463,18 @@ const shouldShowActionButton = computed(() => {
 
 const isButtonDisabled = computed(() => {
     if (!selectedCaisse.value) return true;
-    const hasActiveOther = !!ouvertureRafNonFermee.value;
-    const info = caisseRafInfo.value[selectedCaisse.value];
-    const isThisOpeningActive =
-        info?.ouverture_raf_non_fermee &&
-        String(info.ouverture_raf_non_fermee.caisse_id) === String(selectedCaisse.value);
 
-    if (!isActionFermeture.value && hasActiveOther && !isThisOpeningActive) return true;
+    // Si raf_config = 1, appliquer la contrainte J-5
+    if (rafConfig.value === 1) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selected = new Date(selectedDate.value + 'T00:00:00');
+        const fiveDaysAgo = new Date(today);
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+        if (selected < fiveDaysAgo || selected > today) return true;
+    }
+
     return false;
 });
 
@@ -534,6 +540,11 @@ const fetchRafInfoForCaisse = async (caisseId) => {
             ouverture_raf_du_jour: data.ouverture_raf_du_jour || null,
             ouverture_raf_non_fermee: data.ouverture_raf_non_fermee || null,
         };
+
+        // Stocker la config RAF (contrainte J-5)
+        if (data.raf_config !== undefined) {
+            rafConfig.value = data.raf_config;
+        }
 
         if (String(caisseId) === String(selectedCaisse.value)) {
             caisseOuverture.value = data.caisse_ouverture || null;

@@ -81,6 +81,9 @@ class RafCaisseController extends Controller
             ->whereDate('date_ouverture', $date)
             ->first();
 
+        // 4) Lire la config RAF (contrainte J-5)
+        $rafConfig = (int) DB::table('settings')->value('raf_config');
+
         return response()->json([
             'caisse_id' => $caisseId,
             'date_cible' => $date,
@@ -88,6 +91,7 @@ class RafCaisseController extends Controller
             'ouverture_raf_non_fermee' => $ouvertureRafNonFermee,
             'caisse_ouverture' => $caisseOuverture,
             'status_raf' => $ouvertureRafNonFermee ? 'ouverte' : 'fermée',
+            'raf_config' => $rafConfig,
         ]);
     }
 
@@ -119,16 +123,23 @@ class RafCaisseController extends Controller
             return response()->json(['message' => 'Caisse introuvable.'], 404);
         }
 
-        // ✅ Vérification date (J-5)
+        // ✅ Parse de la date d'opération
         $dateOperation = Carbon::parse($request->date_operation)->toDateString();
-        $today = Carbon::now()->toDateString();
-        $fiveDaysAgo = Carbon::now()->subDays(5)->toDateString();
 
-        if ($dateOperation < $fiveDaysAgo || $dateOperation > $today) {
-            return response()->json([
-                'message' => "La date de l'opération doit être comprise dans les 5 derniers jours."
-            ], 400);
+        // ✅ Vérification dynamique via settings.raf_config (1 = contrainte active, 0 = libre)
+        $rafConfig = DB::table('settings')->value('raf_config');
+
+        if ((int) $rafConfig === 1) {
+            $today = Carbon::now()->toDateString();
+            $fiveDaysAgo = Carbon::now()->subDays(5)->toDateString();
+
+            if ($dateOperation < $fiveDaysAgo || $dateOperation > $today) {
+                return response()->json([
+                    'message' => "La date de l'opération doit être comprise dans les 5 derniers jours."
+                ], 400);
+            }
         }
+
 
         // ✅ Déterminer action
         $isFermeture = (bool) $request->is_fermeture;
