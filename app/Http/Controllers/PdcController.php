@@ -695,50 +695,82 @@ class PdcController extends Controller
         ], 200);
     }
 
-    public function updateFdsOpsStatutPlaque(Request $request)
+    public function updateStatutPosePlaque(Request $request)
     {
+        $request->validate([
+            'num_chrono' => ['required', 'string']
+        ]);
+
         $dossier = Dossier::where('num_chrono', $request->num_chrono)->first();
 
         if (!$dossier) {
             return response()->json([
                 'success' => false,
-                'message' => 'Dossier non trouvé',
+                'status'  => 'DOSSIER_NOT_FOUND',
+                'message' => 'Dossier non trouvé'
             ], 404);
         }
 
-        $dossier->status_pose_plaque = 2; // 2 : Plaque posée
-        $dossier->save();
+        // Vérifier si la plaque est déjà posée
+        if ($dossier->status_pose_plaque == 2) {
+            return response()->json([
+                'success' => false,
+                'status'  => 'PLAQUE_ALREADY_INSTALLED',
+                'message' => 'La plaque est déjà marquée comme posée'
+            ], 409);
+        }
+
+        $dossier->update([
+            'status_pose_plaque' => 2 // Plaque posée
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Mise à jour du statut plaque du dossier réussie.',
-            'data' => $dossier
+            'status'  => 'SUCCESS',
+            'message' => 'Statut de pose de plaque mis à jour avec succès',
+            'data' => [
+                'id_dossier'         => $dossier->id,
+                'num_chrono'         => $dossier->num_chrono,
+                'status_pose_plaque' => $dossier->status_pose_plaque,
+            ]
         ], 200);
     }
 
     public function getFdsOpsPaymentStatus(Request $request)
     {
+        $request->validate([
+            'num_chrono' => ['required', 'string']
+        ]);
+
         $dossier = Dossier::where('num_chrono', $request->num_chrono)->first();
 
         if (!$dossier) {
             return response()->json([
                 'success' => false,
-                'message' => 'Dossier non trouvé',
+                'status'  => 'DOSSIER_NOT_FOUND',
+                'message' => 'Dossier non trouvé'
             ], 404);
         }
-        //get paiement  from payment table 
+
         $paiement = Paiement::where('id_dossier', $dossier->id)->first();
+
         if (!$paiement) {
             return response()->json([
                 'success' => false,
-                'message' => 'Dossier non payé',
+                'status'  => 'PAYMENT_NOT_FOUND',
+                'message' => 'Aucun paiement trouvé pour ce dossier'
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'statut_paiement' => $paiement->statut,
-            'date_paiement' => $paiement->date,
+            'status'  => 'SUCCESS',
+            'data' => [
+                'num_chrono'      => $dossier->num_chrono,
+                'id_dossier'      => $dossier->id,
+                'statut_paiement' => $paiement->statut,
+                'date_paiement'   => $paiement->date,
+            ]
         ], 200);
     }
 

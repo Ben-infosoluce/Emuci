@@ -28,26 +28,29 @@ function generateImmatriculation($prefix = 'CI', $length = 8)
 function getIdSite()
 {
     $user = Auth::user();
-    return $user->id_site;
+    return $user ? $user->id_site : null;
 }
 
 function getIdCaisse()
 {
     $site_id = getIdSite();
+    if (!$site_id) {
+        return null;
+    }
     $caisse = Caisse::where('site_id', $site_id)->first();
-    return $caisse->id;
+    return $caisse ? $caisse->id : null;
 }
+
 function getConnectedUserId()
 {
     $user = Auth::user();
-    return $user->id;
+    return $user ? $user->id : null;
 }
 
 function getConnectedUserRole()
 {
     $user = Auth::user();
-    $role = $user->r_user_role->nom_role;
-    return $role;
+    return ($user && $user->r_user_role) ? $user->r_user_role->nom_role : null;
 }
 
 

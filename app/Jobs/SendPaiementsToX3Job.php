@@ -56,7 +56,11 @@ class SendPaiementsToX3Job implements ShouldQueue
                 }
 
                 // Récupérer les informations du client depuis le dossier
-                $dossier = $paiementsDuDossier->first()->dossier;
+                $firstPaiement = $paiementsDuDossier->first();
+                $dossier = $firstPaiement ? $firstPaiement->dossier : null;
+                if (!$dossier) {
+                    throw new Exception("Dossier manquant ou introuvable pour la facture [NUM: $numFacture]");
+                }
                 Log::info('dossier', $dossier->toArray());
                 $client = $dossier->client;
 
@@ -69,6 +73,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                     'TVA' => (int) round($totalTTC) - (int) round($totalHT),
                     'TOTALHT' => (int) round($totalHT), // Format entier
                     'TOTALTTC' => (int) round($totalTTC), // Format entier
+                    'SITE' => $dossier->id_site,
                     'CUR' => 'XOF'
                 ];
                 Log::info('Création entête facture X3', $enteteData);
@@ -96,6 +101,13 @@ class SendPaiementsToX3Job implements ShouldQueue
                 foreach ($paiementsDuDossier as $paiement) {
                     // 1. Récupérer le breakdown des montants depuis la description du paiement
                     $description = json_decode($paiement->description ?? '[]', true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        Log::warning('Description JSON invalide pour le paiement', [
+                            'paiement_id' => $paiement->id,
+                            'reference' => $paiement->reference,
+                            'description_brute' => $paiement->description
+                        ]);
+                    }
                     $breakdown = collect(is_array($description) ? $description : []);
 
                     // 2. Identifier les services à envoyer
@@ -106,9 +118,14 @@ class SendPaiementsToX3Job implements ShouldQueue
                     foreach ($serviceIds as $serviceId) {
                         if (isset($services_par_id[$serviceId])) {
                             // Chercher le montant réel dans le breakdown
-                            $detailService = $breakdown->firstWhere('id_service', $serviceId);
+                            $detailService = $breakdown->firstWhere('id', $serviceId);
 
                             if (!$detailService) {
+                                Log::error("Montant introuvable pour le service dans le breakdown du paiement", [
+                                    'service_id' => $serviceId,
+                                    'paiement_ref' => $paiement->reference,
+                                    'breakdown' => $breakdown->toArray()
+                                ]);
                                 throw new Exception("Montant introuvable pour le service [ID: $serviceId] dans le paiement [REF: {$paiement->reference}]. Échec de l'envoi pour éviter une division erronée.");
                             }
 
@@ -121,6 +138,11 @@ class SendPaiementsToX3Job implements ShouldQueue
 
                     // Fallback si aucun service mappé n'est trouvé dans le dossier
                     if (empty($servicesAEnvoyer)) {
+                        Log::warning("Aucun service mappé trouvé pour le dossier, utilisation du fallback ARTICLE01", [
+                            'num_chrono' => $paiement->dossier->num_chrono ?? $numFacture,
+                            'detail_dossier' => $rawDetail,
+                            'mapping_services' => $services_par_id
+                        ]);
                         $servicesAEnvoyer[] = [
                             'itmref' => "ARTICLE01",
                             'montant_ttc' => $paiement->montant - 100

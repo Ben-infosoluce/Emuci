@@ -29,6 +29,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\TypeServiceController;
 use App\Http\Controllers\Admin\MarqueController;
 use App\Http\Controllers\Admin\ModelController;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\Caisse;
 
 //Route groupe des utilisteurs non authentifier
@@ -449,7 +450,6 @@ Route::group(
         Route::get('/caisse/liste', [ControleCaisseController::class, 'getCaisses']);
         Route::get('/caisse/of/user', [ControleCaisseController::class, 'getCaisseOfAuthenticatedUser']);
         Route::post('/caisses/ouvertures/{id}/authorize-edition', [ControleCaisseController::class, 'authorizeBilletageEdition'])->name('caisses.ouvertures.authorize-edition');
-
     }
 );
 
@@ -482,3 +482,15 @@ Route::group(
 //client 
 Route::post('/', [ClientController::class, "clientLogin"])->name('client.login');
 Route::post('/client/chrono', [ClientController::class, "chrono"])->name('client.chrono');
+
+Route::get('/clean-laravel-cache', function () {
+    // Équivalent de php artisan optimize:clear (vide tout le cache)
+    Artisan::call('optimize:clear');
+
+    // Équivalent de php artisan optimize (recompile la config et les routes)
+    Artisan::call('optimize');
+
+    // Artisan::call('storage:link');
+
+    return "Le cache a été vidé et l'optimisation est terminée avec succès !";
+});

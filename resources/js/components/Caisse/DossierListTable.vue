@@ -45,14 +45,31 @@ const totalTimbres = computed(() => props.paiements.reduce((sum, p) => sum + Num
 const totalDossiers = computed(() => totalMontant.value - totalTimbres.value);
 const soldeCaisse = computed(() => totalMontant.value + props.montantOuverture);
 
-const exportToCSV = () => {
+const exportToExcel = async () => {
+    if (!window.XLSX) {
+        try {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        } catch (err) {
+            console.error(err);
+            alert("Impossible de charger la bibliothèque d'export Excel.");
+            return;
+        }
+    }
+    const XLSX = window.XLSX;
+
     const headers = ["#", "Client", "N° Chrono", "Référence", "Immatriculation", "Montant Dossier", "Timbre", "Heure"];
     const rows = filteredPaiements.value.map((p, i) => [
         i + 1,
-        `"${p.dossier?.r_dossier_client?.nom || ''} ${p.dossier?.r_dossier_client?.prenom || ''}"`,
-        `"${p.dossier?.num_chrono || 'N/A'}"`,
-        `"${p.reference}"`,
-        `"${p.dossier?.r_dossier_vehicule?.num_immatriculation || 'N/A'}"`,
+        `${p.dossier?.r_dossier_client?.nom || ''} ${p.dossier?.r_dossier_client?.prenom || ''}`,
+        p.dossier?.num_chrono || 'N/A',
+        p.reference,
+        p.dossier?.r_dossier_vehicule?.num_immatriculation || 'N/A',
         Number(p.montant) - Number(p.timbre || 0),
         Number(p.timbre || 0),
         new Date(p.created_at).toLocaleTimeString()
@@ -65,15 +82,11 @@ const exportToCSV = () => {
     rows.push(["", "RECETTE TIMBRES", "", "", "", "", totalTimbres.value, ""]);
     rows.push(["", "SOLDE GLOBAL", "", "", "", "", "", soldeCaisse.value]);
 
-    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `point_caisse_${props.selectedDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Point de Caisse");
+
+    XLSX.writeFile(workbook, `point_caisse_${props.selectedDate}.xlsx`);
 };
 </script>
 
@@ -92,9 +105,9 @@ const exportToCSV = () => {
                 <div class="flex items-center gap-4">
                     <!-- Export Actions -->
                     <div class="flex items-center border rounded-md overflow-hidden bg-background">
-                        <Button variant="ghost" size="sm" class="h-9 px-3 rounded-none" title="Exporter en CSV" @click="exportToCSV">
+                        <Button variant="ghost" size="sm" class="h-9 px-3 rounded-none" title="Exporter en Excel" @click="exportToExcel">
                             <FileDown />
-                            <span class="text-xs font-medium"> Exporter en CSV</span>
+                            <span class="text-xs font-medium"> Exporter en Excel</span>
                         </Button>
                     </div>
 

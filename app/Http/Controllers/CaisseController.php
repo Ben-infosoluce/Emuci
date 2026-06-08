@@ -453,6 +453,7 @@ class CaisseController extends Controller
         $dateEnd = $request->input('date_end');
         $status = $request->input('status'); // 'tout', 'perte', 'surplus', 'equilibre'
         $siteId = $request->input('site_id');
+        $perPage = $request->input('per_page', 10);
 
         $query = DB::table('caisse_ouvertures')
             ->join('caisses', 'caisse_ouvertures.caisse_id', '=', 'caisses.id')
@@ -500,7 +501,7 @@ class CaisseController extends Controller
         }
 
         $history = $query->orderBy('caisse_ouvertures.date_fermeture', 'desc')
-            ->paginate(15);
+            ->paginate($perPage);
 
         return response()->json($history);
     }
@@ -516,6 +517,7 @@ class CaisseController extends Controller
         $dateStart = $request->input('date_start');
         $dateEnd = $request->input('date_end');
         $status = $request->input('status');
+        $perPage = $request->input('per_page', 10);
 
         $query = DB::table('caisse_ouvertures')
             ->join('caisses', 'caisse_ouvertures.caisse_id', '=', 'caisses.id')
@@ -557,7 +559,7 @@ class CaisseController extends Controller
         }
 
         $history = $query->orderBy('caisse_ouvertures.date_fermeture', 'desc')
-            ->paginate(15);
+            ->paginate($perPage);
 
         return response()->json($history);
     }
@@ -573,6 +575,9 @@ class CaisseController extends Controller
     public function getRafValidationsHistory(Request $request)
     {
         // Le RAF voit tout comme le Boss
+        if (!$request->has('per_page')) {
+            $request->merge(['per_page' => 10]);
+        }
         return $this->getValidationsHistory($request);
     }
 

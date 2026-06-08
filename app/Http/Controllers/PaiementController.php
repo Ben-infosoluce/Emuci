@@ -302,7 +302,7 @@ class PaiementController extends Controller
                     'id' => $changementPlaqueData->id,
                     "statut" => 1,
                     "id_site" => 2,
-                    'montant' => (float)$changementPlaqueData->montant, //convertir en int si besoin
+                    'montant' => (float) $changementPlaqueData->montant, //convertir en int si besoin
                     "id_entite" => 1,
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s'),
@@ -406,25 +406,8 @@ class PaiementController extends Controller
                 'updated_at' => now(),
             ]);
 
-            //update numérisation site_id
-            updateFdsSite($dossier->num_chrono, getIdSite());
-
             DB::commit();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Paiements enregistrés avec succès.',
-                'dossier' => $dossier,
-                'montant_dossier_ht' => $montant_dossier_ht,
-                'montant_dossier_ttc' => $montant_dossier_ttc,
-                'montant_dossier_lier_ht' => $montant_dossier_lier_ht,
-                'montant_dossier_lier_ttc' => $montant_dossier_lier_ttc,
-                // 'changement_plaque' => $changementPlaqueData ? [
-                //     'nom' => $changementPlaqueData->nom_type_service,
-                //     'montant_ht' => $changementPlaqueData->montant,
-                //     'montant_ttc' => $changementPlaqueData->montant * 1.18,
-                // ] : null,
-            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -433,6 +416,27 @@ class PaiementController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+
+        // --- APPELS EXTERNES (hors transaction) ---
+        // Exécutés après le commit : une erreur ici ne rollback pas le paiement.
+
+        // update numérisation site_id uniquement pour FDS
+        if ($dossier->type == 'FDS') {
+            updateFdsSite($dossier->num_chrono, getIdSite());
+        }
+
+        // --- NOTIFICATION EXTERNE DU PAIEMENT ---
+        $this->notifierPaiementExterne($dossier->num_chrono);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Paiements enregistrés avec succès.',
+            'dossier' => $dossier,
+            'montant_dossier_ht' => $montant_dossier_ht,
+            'montant_dossier_ttc' => $montant_dossier_ttc,
+            'montant_dossier_lier_ht' => $montant_dossier_lier_ht,
+            'montant_dossier_lier_ttc' => $montant_dossier_lier_ttc,
+        ]);
     }
 
     //generate receipt
@@ -700,5 +704,75 @@ class PaiementController extends Controller
             ->select('id', 'nom')
             ->get();
         return response()->json($entites);
+    }
+
+    private function notifierPaiementExterne($chrono)
+    {
+        try {
+            // En mode local uniquement pour le moment
+            // $loginUrl = 'https://demo.dgttc.ci/recensementww/API/Auth/login.php';
+            // $notifyUrl = 'https://demo.dgttc.ci/recensementww/API/notification_paiement_caisse_emuci.php';
+            // $email = 'userinterco@dgttc.ci';
+            // $password = 'interconnection@auth';
+
+            // //PRODUCTION
+            $loginUrl = 'https://recensementww.dgttc.ci/API/Auth/login.php';
+            $notifyUrl = 'https://recensementww.dgttc.ci/API/notification_paiement_caisse_emuci.php';
+            $email = 'userinterco_prod@dgttc.ci';
+            $password = 'interconnection@auth';
+
+            \Illuminate\Support\Facades\Log::info("[notifierPaiementExterne] Début - chrono: {$chrono}");
+
+            $authResponse = \Illuminate\Support\Facades\Http::post($loginUrl, [
+                'email' => $email,
+                'password' => $password,
+            ]);
+
+            \Illuminate\Support\Facades\Log::info("[notifierPaiementExterne] Réponse login", [
+                'status' => $authResponse->status(),
+                'body' => $authResponse->body(),
+            ]);
+
+            $token = $authResponse->json('token');
+
+            if (!$token) {
+                \Illuminate\Support\Facades\Log::error("[notifierPaiementExterne] Token absent ou null - impossible d'envoyer la notification", [
+                    'chrono' => $chrono,
+                    'login_status' => $authResponse->status(),
+                    'login_body' => $authResponse->json(),
+                ]);
+                return;
+            }
+
+            \Illuminate\Support\Facades\Log::info("[notifierPaiementExterne] Token obtenu, envoi de la notification pour chrono: {$chrono}");
+
+            $notifyResponse = \Illuminate\Support\Facades\Http::withHeaders([
+                'X-Token' => $token,
+                'Content-Type' => 'application/json'
+            ])->post($notifyUrl, [
+                        'numChronoCil' => $chrono
+                    ]);
+
+            \Illuminate\Support\Facades\Log::info("[notifierPaiementExterne] Réponse notification", [
+                'chrono' => $chrono,
+                'status' => $notifyResponse->status(),
+                'body' => $notifyResponse->json(),
+            ]);
+
+            if (!$notifyResponse->successful()) {
+                \Illuminate\Support\Facades\Log::error("[notifierPaiementExterne] Échec de la notification externe", [
+                    'chrono' => $chrono,
+                    'status' => $notifyResponse->status(),
+                    'body' => $notifyResponse->body(),
+                ]);
+            } else {
+                \Illuminate\Support\Facades\Log::info("[notifierPaiementExterne] Notification envoyée avec succès pour le chrono: {$chrono}");
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("[notifierPaiementExterne] Exception: " . $e->getMessage(), [
+                'chrono' => $chrono,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 }

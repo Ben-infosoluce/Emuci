@@ -29,7 +29,15 @@
           <option value="surplus">Surplus</option>
         </select>
 
-        <Button @click="fetchHistory" variant="default" size="sm" class="bg-amber-600 hover:bg-amber-700">
+        <select v-model="filters.per_page" @change="fetchHistory(1)"
+          class="text-xs border-gray-200 rounded-lg focus:ring-amber-500 focus:border-amber-500">
+          <option :value="10">10 par page</option>
+          <option :value="15">15 par page</option>
+          <option :value="20">20 par page</option>
+          <option :value="50">50 par page</option>
+        </select>
+
+        <Button @click="fetchHistory(1)" variant="default" size="sm" class="bg-amber-600 hover:bg-amber-700">
           <RefreshCcw v-if="loading" class="w-4 h-4 animate-spin mr-2" />
           Filtrer
         </Button>
@@ -115,12 +123,7 @@
       <div v-if="pagination.last_page > 1"
         class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
         <span class="text-xs text-gray-500">Page {{ pagination.current_page }} sur {{ pagination.last_page }}</span>
-        <div class="flex gap-2">
-          <Button variant="outline" size="sm" :disabled="pagination.current_page === 1"
-            @click="goToPage(pagination.current_page - 1)"> Précédent </Button>
-          <Button variant="outline" size="sm" :disabled="pagination.current_page === pagination.last_page"
-            @click="goToPage(pagination.current_page + 1)"> Suivant </Button>
-        </div>
+        <Pagination :meta="pagination" @page-change="goToPage" />
       </div>
     </div>
   </div>
@@ -131,6 +134,7 @@ import { ref, onMounted, reactive } from 'vue';
 import { RefreshCcw } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import Pagination from '@/components/Pagination.vue';
 import axios from 'axios';
 
 const history = ref([]);
@@ -141,7 +145,8 @@ const filters = reactive({
   date_start: '',
   date_end: '',
   status: 'tout',
-  site_id: 'tout'
+  site_id: 'tout',
+  per_page: 10
 });
 
 defineProps({

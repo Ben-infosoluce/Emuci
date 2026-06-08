@@ -838,7 +838,7 @@ async function validerPaiement() {
     );
 
     try {
-        const response = await axios.post(
+        const promise = axios.post(
             `/statut/paiement`,
             {
                 statut_paiement: nouveauStatut,
@@ -866,13 +866,26 @@ async function validerPaiement() {
             }
         );
 
-        toast.success(response.data.message);
+        toast.promise(promise, {
+            loading: 'Validation du paiement en cours...',
+            success: (data) => {
+                return data.data.message || 'Paiement validé avec succès';
+            },
+            error: (err) => {
+                return err.response?.data?.message || "Une erreur s'est produite lors de la mise à jour.";
+            }
+        });
+
+        const response = await promise;
+
         props.dossier.statut_paiement = nouveauStatut;
-        router.visit('/paiement/receipt/' + props.dossier.num_chrono);
+        
+        setTimeout(() => {
+            router.visit('/paiement/receipt/' + props.dossier.num_chrono);
+        }, 800);
+
     } catch (error) {
         isSubmitting.value = false;
-        const errorMessage = error.response?.data?.message || "Une erreur s'est produite lors de la mise à jour.";
-        toast.error(errorMessage);
         console.error(error);
     }
 }
