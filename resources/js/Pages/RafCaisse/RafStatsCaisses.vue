@@ -316,7 +316,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import axios from "axios";
 import {
     AlertDialog,
@@ -337,10 +337,22 @@ import DossierListTable from "@/components/Caisse/DossierListTable.vue";
 // ============================================================================
 // REFS
 // ============================================================================
+const urlParams = new URLSearchParams(window.location.search);
 const paiements = ref([]);
-const selectedDate = ref(new Date().toISOString().split("T")[0]);
+const selectedDate = ref(urlParams.get("date") || new Date().toISOString().split("T")[0]);
 const caisses = ref([]);
-const selectedCaisse = ref("");
+const selectedCaisse = ref(urlParams.get("caisse_id") || "");
+
+watch([selectedDate, selectedCaisse], () => {
+    const url = new URL(window.location.href);
+    if (selectedDate.value) {
+        url.searchParams.set("date", selectedDate.value);
+    }
+    if (selectedCaisse.value) {
+        url.searchParams.set("caisse_id", selectedCaisse.value);
+    }
+    window.history.replaceState({}, '', url);
+});
 const montantRecu = ref("");
 const loading = ref(false);
 const isDialogOpen = ref(false);

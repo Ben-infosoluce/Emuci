@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SendPaiementsToX3Job;
+use App\Models\Paiement;
 
 
 
@@ -207,6 +208,7 @@ class RafCaisseController extends Controller
             DB::beginTransaction();
 
             try {
+
                 // 🚀 Dispatch JOB X3 (asynchrone, retry, logs)
                 SendPaiementsToX3Job::dispatch(
                     $dateOperation,

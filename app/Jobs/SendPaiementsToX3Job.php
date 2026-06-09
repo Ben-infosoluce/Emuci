@@ -30,9 +30,14 @@ class SendPaiementsToX3Job implements ShouldQueue
 
     public function handle(X3FactureService $x3)
     {
-        $paiements = Paiement::with('dossier')
-            ->whereDate('created_at', $this->dateOperation)
-            ->get();
+        $query = Paiement::with('dossier')
+            ->whereDate('created_at', $this->dateOperation);
+
+        if ($this->caisseId) {
+            $query->where('caisse_id', $this->caisseId);
+        }
+
+        $paiements = $query->get();
 
         if ($paiements->isEmpty()) {
             throw new Exception('Aucun paiement à envoyer');
