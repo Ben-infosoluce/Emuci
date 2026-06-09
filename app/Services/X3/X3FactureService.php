@@ -26,6 +26,7 @@ class X3FactureService
     protected function client()
     {
         return Http::withBasicAuth($this->username, $this->password)
+            ->withoutVerifying()
             ->acceptJson()
             ->contentType('application/json')
             ->connectTimeout(30) // Temps max pour établir la connexion
@@ -47,9 +48,7 @@ class X3FactureService
             'payload' => $payload
         ]);
 
-        $response = $this->client()->post($url, [
-            'json' => $payload
-        ]);
+        $response = $this->client()->post($url, $payload);
 
         if (!$response->successful()) {
             Log::error('X3 ENTETE ERROR', [
@@ -82,9 +81,7 @@ class X3FactureService
             'payload' => $payload
         ]);
 
-        $response = $this->client()->post($url, [
-            'json' => $payload
-        ]);
+        $response = $this->client()->post($url, $payload);
 
         if (!$response->successful()) {
             Log::error('X3 LIGNE ERROR', [
