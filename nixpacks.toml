@@ -1,2 +1,9 @@
+[phases.install]
+dependsOn = ["setup"]
+cmds = ["npm install"]
+
+[variables]
+NODE_OPTIONS = "--dns-result-order=ipv4first"
+
 [start]
 cmd = "bash start.sh"
