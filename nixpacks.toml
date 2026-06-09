@@ -1,6 +1,9 @@
 [phases.install]
 dependsOn = ["setup"]
-cmds = ["npm install"]
+cmds = [
+    "composer install --no-dev --optimize-autoloader",
+    "npm install"
+]
 
 [variables]
 NODE_OPTIONS = "--dns-result-order=ipv4first"
