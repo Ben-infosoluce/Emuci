@@ -12,24 +12,56 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
+/**
+ * Job pour l'envoi des paiements vers Sage X3
+ * 
+ * Ce job est responsable de la récupération des paiements pour une date et une caisse donnée,
+ * de leur transformation en factures X3 et de leur envoi vers l'API Sage X3.
+ * 
+ * Le traitement inclut :
+ * - Le regroupement des paiements par dossier
+ * - La création d'en-têtes de facture
+ * - La création de lignes de facture pour chaque service
+ * - La gestion des erreurs et des logs
+ */
 class SendPaiementsToX3Job implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /** @var int Nombre de tentatives en cas d'échec */
     public int $tries = 5;
+
+    /** @var int Délai d'expiration du job en secondes */
     public int $timeout = 120;
 
+    /** @var string Date de l'opération au format YYYY-MM-DD */
     protected string $dateOperation;
+
+    /** @var int ID de la caisse concernée */
     protected int $caisseId;
 
+    /**
+     * Crée une nouvelle instance du job
+     *
+     * @param string $dateOperation Date de l'opération au format YYYY-MM-DD
+     * @param int $caisseId ID de la caisse concernée
+     */
     public function __construct(string $dateOperation, int $caisseId)
     {
         $this->dateOperation = $dateOperation;
         $this->caisseId = $caisseId;
     }
 
+    /**
+     * Exécute le job
+     *
+     * @param X3FactureService $x3 Service pour l'interaction avec l'API Sage X3
+     * @return void
+     * @throws Exception Si aucun paiement n'est trouvé
+     */
     public function handle(X3FactureService $x3)
     {
+        // Récupération des paiements pour la date et la caisse spécifiées
         $query = Paiement::with('dossier')
             ->whereDate('created_at', $this->dateOperation);
 
@@ -43,19 +75,20 @@ class SendPaiementsToX3Job implements ShouldQueue
             throw new Exception('Aucun paiement à envoyer');
         }
 
-        // Grouper les paiements par dossier (num_chrono)
+        // Grouper les paiements par dossier (num_chrono) pour créer une facture par dossier
         $groupedPaiements = $paiements->groupBy('dossier.num_chrono');
 
         foreach ($groupedPaiements as $numFacture => $paiementsDuDossier) {
             try {
                 Log::info('Début traitement facture X3', ['num_facture' => $numFacture]);
 
-                // ÉTAPE 1 : Créer l'en-tête de la facture
+                // ÉTAPE 1 : Calcul des totaux et création de l'en-tête de la facture dans Sage X3
                 $totalHT = 0;
                 $totalTTC = 0;
 
                 foreach ($paiementsDuDossier as $paiement) {
-                    $montantHT = $paiement->montant / 1.18; // À vérifier : 18% ou 25% ?
+                    // Calcul du montant HT (TVA 18%)
+                    $montantHT = $paiement->montant / 1.18;
                     $totalHT += $montantHT;
                     $totalTTC += $paiement->montant;
                 }
@@ -83,7 +116,8 @@ class SendPaiementsToX3Job implements ShouldQueue
                 ];
                 Log::info('Création entête facture X3', $enteteData);
                 $x3->createEntete($enteteData);
-                // ÉTAPE 2 : Créer les lignes de la facture
+                // ÉTAPE 2 : Création des lignes de la facture dans Sage X3
+                // Chaque ligne correspond à un service spécifique lié au dossier
                 $linCounter = 1000;
                 $services_par_id = [
                     "2" => "REI01",
@@ -100,8 +134,19 @@ class SendPaiementsToX3Job implements ShouldQueue
                     "42" => "DUP03",
                     "43" => "DUP04",
                     "44" => "DUP05",
-                    "45" => "OPS02"
+                    "45" => "OPS02",
                 ];
+                //pour RELICA-PRIMO et PRIMO CAISSE, il faut : regarder 2 choses :
+                // 1. RELICA-PRIMO :
+                // REL01 RELICA-PRIMO  Auto
+                // REL02 RELICA-PRIMO  Moto
+                // REL03 RELICA-PRIMO  Semi-remorque
+
+                // 2. PRIMO CAISSE :
+                // PREM01 PRIMO-CAISSE  Auto
+                // PREM02 PRIMO-CAISSE  Moto
+                // PREM03 PRIMO-CAISSE  Semi-remorque
+
 
                 foreach ($paiementsDuDossier as $paiement) {
                     // 1. Récupérer le breakdown des montants depuis la description du paiement
@@ -121,21 +166,52 @@ class SendPaiementsToX3Job implements ShouldQueue
 
                     $servicesAEnvoyer = [];
                     foreach ($serviceIds as $serviceId) {
-                        if (isset($services_par_id[$serviceId])) {
-                            // Chercher le montant réel dans le breakdown
-                            $detailService = $breakdown->firstWhere('id', $serviceId);
+                        if (isset($services_par_id[$serviceId]) || $serviceId == 46 || $serviceId == 47) {
+                            $detailService['montant'] = 0;
+                            //pour le Relica Primo et Primo Caisse, on prend directement le montant du paiement car il n'est pas détaillé dans le breakdown
+                            if ($serviceId == 46 or $serviceId == 47) {
+                                $detailService['montant'] = $paiement->montant;
 
-                            if (!$detailService) {
-                                Log::error("Montant introuvable pour le service dans le breakdown du paiement", [
-                                    'service_id' => $serviceId,
-                                    'paiement_ref' => $paiement->reference,
-                                    'breakdown' => $breakdown->toArray()
-                                ]);
-                                throw new Exception("Montant introuvable pour le service [ID: $serviceId] dans le paiement [REF: {$paiement->reference}]. Échec de l'envoi pour éviter une division erronée.");
+                                $genre = strtoupper($paiement->dossier->vehicule->genre_vehicule ?? '');
+
+                                $isRemorque = str_contains($genre, 'REMORQUE');
+                                $isMoto = str_contains($genre, 'MOTO');
+
+                                if ($serviceId == 46) {
+                                    // RELICA-PRIMO
+                                    if ($isRemorque) {
+                                        $itmref = 'REL03';
+                                    } elseif ($isMoto) {
+                                        $itmref = 'REL02';
+                                    } else {
+                                        $itmref = 'REL01';
+                                    }
+                                } else {
+                                    // PRIMO CAISSE
+                                    if ($isRemorque) {
+                                        $itmref = 'PREM03';
+                                    } elseif ($isMoto) {
+                                        $itmref = 'PREM02';
+                                    } else {
+                                        $itmref = 'PREM01';
+                                    }
+                                }
+                            } else {
+                                $itmref = $services_par_id[$serviceId];
+                                // Chercher le montant réel dans le breakdown
+                                $detailService = $breakdown->firstWhere('id', $serviceId);
+
+                                if (!$detailService) {
+                                    Log::error("Montant introuvable pour le service dans le breakdown du paiement", [
+                                        'service_id' => $serviceId,
+                                        'paiement_ref' => $paiement->reference,
+                                        'breakdown' => $breakdown->toArray()
+                                    ]);
+                                    throw new Exception("Montant introuvable pour le service [ID: $serviceId] dans le paiement [REF: {$paiement->reference}]. Échec de l'envoi pour éviter une division erronée.");
+                                }
                             }
-
                             $servicesAEnvoyer[] = [
-                                'itmref' => $services_par_id[$serviceId],
+                                'itmref' => $itmref,
                                 'montant_ttc' => (float) $detailService['montant']
                             ];
                         }
@@ -182,6 +258,16 @@ class SendPaiementsToX3Job implements ShouldQueue
                     'num_facture' => $numFacture,
                     'nombre_lignes' => $paiementsDuDossier->count()
                 ]);
+            } catch (\Illuminate\Http\Client\RequestException $e) {
+                Log::error('Erreur de requête API Sage X3', [
+                    'num_facture' => $numFacture,
+                    'error' => $e->getMessage()
+                ]);
+                if ($e->response) {
+                    Log::error("=== REPONSE COMPLETE X3 POUR $numFacture ===");
+                    Log::error($e->response->body());
+                }
+                continue;
             } catch (Exception $e) {
                 Log::error('Erreur traitement facture X3', [
                     'num_facture' => $numFacture,
@@ -200,8 +286,10 @@ class SendPaiementsToX3Job implements ShouldQueue
         ]);
     }
 
+    // En cas d'échec du job après toutes les tentatives, cette méthode sera appelée
     public function failed(\Throwable $exception)
     {
+        // Journalisation critique en cas d'échec du job
         Log::critical('JOB X3 FAILED', [
             'date' => $this->dateOperation,
             'caisse_id' => $this->caisseId,

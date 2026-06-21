@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Dossier;
 use App\Models\Service;
 use App\Models\Vehicule;
+use App\Models\ReplicaPrimo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
@@ -85,6 +86,11 @@ class CaisseController extends Controller
                 ->whereIn('id', $details)
                 // ->where('id_site', getIdSite())
                 ->get();
+        } elseif ($dossier->type == 'PRIMO-ESPECE') {
+            $detailTypeServices = DB::table('detail_type_services')
+                ->whereIn('id', $details)
+                // ->where('id_site', getIdSite())
+                ->get();
         } else {
             $detailTypeServices = DB::table('detail_type_services')
                 ->whereIn('id', $details)
@@ -150,6 +156,12 @@ class CaisseController extends Controller
 
 
 
+        // ── RELICA-PRIMO : récupérer mt_total_cil depuis la table relica_primo ──
+        $relicaPrimo = null;
+        if ($dossier->type === 'RELICA-PRIMO') {
+            $relicaPrimo = ReplicaPrimo::where('chrono', $dossier->num_chrono)->first();
+        }
+
         return inertia('Caisse/components/createForm', [
             'chrono' => $vin,
             'dossier' => $dossier,
@@ -157,7 +169,7 @@ class CaisseController extends Controller
             'detailTypeServices' => $detailTypeServices,
             'detailTypeServices_lier' => $detailTypeServices_lier,
             'autre_facturation' => $autre_facturation,
-            // nb_plaque n'est plus nécessaire côté front-end
+            'relicaPrimo' => $relicaPrimo,
         ]);
     }
 
@@ -207,7 +219,15 @@ class CaisseController extends Controller
                     $query->where('id_site', $userSiteId)
                         ->orWhere('id_site', 0);
                 });
-        } elseif (in_array(19, $permissions)) {
+        } elseif (in_array(19, $permissions) || in_array(20, $permissions)) {
+            $types = [];
+            if (in_array(19, $permissions)) {
+                $types[] = 'RELICA-PRIMO';
+            }
+            if (in_array(20, $permissions)) {
+                $types[] = 'PRIMO-ESPECE';
+            }
+
             $query = Dossier::with([
                 'r_dossier_vehicule',
                 'r_dossier_user',
@@ -216,7 +236,7 @@ class CaisseController extends Controller
                 'r_dossier_services',
                 'r_dossier_services.r_service_types',
                 'r_dossier_transactions',
-            ])->where('type', 'RELICA-PRIMO')
+            ])->whereIn('type', $types)
                 // Ce bloc gère l'exclusion : soit MON site
                 ->where(function ($query) use ($userSiteId) {
                     $query->where('id_site', $userSiteId);

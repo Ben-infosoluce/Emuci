@@ -24,11 +24,11 @@ class RafCaisseController extends Controller
 
     public function showRafDashboard()
     {
-        return inertia('RafCaisse/Dashbord', );
+        return inertia('RafCaisse/Dashbord',);
     }
     public function showRafCaisseCaissesStatistics()
     {
-        return inertia('RafCaisse/RafStatsCaisses', );
+        return inertia('RafCaisse/RafStatsCaisses',);
     }
 
 
@@ -190,6 +190,9 @@ class RafCaisseController extends Controller
     |--------------------------------------------------------------------------
     | 🔴 FERMETURE RAF + ENVOI SAGE X3
     |--------------------------------------------------------------------------
+    | Cette section gère la clôture de la session RAF pour une caisse donnée.
+    | Une fois la clôture validée, un job asynchrone est dispatché pour envoyer
+    | les données de paiement vers l'ERP Sage X3.
     */
         if ($isFermeture) {
 
@@ -216,11 +219,11 @@ class RafCaisseController extends Controller
                 );
 
                 // ✅ Clôture RAF
-                $record->update([
-                    'montant_controlleur' => $request->montant_controlleur,
-                    'date_fermeture_raf' => now(),
-                    'status_raf' => 0,
-                ]);
+                // $record->update([
+                //     'montant_controlleur' => $request->montant_controlleur,
+                //     'date_fermeture_raf' => now(),
+                //     'status_raf' => 0,
+                // ]);
 
                 DB::commit();
 

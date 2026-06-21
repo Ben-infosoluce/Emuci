@@ -48,8 +48,14 @@
                 props?.dossier?.id }}</span>
         </h2>
         <!-- Sous-titre RELICA-PRIMO -->
-        <p v-if="isRelica" style="text-align: center; font-size: 0.7rem; color: #1d4ed8; font-weight: 600; margin-top: 0; margin-bottom: 1rem;">
-            RELICA PRIMO &mdash; Reliquat {{ relicaGenreLabel }} / Site {{ relicaPrefix }}
+        <p v-if="isRelica"
+            style="text-align: center; font-size: 0.7rem; color: #1d4ed8; font-weight: 600; margin-top: 0; margin-bottom: 1rem;">
+            Reliquat {{ relicaGenreLabel }} / Site {{ relicaPrefix }}
+        </p>
+        <!--Sous-titre PRIMO-ESPECE   -->
+        <p v-if="isPrimoEspece"
+            style="text-align: center; font-size: 0.7rem; color: #1d4ed8; font-weight: 600; margin-top: 0; margin-bottom: 1rem;">
+            Paiement en Espèce - PRIMO
         </p>
         <!-- Info Table -->
         <div
@@ -157,8 +163,9 @@ const props = defineProps({
     dossier_lier: Object,
     detailTypeServices_lier: Object,
     autre_facturation: Object,
+    relicaPrimo: Object,
 });
-
+console.log('Props reçus dans Receipt.vue :', props.dossier);
 const zoneImpression = ref(null);
 const qrCodeRef = ref(null)
 
@@ -175,25 +182,13 @@ const hasTriggerService = serviceTypes.some(item =>
     TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
 );
 
-// ── RELICA-PRIMO : table de reliquats ────────────────────────────────────────
+// ── RELICA-PRIMO : table de prix ─────────────────────────────────────────────
+// Prix totaux par catégorie
 const RELICA_PRIX = { auto: 22600, moto: 14100, remorque: 15570 };
-const RELICA_DEJA_REGLE = {
-    auto:     { ABJ: 22317, BKE_KGO: 13300 },
-    moto:     { ABJ: 10713, BKE_KGO:  6300 },
-    remorque: { ABJ: 12620, BKE_KGO: 13300 },
-};
-const RELICA_RELIQUAT = {
-    auto:     { ABJ:  283, BKE_KGO: 9300 },
-    moto:     { ABJ: 3387, BKE_KGO: 7800 },
-    remorque: { ABJ: 2950, BKE_KGO: 2270 },
-};
 
 const isRelica = props.dossier?.type === 'RELICA-PRIMO';
+const isPrimoEspece = props.dossier?.type === 'PRIMO-ESPECE';
 
-const relicaSiteGroup = computed(() => {
-    const chrono = props.dossier?.num_chrono || '';
-    return chrono.startsWith('ABJ') ? 'ABJ' : 'BKE_KGO';
-});
 const relicaPrefix = computed(() => {
     const chrono = props.dossier?.num_chrono || '';
     if (chrono.startsWith('ABJ')) return 'ABJ';
@@ -211,17 +206,36 @@ const relicaGenreCategory = computed(() => {
 const relicaGenreLabel = computed(() =>
     ({ auto: 'Auto', moto: 'Motos', remorque: 'Semi-remorques' })[relicaGenreCategory.value]
 );
-const relicaPrixTotal  = computed(() => RELICA_PRIX[relicaGenreCategory.value]);
-const relicaDejaRegle  = computed(() => RELICA_DEJA_REGLE[relicaGenreCategory.value][relicaSiteGroup.value]);
-const relicaReliquat   = computed(() => RELICA_RELIQUAT[relicaGenreCategory.value][relicaSiteGroup.value]);
+const relicaPrixTotal = computed(() => RELICA_PRIX[relicaGenreCategory.value]);
+
+// Montant déjà réglé récupéré depuis la table relica_primo (via le backend)
+const relicaDejaRegle = computed(() => {
+    if (props.relicaPrimo && props.relicaPrimo.mt_total_cil != null) {
+        return Number(props.relicaPrimo.mt_total_cil);
+    }
+    return 0;
+});
+
+// Reliquat = Prix total − Déjà réglé
+const relicaReliquat = computed(() => {
+    return Math.max(0, RELICA_PRIX[relicaGenreCategory.value] - relicaDejaRegle.value);
+});
 
 const items = computed(() => {
     // ── Cas RELICA-PRIMO : afficher le détail reliquat ──
     if (isRelica) {
         return [
-            { name: `Prix total — ${relicaGenreLabel.value}`,                                          amount:  relicaPrixTotal.value,  isReliquat: false },
-            { name: `Déjà réglé (Dossiers ${relicaPrefix.value})`,                                    amount: -relicaDejaRegle.value,   isReliquat: false },
-            { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`,        amount:  relicaReliquat.value,   isReliquat: true  },
+            { name: `Prix total — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: false },
+            { name: `Déjà réglé (Dossiers ${relicaPrefix.value})`, amount: -relicaDejaRegle.value, isReliquat: false },
+            { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`, amount: relicaReliquat.value, isReliquat: true },
+        ];
+    }
+
+    // ── Cas PRIMO-ESPECE : afficher uniquement le montant total ──
+    // Même logique que RELICA-PRIMO mais rien n'a été déjà réglé, on facture la totalité
+    if (isPrimoEspece) {
+        return [
+            { name: `Prix total — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: true }
         ];
     }
 
@@ -244,15 +258,18 @@ const items = computed(() => {
 
 // Total HT
 const totalHT = computed(() =>
-    items.value.reduce((acc, item) => acc + item.amount, 0)
+    (items.value || []).reduce((acc, item) => acc + item.amount, 0)
 );
 
 // Total TTC :
 // - RELICA-PRIMO : uniquement reliquat + timbre (les lignes Prix total et Déjà réglé sont informatives)
+// - PRIMO-ESPECE : total HT + timbre
 // - Standard     : somme HT + timbre
-const totalTTC = computed(() =>
-    isRelica ? relicaReliquat.value + 100 : totalHT.value + 100
-);
+const totalTTC = computed(() => {
+    if (isRelica) return relicaReliquat.value + 100;
+    if (isPrimoEspece) return totalHT.value + 100;
+    return totalHT.value + 100;
+});
 
 // Formatage des montants
 function formatAmount(val) {

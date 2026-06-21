@@ -405,6 +405,12 @@ Route::group([
 
     // Clients
     Route::get('/clients', [ClientController::class, 'clientListe'])->name('client.liste');
+
+    // Upload Primo
+    Route::controller(\App\Http\Controllers\UploadPrimoController::class)->group(function () {
+        Route::get('/upload-primo', '__invoke')->name('upload.primo');
+        Route::post('/upload-primo', 'upload')->name('upload.primo.process');
+    });
 });
 
 
@@ -477,7 +483,6 @@ Route::group(
 );
 
 // Liste des caisses RAF/raf/caisse/controller/statistics/caisses
-
 
 //client 
 Route::post('/', [ClientController::class, "clientLogin"])->name('client.login');

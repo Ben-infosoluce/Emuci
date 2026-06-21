@@ -8,9 +8,11 @@ use App\Models\Entite;
 use App\Models\Paiement;
 use App\Models\Service;
 use App\Models\Vehicule;
+use App\Models\ReplicaPrimo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpParser\Node\Expr\Cast\Double;
 
 class PaiementController extends Controller
@@ -407,7 +409,6 @@ class PaiementController extends Controller
             ]);
 
             DB::commit();
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -576,6 +577,12 @@ class PaiementController extends Controller
 
         // dd($autre_facturation);
 
+        // ── RELICA-PRIMO : récupérer mt_total_cil depuis la table relica_primo ──
+        $relicaPrimo = null;
+        if ($dossier->type === 'RELICA-PRIMO') {
+            $relicaPrimo = ReplicaPrimo::where('chrono', $dossier->num_chrono)->first();
+        }
+
         /*
          |--------------------------------------------------------------------------
          | 5️⃣ Retour vers Inertia
@@ -592,7 +599,8 @@ class PaiementController extends Controller
             'dossier_lier' => $dossier_lier,
             'detailTypeServices_lier' => $detailTypeServices_lier,
 
-            'autre_facturation' => $autre_facturation
+            'autre_facturation' => $autre_facturation,
+            'relicaPrimo' => $relicaPrimo,
         ]);
     }
 
@@ -706,6 +714,96 @@ class PaiementController extends Controller
         return response()->json($entites);
     }
 
+    /**
+     * Enregistre un paiement en espèces pour PRIMO-ESPECE
+     */
+    public function enregistrerPaiementEspece(Request $request)
+    {
+        // Validation des données
+        $validated = $request->validate([
+            'NUMCHRONOCIL' => 'required|string',
+            'NUMEROCHASISIS' => 'required|string',
+            'IDENTITE_CLIENT' => 'required|string',
+            'MONTANT_TOTAL' => 'required|numeric|min:0',
+            'DATE_PAIEMENT' => 'required|date',
+            'DEVISE' => 'required|string|size:3',
+            'MODE_PAIEMENT' => 'required|string',
+            'REFERENCE_PAIEMENT' => 'required|string',
+            'OBSERVATIONS' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Vérifier si le dossier existe
+            $dossier = Dossier::where('num_chrono', $validated['NUMCHRONOCIL'])->first();
+            if (!$dossier) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dossier non trouvé'
+                ], 404);
+            }
+
+            // Vérifier si le dossier est déjà payé
+            if ($dossier->statut_paiement == 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ce dossier a déjà été payé'
+                ], 422);
+            }
+
+            // Mettre à jour le statut de paiement du dossier
+            $dossier->update([
+                'statut_paiement' => 2, // Statut payé
+                'paiement_validated_by' => 1, // ID de l'utilisateur système
+                'date_paiement' => now()
+            ]);
+
+            // Enregistrer le paiement
+            DB::table('paiements')->insert([
+                'id_dossier' => $dossier->id,
+                'montant' => $validated['MONTANT_TOTAL'],
+                'mode_paiement' => 'ESPECES',
+                'id_service' => $dossier->id_service,
+                'id_vehicule' => $dossier->id_vehicule,
+                'user_id' => 1, // ID de l'utilisateur système
+                'description' => json_encode([
+                    'reference' => $validated['REFERENCE_PAIEMENT'],
+                    'observations' => $validated['OBSERVATIONS'] ?? '',
+                    'flux' => 'PRIMO-ESPECE'
+                ]),
+                'reference' => $validated['REFERENCE_PAIEMENT'],
+                'caisse_ouverture_id' => null, // À adapter selon la gestion de caisse
+                'id_site' => $dossier->id_site,
+                'caisse_id' => null, // À adapter selon la gestion de caisse
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+
+            // Notifier le système externe
+            $this->notifierPaiementExterne($dossier->num_chrono);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Paiement en espèces enregistré avec succès',
+                'dossier' => $dossier->num_chrono,
+                'montant' => $validated['MONTANT_TOTAL'],
+                'reference' => $validated['REFERENCE_PAIEMENT']
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Illuminate\Support\Facades\Log::error("Erreur lors de l'enregistrement du paiement PRIMO-ESPECE: " . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'enregistrement du paiement',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     private function notifierPaiementExterne($chrono)
     {
         try {
@@ -750,8 +848,8 @@ class PaiementController extends Controller
                 'X-Token' => $token,
                 'Content-Type' => 'application/json'
             ])->post($notifyUrl, [
-                        'numChronoCil' => $chrono
-                    ]);
+                'numChronoCil' => $chrono
+            ]);
 
             \Illuminate\Support\Facades\Log::info("[notifierPaiementExterne] Réponse notification", [
                 'chrono' => $chrono,

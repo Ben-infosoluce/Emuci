@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\PdcController;
+use App\Http\Controllers\PaiementController;  // Ajout de l'import
 
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -20,6 +21,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update/statut/pose/plaque', [PdcController::class, 'updateStatutPosePlaque']);
     Route::post('/get/payment/status', [PdcController::class, 'getFdsOpsPaymentStatus']);
     Route::post('/relica/primo', [PdcController::class, 'SaveRelicaPrimo']);
+
+    // PRIMO-ESPECE - Création de dossier avec paiement total
+    Route::post('/primo/espece', [PdcController::class, 'SavePrimoEspece']);
 });
 
 Route::get('/ping', function () {
