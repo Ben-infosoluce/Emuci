@@ -9,8 +9,12 @@ import sys
 # ═══════════════════════════════════════════════════════════════
 
 SOURCE_URL = "https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260501/20260531"   # ← URL qui retourne ton JSON
-API_URL    = "http://127.0.0.1:8000/api/relica/primo"
-BEARER_TOKEN = "5|tiIzZxz17YP7yZoxIKXJQWxZ1RiR9fIdRoJeLO1n71afb213"
+# API_URL    = "http://127.0.0.1:8000/api/relica/primo"
+# BEARER_TOKEN = "5|tiIzZxz17YP7yZoxIKXJQWxZ1RiR9fIdRoJeLO1n71afb213"
+
+#recette
+API_URL    = "https://emuci.infosoluces.digital/api/relica/primo"
+BEARER_TOKEN = "67|SIeZoIUHzJnFOyyEnv0hWB6DlRkpONQawcK6KStl0b0e38d2"
 
 # Headers pour la requête source (si besoin d'authentification)
 SOURCE_HEADERS = {

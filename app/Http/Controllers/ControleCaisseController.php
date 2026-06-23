@@ -437,6 +437,17 @@ class ControleCaisseController extends Controller
             ], 403);
         }
 
+        // Vérifier si la caissière a bien fermé sa caisse pour cette date
+        $caisseOuverture = CaisseOuverture::where('caisse_id', $request->id_caisse)
+            ->whereDate('date_ouverture', $date)
+            ->first();
+
+        if (!$caisseOuverture || $caisseOuverture->statut !== 'fermé') {
+            return response()->json([
+                'message' => "La caissière n'a pas encore fermé sa caisse pour cette date.",
+            ], 403);
+        }
+
         // Chercher la session du contrôleur correspondant à la date
         $record = ControlleurCaisse::where('caisse_id', $request->id_caisse)
             ->where('date', $date) // ← on compare à la colonne `date`

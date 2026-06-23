@@ -121,7 +121,7 @@
                             formatAmount(100) }}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Total TTC</td>
+                        <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Total Payé</td>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: right;">{{
                             formatAmount(totalTTC) }}</td>
                     </tr>
@@ -225,7 +225,7 @@ const items = computed(() => {
     // ── Cas RELICA-PRIMO : afficher le détail reliquat ──
     if (isRelica) {
         return [
-            { name: `Prix total — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: false },
+            { name: `Prix total TTC — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: false },
             { name: `Déjà réglé (Dossiers ${relicaPrefix.value})`, amount: -relicaDejaRegle.value, isReliquat: false },
             { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`, amount: relicaReliquat.value, isReliquat: true },
         ];
@@ -235,7 +235,7 @@ const items = computed(() => {
     // Même logique que RELICA-PRIMO mais rien n'a été déjà réglé, on facture la totalité
     if (isPrimoEspece) {
         return [
-            { name: `Prix total — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: true }
+            { name: `Prix total TTC — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: true }
         ];
     }
 

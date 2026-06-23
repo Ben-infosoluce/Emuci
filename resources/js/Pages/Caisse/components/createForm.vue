@@ -268,38 +268,38 @@
 
                                     <!-- Ligne : Prix total dû -->
                                     <div class="flex justify-between px-2 py-1 text-gray-500">
-                                        <span>Prix total ({{ relicaGenreLabel }})</span>
+                                        <span>Prix total TTC ({{ relicaGenreLabel }})</span>
                                         <span class="font-medium">{{ formatMontant(relicaPrixTotal) }} F CFA</span>
                                     </div>
 
                                     <!-- Ligne : Déjà réglé -->
                                     <div class="flex justify-between px-2 py-1 text-gray-500">
-                                        <span>Déjà réglé (Dossiers {{ relicaPrefix }})</span>
+                                        <span>Déjà réglé TTC (Dossiers {{ relicaPrefix }})</span>
                                         <span class="font-medium text-red-500">− {{ formatMontant(relicaDejaRegle) }} F
                                             CFA</span>
                                     </div>
 
                                     <!-- Ligne : Reliquat -->
-                                    <div class="flex justify-between px-2 py-2 border-t border-b font-semibold">
-                                        <span>Reliquat à encaisser</span>
+                                    <div class="flex justify-between px-2 py-3 border-t border-b font-semibold">
+                                        <span>Reliquat TTC à encaisser</span>
                                         <span class="text-green-700">{{ formatMontant(relicaReliquat) }} F CFA</span>
                                     </div>
                                 </div>
 
                                 <!-- Section récapitulative -->
-                                <div class="space-y-2 pt-2 mt-4">
-                                    <div class="flex justify-between">
-                                        <span class="font-medium">RELIQUAT HT :</span>
+                                <div class="space-y-2  mt-3">
+                                    <!-- <div class="flex justify-between">
+                                        <span class="font-medium">RELIQUAT TTC:</span>
                                         <span class="font-bold text-gray-700">
                                             {{ formatMontant(relicaReliquat) }} F CFA
                                         </span>
-                                    </div>
-                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                    </div> -->
+                                    <div class="flex justify-between font-bold text-green-800">
                                         <span class="font-medium">Timbre :</span>
                                         <span class="font-bold">{{ formatMontant(100) }}</span>
                                     </div>
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2">
-                                        <span class="font-medium">TOTAL TTC :</span>
+                                        <span class="font-medium">TOTAL A PAYER :</span>
                                         <span class="font-bold">{{ formatMontant(relicaMontantTTC) }} F CFA</span>
                                     </div>
                                 </div>
@@ -498,27 +498,27 @@
 
                                     <!-- Prix total dû -->
                                     <div class="flex justify-between px-2 py-1 text-gray-500">
-                                        <span>Prix total ({{ relicaGenreLabel }})</span>
+                                        <span>Prix total TTC ({{ relicaGenreLabel }})</span>
                                         <span class="font-medium">{{ formatMontant(relicaPrixTotal) }} F CFA</span>
                                     </div>
 
                                     <!-- Déjà réglé -->
                                     <div class="flex justify-between px-2 py-1 text-gray-500">
-                                        <span>Déjà réglé (Dossiers {{ relicaPrefix }})</span>
+                                        <span>Déjà réglé TTC (Dossiers {{ relicaPrefix }})</span>
                                         <span class="font-medium text-red-500">− {{ formatMontant(relicaDejaRegle) }} F
                                             CFA</span>
                                     </div>
 
                                     <!-- Reliquat -->
                                     <div class="flex justify-between px-2 py-2 border-t border-b font-semibold">
-                                        <span>Reliquat à encaisser</span>
+                                        <span>Reliquat TTC à encaisser</span>
                                         <span class="text-green-700">{{ formatMontant(relicaReliquat) }} F CFA</span>
                                     </div>
                                 </div>
 
                                 <div class="space-y-2 pt-2 mt-4">
                                     <div class="flex justify-between">
-                                        <span class="font-medium">RELIQUAT HT :</span>
+                                        <span class="font-medium">RELIQUAT TTC :</span>
                                         <span class="font-bold text-gray-700">{{ formatMontant(relicaReliquat) }}</span>
                                     </div>
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2">
