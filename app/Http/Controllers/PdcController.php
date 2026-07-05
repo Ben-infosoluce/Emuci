@@ -559,7 +559,15 @@ class PdcController extends Controller
             'MONTANT_TOTAL.min' => 'Le montant total doit être supérieur ou égal à 0.',
         ];
 
-        $validated = $request->validate($rules, $messages);
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), $rules, $messages);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation échouée',
+                'error' => $validator->errors()->first()
+            ], 422);
+        }
+        $validated = $validator->validated();
 
         try {
             DB::beginTransaction();
@@ -665,30 +673,28 @@ class PdcController extends Controller
             $dossier->date_creation = $date_ouverture_parsed;
             $dossier->save();
 
-            // Enregistrement du paiement pour la totalité du montant
-            DB::table('paiements')->insert([
-                'id_dossier' => $dossier->id,
-                'montant' => $request->MONTANT_TOTAL,
-                'mode_paiement' => 'ESPECES',
-                'id_service' => 6, // ID du service PRIMO-ESPECE
-                'id_vehicule' => $vehicule->id,
-                'user_id' => 1, // ID de l'utilisateur système
-                'description' => json_encode([
-                    'flux' => 'PRIMO-ESPECE',
-                    'montant_total' => $request->MONTANT_TOTAL
-                ]),
-                'reference' => 'PRIMO-ESP-' . strtoupper(uniqid()),
-                'caisse_ouverture_id' => null,
-                'id_site' => $id_site,
-                'caisse_id' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            // // Enregistrement du paiement pour la totalité du montant
+            // DB::table('paiements')->insert([
+            //     'id_dossier' => $dossier->id,
+            //     'montant' => $request->MONTANT_TOTAL,
+            //     'mode_paiement' => 'ESPECES',
+            //     'id_service' => 6, // ID du service PRIMO-ESPECE
+            //     'id_vehicule' => $vehicule->id,
+            //     'user_id' => 1, // ID de l'utilisateur système
+            //     'description' => json_encode([
+            //         'flux' => 'PRIMO-ESPECE',
+            //         'montant_total' => $request->MONTANT_TOTAL
+            //     ]),
+            //     'reference' => 'PRIMO-ESP-' . strtoupper(uniqid()),
+            //     'id_site' => $id_site,
+            //     'created_at' => now(),
+            //     'updated_at' => now(),
+            // ]);
 
             // Mise à jour du statut de paiement du dossier
-            $dossier->statut_paiement = 2; // Statut payé
-            $dossier->paiement_validated_by = 1; // ID de l'utilisateur système
-            $dossier->date_paiement = now();
+            $dossier->statut_paiement = 1; // Statut payé
+            // $dossier->paiement_validated_by = 1; // ID de l'utilisateur système
+            // $dossier->date_paiement = now();
             $dossier->save();
 
             DB::commit();
@@ -703,6 +709,94 @@ class PdcController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la création du dossier PRIMO-ESPECE',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Synchronisation des données depuis l'API externe pour éviter l'erreur CORS côté frontend
+     */
+    public function syncPrimoEspeceExternal(Request $request)
+    {
+        $url = $request->input('url');
+
+        if (!$url) {
+            return response()->json(['success' => false, 'message' => 'L\'URL est requise'], 400);
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withoutVerifying()
+                ->withToken('15695|V8NC9yi9j2LNHBtJYeUoneyc46yzSOKQ5INvNA6P4283c046')
+                // ->withToken('6|HSOQ0iwxUfe5Exa8DNHOyH7XXqBLUZ6pOcRihgjze262c856')
+                ->get($url);
+
+            if (!$response->successful()) {
+                return response()->json(['success' => false, 'message' => 'Erreur lors de la récupération des données externes'], 400);
+            }
+
+            $data = $response->json();
+
+            if (!is_array($data)) {
+                return response()->json(['success' => false, 'message' => 'Format de réponse invalide de l\'API externe'], 400);
+            }
+
+            $results = [];
+
+            foreach ($data as $item) {
+                $chrono = $item['NUMCHRONOCIL'] ?? null;
+
+                // Vérifier si le dossier existe déjà pour éviter les doublons
+                $alreadyExists = DB::table('dossiers')->where('num_chrono', $chrono)->exists();
+                if ($alreadyExists) {
+                    $results[] = [
+                        'chrono' => $chrono,
+                        'status' => 409,
+                        'message' => 'Dossier déjà existant, ignoré'
+                    ];
+                    continue;
+                }
+
+                // Calcul du montant total
+                $montant_total = (isset($item['MT_SECUPOSE']) ? intval($item['MT_SECUPOSE']) : 0) + (isset($item['MT_PLAQUES']) ? intval($item['MT_PLAQUES']) : 0);
+
+                $primoRequest = new Request([
+                    'NUMCHRONOCIL' => $chrono,
+                    'NUMEROCHASISIS' => $item['NUMEROCHASISIS'] ?? null,
+                    'IDENTITE_CLIENT' => $item['IDENTITE_CLIENT'] ?? null,
+                    'GENRE' => $item['GENRE'] ?? null,
+                    'DATEOUVERTUREDOSSIER' => $item['DATEOUVERTUREDOSSIER'] ?? null,
+                    'MONTANT_TOTAL' => $montant_total
+                ]);
+
+                // Appel direct de la logique métier de SavePrimoEspece
+                try {
+                    $res = $this->SavePrimoEspece($primoRequest);
+                    $resData = json_decode($res->getContent(), true);
+                    $results[] = [
+                        'chrono' => $chrono,
+                        'status' => $res->getStatusCode(),
+                        'message' => $resData['message'] ?? null,
+                        'error' => $resData['error'] ?? null,
+                    ];
+                } catch (\Exception $itemException) {
+                    $results[] = [
+                        'chrono' => $chrono,
+                        'status' => 500,
+                        'error' => $itemException->getMessage()
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Synchronisation terminée',
+                'details' => $results
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la synchronisation',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -902,7 +996,7 @@ class PdcController extends Controller
         if (!$dossier) {
             return response()->json([
                 'success' => false,
-                'status'  => 'DOSSIER_NOT_FOUND',
+                'status' => 'DOSSIER_NOT_FOUND',
                 'message' => 'Dossier non trouvé'
             ], 404);
         }
@@ -911,7 +1005,7 @@ class PdcController extends Controller
         if ($dossier->status_pose_plaque == 2) {
             return response()->json([
                 'success' => false,
-                'status'  => 'PLAQUE_ALREADY_INSTALLED',
+                'status' => 'PLAQUE_ALREADY_INSTALLED',
                 'message' => 'La plaque est déjà marquée comme posée'
             ], 409);
         }
@@ -922,11 +1016,11 @@ class PdcController extends Controller
 
         return response()->json([
             'success' => true,
-            'status'  => 'SUCCESS',
+            'status' => 'SUCCESS',
             'message' => 'Statut de pose de plaque mis à jour avec succès',
             'data' => [
-                'id_dossier'         => $dossier->id,
-                'num_chrono'         => $dossier->num_chrono,
+                'id_dossier' => $dossier->id,
+                'num_chrono' => $dossier->num_chrono,
                 'status_pose_plaque' => $dossier->status_pose_plaque,
             ]
         ], 200);
@@ -943,7 +1037,7 @@ class PdcController extends Controller
         if (!$dossier) {
             return response()->json([
                 'success' => false,
-                'status'  => 'DOSSIER_NOT_FOUND',
+                'status' => 'DOSSIER_NOT_FOUND',
                 'message' => 'Dossier non trouvé'
             ], 404);
         }
@@ -953,19 +1047,20 @@ class PdcController extends Controller
         if (!$paiement) {
             return response()->json([
                 'success' => false,
-                'status'  => 'PAYMENT_NOT_FOUND',
+                'status' => 'PAYMENT_NOT_FOUND',
                 'message' => 'Aucun paiement trouvé pour ce dossier'
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'status'  => 'SUCCESS',
+            'status' => 'SUCCESS',
+            'message' => 'Ce dossier a été payé',
             'data' => [
-                'num_chrono'      => $dossier->num_chrono,
-                'id_dossier'      => $dossier->id,
-                'statut_paiement' => $paiement->statut,
-                'date_paiement'   => $paiement->date,
+                'num_chrono' => $dossier->num_chrono,
+                'reference' => $paiement->reference,
+                'montant' => $paiement->montant,
+                'date_paiement' => $paiement->created_at,
             ]
         ], 200);
     }

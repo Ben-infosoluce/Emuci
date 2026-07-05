@@ -3,11 +3,14 @@
         <div class="flex flex-col space-y-4 mx-8 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <!-- Titre -->
             <h4 class="text-2xl font-bold tracking-tight">
-                Dossiers Paiements
+                Dossiers Paiementss
             </h4>
 
-            <!-- Bouton Nouveau -->
+            <!-- Bouton Nouveau et Actualiser -->
             <div class="flex items-center space-x-2">
+                <Button @click="actualiserData" :disabled="loadingActualiser" variant="outline">
+                    <RefreshCw class="w-4 h-4 mr-2" :class="{ 'animate-spin': loadingActualiser }" /> Actualiser
+                </Button>
                 <Link :href="route('show.new.caisse')">
                 <Button>
                     <Plus class=" w-4 h-4 mr-2" /> Nouveau Paiement
@@ -174,7 +177,7 @@ import { router, useForm } from '@inertiajs/vue3'
 import { Input } from '@/components/ui/input'
 import Pagination from '@/components/Pagination.vue'
 import { Input_search } from '@/components/ui/Input_search'
-import { MoveRight, MoveLeft, Plus } from 'lucide-vue-next'
+import { MoveRight, MoveLeft, Plus, RefreshCw } from 'lucide-vue-next'
 import Control from "../Caisse/components/Control.vue";
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -183,6 +186,7 @@ import { useCaisseStore } from "@/stores/mainStore";
 
 
 const loading = ref(false)
+const loadingActualiser = ref(false)
 const store = useCaisseStore();
 const { isOpen } = storeToRefs(store);
 // Pagination
@@ -228,7 +232,33 @@ async function fetchDossiers() {
     meta.value = json.dossiers
     updateURL()
     loading.value = false
-    console.log(dossiers.value) 
+    console.log(dossiers.value)
+}
+
+// Actualisation depuis l'API externe via le Backend (pour éviter le CORS)
+async function actualiserData() {
+    loadingActualiser.value = true;
+    try {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const currentDate = `${year}${month}${day}`;
+        
+        // Exemple avec des dates fixes pour test : 20260501 et 20260504 (ou utilisez currentDate)
+        // const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260706/${currentDate}`;
+        const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260501/20260504`;
+
+        // Appel du backend pour contourner le CORS
+        await window.axios.post('/api/primo/espece/sync', { url: url });
+        
+        // Rafraîchir les dossiers après l'actualisation
+        fetchDossiers();
+    } catch (error) {
+        console.error("Erreur lors de l'actualisation:", error);
+    } finally {
+        loadingActualiser.value = false;
+    }
 }
 
 // Filtres

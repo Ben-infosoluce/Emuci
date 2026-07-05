@@ -26,6 +26,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/primo/espece', [PdcController::class, 'SavePrimoEspece']);
 });
 
+// Sync externe CIL - accessible sans auth Sanctum (appelé depuis l'interface interne)
+Route::post('/primo/espece/sync', [PdcController::class, 'syncPrimoEspeceExternal']);
+
 Route::get('/ping', function () {
     return response()->json([
         'success' => true,
