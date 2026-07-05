@@ -24,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // PRIMO-ESPECE - Création de dossier avec paiement total
     Route::post('/primo/espece', [PdcController::class, 'SavePrimoEspece']);
+
+    //Route pour importer les donnee de primo (relica et espece) vers pdc
+    Route::post('/importer/primo/relica/caisse', [PdcController::class, 'ImportPrimoRelicaCaisse']);
 });
 
 // Sync externe CIL - accessible sans auth Sanctum (appelé depuis l'interface interne)

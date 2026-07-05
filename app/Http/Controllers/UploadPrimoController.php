@@ -198,8 +198,11 @@ class UploadPrimoController extends Controller
      */
     private function findColumnIndex(array $header, array $possibleNames): int|false
     {
+        // Trim tous les noms de colonnes du header (espaces, BOM, etc.)
+        $trimmedHeader = array_map('trim', $header);
+
         foreach ($possibleNames as $name) {
-            $index = array_search($name, $header);
+            $index = array_search(trim($name), $trimmedHeader);
             if ($index !== false) {
                 return $index;
             }
