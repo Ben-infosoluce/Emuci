@@ -1,12 +1,15 @@
 [phases.install]
 dependsOn = ["setup"]
 cmds = [
-    "composer install --no-dev --optimize-autoloader",
+    # L'ajout de "-vvv" est CRUCIAL ici pour afficher les logs détaillés de l'erreur
+    "composer install --no-dev --optimize-autoloader -vvv",
     "npm install"
 ]
 
 [variables]
 NODE_OPTIONS = "--dns-result-order=ipv4first"
+# On enlève la limite de mémoire de Composer pour éviter les crashs silencieux
+COMPOSER_MEMORY_LIMIT = "-1"
 
 [start]
 cmd = "bash start.sh"
