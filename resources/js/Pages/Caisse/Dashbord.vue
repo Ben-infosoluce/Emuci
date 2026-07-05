@@ -246,8 +246,8 @@ async function actualiserData() {
         const currentDate = `${year}${month}${day}`;
         
         // Exemple avec des dates fixes pour test : 20260501 et 20260504 (ou utilisez currentDate)
-        // const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260706/${currentDate}`;
-        const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260501/20260504`;
+        const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260706/${currentDate}`;
+        // const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260501/20260504`;
 
         // Appel du backend pour contourner le CORS
         await window.axios.post('/api/primo/espece/sync', { url: url });
