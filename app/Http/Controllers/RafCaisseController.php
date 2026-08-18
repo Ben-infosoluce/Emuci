@@ -24,11 +24,11 @@ class RafCaisseController extends Controller
 
     public function showRafDashboard()
     {
-        return inertia('RafCaisse/Dashbord', );
+        return inertia('RafCaisse/Dashbord',);
     }
     public function showRafCaisseCaissesStatistics()
     {
-        return inertia('RafCaisse/RafStatsCaisses', );
+        return inertia('RafCaisse/RafStatsCaisses',);
     }
 
 

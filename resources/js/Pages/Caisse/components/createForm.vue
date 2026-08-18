@@ -266,14 +266,14 @@
                                 <div class="space-y-2 pt-4">
                                     <h3 class="font-semibold text-gray-700">Éléments à facturer</h3>
 
-                                    <!-- Ligne : Prix total dû -->
-                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                    <!-- Ligne : Prix total dû (masqué pour les motos en reliquat) -->
+                                    <div v-if="relicaGenreCategory !== 'moto'" class="flex justify-between px-2 py-1 text-gray-500">
                                         <span>Prix total TTC ({{ relicaGenreLabel }})</span>
                                         <span class="font-medium">{{ formatMontant(relicaPrixTotal) }} F CFA</span>
                                     </div>
 
-                                    <!-- Ligne : Déjà réglé -->
-                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                    <!-- Ligne : Déjà réglé (masqué pour les motos en reliquat) -->
+                                    <div v-if="relicaGenreCategory !== 'moto'" class="flex justify-between px-2 py-1 text-gray-500">
                                         <span>Déjà réglé TTC (Dossiers {{ relicaPrefix }})</span>
                                         <span class="font-medium text-red-500">− {{ formatMontant(relicaDejaRegle) }} F
                                             CFA</span>
@@ -375,7 +375,7 @@
 
                         </Link>
                     </div>
-                    <div v-if="dossier.type === 'RELICA-PRIMO' && relicaDejaRegle === 0" class="border-2 border-orange-500 p-4 rounded-md text-orange-700 bg-orange-50">
+                    <div v-if="dossier.type === 'RELICA-PRIMO' && relicaGenreCategory !== 'moto' && relicaDejaRegle === 0" class="border-2 border-orange-500 p-4 rounded-md text-orange-700 bg-orange-50">
                         La réconciliation pour ce dossier n'a pas encore été effectuée, le dossier ne peut donc pas être payé pour le moment.
                     </div>
                     <div v-else class="flex items-center space-x-2">
@@ -496,14 +496,14 @@
                                         </p>
                                     </div>
 
-                                    <!-- Prix total dû -->
-                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                    <!-- Prix total dû (masqué pour les motos en reliquat) -->
+                                    <div v-if="relicaGenreCategory !== 'moto'" class="flex justify-between px-2 py-1 text-gray-500">
                                         <span>Prix total TTC ({{ relicaGenreLabel }})</span>
                                         <span class="font-medium">{{ formatMontant(relicaPrixTotal) }} F CFA</span>
                                     </div>
 
-                                    <!-- Déjà réglé -->
-                                    <div class="flex justify-between px-2 py-1 text-gray-500">
+                                    <!-- Déjà réglé (masqué pour les motos en reliquat) -->
+                                    <div v-if="relicaGenreCategory !== 'moto'" class="flex justify-between px-2 py-1 text-gray-500">
                                         <span>Déjà réglé TTC (Dossiers {{ relicaPrefix }})</span>
                                         <span class="font-medium text-red-500">− {{ formatMontant(relicaDejaRegle) }} F
                                             CFA</span>
@@ -889,8 +889,11 @@ const relicaDejaRegle = computed(() => {
     return 0;
 });
 
-// Reliquat = Prix total − Déjà réglé
+// Reliquat = Prix total − Déjà réglé (ou montant fixe 7 800 F CFA pour les motos)
 const relicaReliquat = computed(() => {
+    if (relicaGenreCategory.value === 'moto') {
+        return 7800;
+    }
     return Math.max(0, RELICA_PRIX[relicaGenreCategory.value] - relicaDejaRegle.value);
 });
 const relicaMontantHT = computed(() => relicaReliquat.value);

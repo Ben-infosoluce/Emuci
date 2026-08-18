@@ -1,101 +1,88 @@
 #!/usr/bin/env python3
 
+import pandas as pd
 import requests
 import sys
-from datetime import datetime
+import os
 
 # ═══════════════════════════════════════════════════════════════
-# CONFIGURATION — À adapter selon l'environnement
+# CONFIGURATION — Modifie ces valeurs selon ton environnement
 # ═══════════════════════════════════════════════════════════════
 
-# URL de l'API source des données PRIMO-ESPECE
-SOURCE_URL = "https://votre-api-source.com/api/primo/espece/donnees"
+# EXCEL_FILE = "df_final.xlsx"   # ← Fichier Excel local
+EXCEL_FILE = "df_final_production.xlsx" 
 
-# URL de l'API locale pour l'enregistrement des paiements
-API_URL = "http://127.0.0.1:8000/api/primo/espece"
+# API_URL    = "http://127.0.0.1:8000/api/importer/primo/relica/caisse"
+# BEARER_TOKEN = "5|tiIzZxz17YP7yZoxIKXJQWxZ1RiR9fIdRoJeLO1n71afb213"
 
-# Token d'authentification (à générer dans l'application)
-BEARER_TOKEN = "votre_token_bearer_ici"
-
-# Headers pour la requête source
-SOURCE_HEADERS = {
-    "Accept": "application/json",
-    "Authorization": "Bearer votre_token_source_ici"  # Si nécessaire
-}
+#production
+API_URL    = "https://post.digimmat.ci/api/importer/primo/relica/caisse"
+BEARER_TOKEN = "15695|V8NC9yi9j2LNHBtJYeUoneyc46yzSOKQ5INvNA6P4283c046"
 
 # Timeout en secondes
 TIMEOUT = 30
 
-# ═══════════════════════════════════════════════════════════════
+#  ═══════════════════════════════════════════════════════════════
 # FONCTIONS
 # ═══════════════════════════════════════════════════════════════
 
-def fetch_data(url, headers, timeout):
-    """Récupère les données depuis l'URL source."""
-    print(f"📡 Récupération des données PRIMO-ESPECE depuis : {url}")
-    try:
-        response = requests.get(url, headers=headers, timeout=timeout)
-        response.raise_for_status()
-        data = response.json()
-        print(f"✅ Données récupérées ({len(data) if isinstance(data, list) else 1} enregistrement(s))")
-        return data
-    except requests.exceptions.HTTPError as e:
-        print(f"❌ Erreur HTTP lors de la récupération : {e}")
+def load_excel_data(file_path):
+    """Charge les données depuis un fichier Excel."""
+    print(f"📂 Chargement des données depuis : {file_path}")
+    
+    if not os.path.exists(file_path):
+        print(f"❌ Le fichier {file_path} n'existe pas.")
         sys.exit(1)
-    except requests.exceptions.ConnectionError:
-        print(f"❌ Impossible de se connecter à {url}")
-        sys.exit(1)
-    except requests.exceptions.Timeout:
-        print(f"❌ Délai d'attente dépassé pour {url}")
-        sys.exit(1)
-    except requests.exceptions.JSONDecodeError:
-        print(f"❌ La réponse n'est pas un JSON valide.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"❌ Erreur inattendue : {str(e)}")
-        sys.exit(1)
-
-def send_to_primo_espece(item, api_url, headers, timeout):
-    """Envoie un enregistrement vers l'API PRIMO-ESPECE."""
-    payload = {
-        "NUMCHRONOCIL": item.get("NUMCHRONOCIL"),
-        "NUMEROCHASISIS": item.get("NUMEROCHASISIS"),
-        "IDENTITE_CLIENT": item.get("IDENTITE_CLIENT"),
-        "MONTANT_TOTAL": item.get("MONTANT_TOTAL"),
-        "DATE_PAIEMENT": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "DEVISE": "XOF",
-        "MODE_PAIEMENT": "ESPECES",
-        "REFERENCE_PAIEMENT": f"ESP-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-        "OBSERVATIONS": item.get("OBSERVATIONS", "")
-    }
     
     try:
-        response = requests.post(api_url, headers=headers, json=payload, timeout=timeout)
-        return response
-    except requests.exceptions.ConnectionError:
-        print(f"❌ Connexion refusée — vérifie que l'API tourne sur {api_url}")
-        return None
-    except requests.exceptions.Timeout:
-        print("❌ Délai d'attente dépassé lors de l'envoi")
-        return None
+        # Lecture du fichier Excel
+        df = pd.read_excel(file_path)
+        
+        # Convertir les colonnes de date en chaînes de caractères
+        # Format attendu par Laravel : 'Ymd' (ex: '20260501')
+        if 'DATEOUVERTUREDOSSIER' in df.columns:
+            df['DATEOUVERTUREDOSSIER'] = pd.to_datetime(df['DATEOUVERTUREDOSSIER'], errors='coerce').dt.strftime('%Y%m%d')
+        
+        # Conversion en liste de dictionnaires
+        data = df.to_dict(orient='records')
+        
+        # Remplacer les NaN par None pour éviter les problèmes JSON
+        for item in data:
+            for key, value in item.items():
+                if pd.isna(value):
+                    item[key] = None
+        
+        print(f"✅ Données chargées ({len(data)} enregistrement(s))")
+        return data
+        
     except Exception as e:
-        print(f"❌ Erreur inattendue lors de l'envoi : {str(e)}")
-        return None
+        print(f"❌ Erreur lors de la lecture du fichier Excel : {e}")
+        sys.exit(1)
+
+
+def send_to_api(item, api_url, headers, timeout):
+    """Envoie un enregistrement vers l'API cible."""
+    payload = {
+        "NUMCHRONOCIL": str(item.get("NUMCHRONOCIL", "")),
+        "NUMEROCHASISIS": str(item.get("NUMEROCHASISIS", "")),
+        "IDENTITE_CLIENT": str(item.get("IDENTITE_CLIENT", "")),
+        "GENRE": str(item.get("GENRE", "")),
+        "DATEOUVERTUREDOSSIER": str(item.get("DATEOUVERTUREDOSSIER", "")),
+        "flag_column": int(item.get("flag_column", 2))  # Défaut à 2 (RELICA-PRIMO) si non fourni
+    }
+
+    response = requests.post(api_url, headers=headers, json=payload, timeout=timeout)
+    return response
+
 
 # ═══════════════════════════════════════════════════════════════
 # SCRIPT PRINCIPAL
 # ═══════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    # 1) Récupération des données source
-    print("=" * 70)
-    print("DÉMARRAGE DU SCRIPT PRIMO-ESPECE")
-    print("=" * 70)
-    
-    data_source = fetch_data(SOURCE_URL, SOURCE_HEADERS, TIMEOUT)
 
-    if not isinstance(data_source, list):
-        data_source = [data_source]
+    # 1) Chargement des données depuis Excel
+    data_source = load_excel_data(EXCEL_FILE)
 
     # 2) Headers pour l'API cible
     target_headers = {
@@ -105,54 +92,40 @@ if __name__ == "__main__":
     }
 
     # 3) Envoi des données
-    print("=" * 70)
-    print("ENVOI DES PAIEMENTS EN ESPÈCES VERS PRIMO-ESPECE")
-    print("=" * 70)
+    print("=" * 60)
+    print("ENVOI DES DOSSIERS VERS L'API RELICA/PRIMO")
+    print("=" * 60)
 
     success_count = 0
     error_count = 0
 
     for idx, item in enumerate(data_source, start=1):
         num_chrono = item.get("NUMCHRONOCIL", f"ITEM_{idx}")
+        flag_value = item.get("flag_column", 2)
+        type_label = "PRIMO-ESPECE" if flag_value == 1 else "RELICA-PRIMO"
 
         try:
-            print(f"\n🔹 Traitement du dossier {num_chrono} ({idx}/{len(data_source)})")
-            
-            response = send_to_primo_espece(item, API_URL, target_headers, TIMEOUT)
+            r = send_to_api(item, API_URL, target_headers, TIMEOUT)
 
-            if response is None:
-                print(f"❌ [{num_chrono}] Erreur lors de l'envoi")
-                error_count += 1
-                continue
-
-            if response.status_code in (200, 201, 202):
-                result = response.json()
-                if result.get('success'):
-                    print(f"✅ [{num_chrono}] Paiement enregistré avec succès")
-                    success_count += 1
-                else:
-                    print(f"⚠️  [{num_chrono}] Échec : {result.get('message', 'Aucun message d\'erreur')}")
-                    error_count += 1
+            if r.status_code in (200, 201, 202):
+                print(f"✅ [{num_chrono}] {type_label} — Envoyé avec succès (HTTP {r.status_code})")
+                success_count += 1
             else:
-                print(f"❌ [{num_chrono}] Erreur HTTP {response.status_code}")
-                print(f"   Réponse : {response.text[:200]}")
+                print(f"❌ [{num_chrono}] {type_label} — Échec — HTTP {r.status_code}")
+                print(f"   Réponse : {r.text[:200]}")
                 error_count += 1
 
+        except requests.exceptions.ConnectionError:
+            print(f"❌ [{num_chrono}] Connexion refusée — vérifie que l'API tourne sur {API_URL}")
+            error_count += 1
+        except requests.exceptions.Timeout:
+            print(f"❌ [{num_chrono}] Délai d'attente dépassé")
+            error_count += 1
         except Exception as e:
-            print(f"❌ [{num_chrono}] Exception : {str(e)}")
+            print(f"❌ [{num_chrono}] Exception : {e}")
             error_count += 1
 
     # 4) Résumé
-    print("\n" + "=" * 70)
-    print("RÉSULTAT FINAL")
-    print("=" * 70)
-    print(f"✅ Succès : {success_count}")
-    print(f"❌ Échecs : {error_count}")
-    print(f"📊 Total  : {len(data_source)}")
-    print("=" * 70)
-    
-    # Code de sortie en fonction du résultat
-    if error_count > 0:
-        sys.exit(1)
-    else:
-        sys.exit(0)
+    print("=" * 60)
+    print(f"RÉSULTAT : {success_count} succès | {error_count} échecs sur {len(data_source)} total")
+    print("=" * 60)

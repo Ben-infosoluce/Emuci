@@ -3,7 +3,7 @@
         <div class="flex flex-col space-y-4 mx-8 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <!-- Titre -->
             <h4 class="text-2xl font-bold tracking-tight">
-                Dossiers Paiementss
+                Dossiers Paiements
             </h4>
 
             <!-- Bouton Nouveau et Actualiser -->
@@ -244,14 +244,14 @@ async function actualiserData() {
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
         const currentDate = `${year}${month}${day}`;
-        
+
         // Exemple avec des dates fixes pour test : 20260501 et 20260504 (ou utilisez currentDate)
         const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260706/${currentDate}`;
         // const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260501/20260504`;
 
         // Appel du backend pour contourner le CORS
         await window.axios.post('/api/primo/espece/sync', { url: url });
-        
+
         // Rafraîchir les dossiers après l'actualisation
         fetchDossiers();
     } catch (error) {

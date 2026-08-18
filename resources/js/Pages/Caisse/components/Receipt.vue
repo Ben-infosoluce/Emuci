@@ -216,14 +216,22 @@ const relicaDejaRegle = computed(() => {
     return 0;
 });
 
-// Reliquat = Prix total − Déjà réglé
+// Reliquat = Prix total − Déjà réglé (ou montant fixe 7 800 F CFA pour les motos)
 const relicaReliquat = computed(() => {
+    if (relicaGenreCategory.value === 'moto') {
+        return 7800;
+    }
     return Math.max(0, RELICA_PRIX[relicaGenreCategory.value] - relicaDejaRegle.value);
 });
 
 const items = computed(() => {
     // ── Cas RELICA-PRIMO : afficher le détail reliquat ──
     if (isRelica) {
+        if (relicaGenreCategory.value === 'moto') {
+            return [
+                { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`, amount: 7800, isReliquat: true },
+            ];
+        }
         return [
             { name: `Prix total TTC — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: false },
             { name: `Déjà réglé (Dossiers ${relicaPrefix.value})`, amount: -relicaDejaRegle.value, isReliquat: false },

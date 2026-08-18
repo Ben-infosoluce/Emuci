@@ -23,6 +23,11 @@ class X3FactureService
         }
     }
 
+    protected function isDryRun(): bool
+    {
+        return (bool) config('services.x3.dry_run', false);
+    }
+
     protected function client()
     {
         return Http::withBasicAuth($this->username, $this->password)
@@ -53,6 +58,20 @@ class X3FactureService
         $payload = array_merge([
             '$representation' => 'YPREFIMMAT.$create'
         ], $data);
+
+        if ($this->isDryRun()) {
+            Log::info('X3 ENTETE DRY RUN', [
+                'url' => $url,
+                'payload' => $payload,
+                'message' => 'Envoi X3 désactivé pour les tests. Aucun appel HTTP n\'a été effectué.'
+            ]);
+
+            return [
+                'dry_run' => true,
+                'status' => 'skipped',
+                'payload' => $payload,
+            ];
+        }
 
         // Journalisation de la requête
         Log::info('X3 ENTETE REQUEST', [
@@ -93,6 +112,20 @@ class X3FactureService
         $payload = array_merge([
             '$representation' => 'YPREFIMMATD.$create'
         ], $data);
+
+        if ($this->isDryRun()) {
+            Log::info('X3 LIGNE DRY RUN', [
+                'url' => $url,
+                'payload' => $payload,
+                'message' => 'Envoi X3 désactivé pour les tests. Aucun appel HTTP n\'a été effectué.'
+            ]);
+
+            return [
+                'dry_run' => true,
+                'status' => 'skipped',
+                'payload' => $payload,
+            ];
+        }
 
         Log::info('X3 LIGNE REQUEST', [
             'url' => $url,

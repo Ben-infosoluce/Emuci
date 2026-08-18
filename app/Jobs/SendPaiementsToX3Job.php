@@ -77,48 +77,84 @@ class SendPaiementsToX3Job implements ShouldQueue
 
         // Grouper les paiements par dossier (num_chrono) pour créer une facture par dossier
         $groupedPaiements = $paiements->groupBy('dossier.num_chrono');
+        $facturesAtraiter = [];
+        $factureHeaderDossiers = [];
 
         foreach ($groupedPaiements as $numFacture => $paiementsDuDossier) {
+            $firstPaiement = $paiementsDuDossier->first();
+            $dossier = $firstPaiement ? $firstPaiement->dossier : null;
+
+            if (!$dossier) {
+                Log::warning('Dossier introuvable pour le groupe de paiements', [
+                    'num_facture_groupe' => $numFacture,
+                    'paiements' => $paiementsDuDossier->pluck('id')->all()
+                ]);
+                continue;
+            }
+
+            // Par défaut, la facture cible est elle-même
+            $targetNumFacture = $numFacture;
+            $headerDossier = $dossier;
+
+            // Est-ce un dossier principal de type Duplicata (id_service === 4) contenant un lien vers un autre dossier ?
+            $isDuplicateWithLink = ((int) ($dossier->id_service ?? 0) === 4) && !empty($dossier->id_dossier_lier);
+
+            if ($isDuplicateWithLink) {
+                // Pour le duplicata (dossier principal), la facture cible reste le duplicata lui-même
+                $targetNumFacture = $dossier->num_chrono;
+                $headerDossier = $dossier;
+            } else {
+                // Pour tout autre dossier (comme le Post), on vérifie s'il existe un duplicata principal qui le lie
+                $duplicateParent = \App\Models\Dossier::where('id_service', 4)
+                    ->where('id_dossier_lier', $dossier->id)
+                    ->first();
+
+                if ($duplicateParent) {
+                    // Si un duplicata lie ce dossier, on redirige les paiements vers la facture du duplicata
+                    $targetNumFacture = $duplicateParent->num_chrono;
+                    $headerDossier = $duplicateParent;
+
+                    Log::info('Dossier enfant/lié détecté, fusion vers facture parent Duplicata', [
+                        'dossier_enfant_id' => $dossier->id,
+                        'num_chrono_enfant' => $dossier->num_chrono,
+                        'dossier_parent_id' => $duplicateParent->id,
+                        'num_chrono_parent' => $duplicateParent->num_chrono,
+                    ]);
+                }
+            }
+
+            if (!isset($facturesAtraiter[$targetNumFacture])) {
+                $facturesAtraiter[$targetNumFacture] = collect();
+            }
+
+            $facturesAtraiter[$targetNumFacture] = $facturesAtraiter[$targetNumFacture]->concat($paiementsDuDossier);
+            
+            // On s'assure que le dossier d'en-tête soit le duplicata (s'il y en a un dans la fusion)
+            if (!isset($factureHeaderDossiers[$targetNumFacture]) || ((int) ($headerDossier->id_service ?? 0) === 4)) {
+                $factureHeaderDossiers[$targetNumFacture] = $headerDossier;
+            }
+        }
+
+        foreach ($facturesAtraiter as $numFacture => $paiementsDuDossier) {
             try {
                 Log::info('Début traitement facture X3', ['num_facture' => $numFacture]);
 
-                // ÉTAPE 1 : Calcul des totaux et création de l'en-tête de la facture dans Sage X3
-                $totalHT = 0;
-                $totalTTC = 0;
-
-                foreach ($paiementsDuDossier as $paiement) {
-                    // Calcul du montant HT (TVA 18%)
-                    $montantHT = $paiement->montant / 1.18;
-                    $totalHT += $montantHT;
-                    $totalTTC += $paiement->montant;
-                }
-
-                // Récupérer les informations du client depuis le dossier
-                $firstPaiement = $paiementsDuDossier->first();
-                $dossier = $firstPaiement ? $firstPaiement->dossier : null;
+                $dossier = $factureHeaderDossiers[$numFacture] ?? ($paiementsDuDossier->first() ? $paiementsDuDossier->first()->dossier : null);
                 if (!$dossier) {
                     throw new Exception("Dossier manquant ou introuvable pour la facture [NUM: $numFacture]");
                 }
                 Log::info('dossier', $dossier->toArray());
                 $client = $dossier->client;
 
-                $enteteData = [
-                    'NUM' => $numFacture,
-                    'DATINV' => $this->dateOperation, // Format YYYY-MM-DD
-                    'BPCINV' => 'C000016', // Code client
-                    'BPRNAM' => ($client ? $client->nom . ' ' . $client->prenom : 'Client'), // Nom client
-                    'TIMBRE' => 100,
-                    'TVA' => (int) round($totalTTC) - (int) round($totalHT),
-                    'TOTALHT' => (int) round($totalHT), // Format entier
-                    'TOTALTTC' => (int) round($totalTTC), // Format entier
-                    'SITE' => $dossier->id_site,
-                    'CUR' => 'XOF'
-                ];
-                Log::info('Création entête facture X3', $enteteData);
-                $x3->createEntete($enteteData);
-                // ÉTAPE 2 : Création des lignes de la facture dans Sage X3
-                // Chaque ligne correspond à un service spécifique lié au dossier
+                // ÉTAPE 1 : Préparation et calcul des lignes en mémoire
+                $lignesAEnvoyer = [];
                 $linCounter = 1000;
+                $totalHT = 0;
+                $totalTTC = 0;
+                
+                // Le montant total des timbres est la somme réelle des timbres de chaque paiement
+                $totalTimbre = $paiementsDuDossier->sum('timbre');
+
                 $services_par_id = [
                     "2" => "REI01",
                     "7" => "OPS01",
@@ -136,17 +172,6 @@ class SendPaiementsToX3Job implements ShouldQueue
                     "44" => "DUP05",
                     "45" => "OPS02",
                 ];
-                //pour RELICA-PRIMO et PRIMO CAISSE, il faut : regarder 2 choses :
-                // 1. RELICA-PRIMO :
-                // REL01 RELICA-PRIMO  Auto
-                // REL02 RELICA-PRIMO  Moto
-                // REL03 RELICA-PRIMO  Semi-remorque
-
-                // 2. PRIMO CAISSE :
-                // PREM01 PRIMO-CAISSE  Auto
-                // PREM02 PRIMO-CAISSE  Moto
-                // PREM03 PRIMO-CAISSE  Semi-remorque
-
 
                 foreach ($paiementsDuDossier as $paiement) {
                     // 1. Récupérer le breakdown des montants depuis la description du paiement
@@ -168,9 +193,9 @@ class SendPaiementsToX3Job implements ShouldQueue
                     foreach ($serviceIds as $serviceId) {
                         if (isset($services_par_id[$serviceId]) || $serviceId == 46 || $serviceId == 47) {
                             $detailService['montant'] = 0;
-                            //pour le Relica Primo et Primo Caisse, on prend directement le montant du paiement car il n'est pas détaillé dans le breakdown
-                            if ($serviceId == 46 or $serviceId == 47) {
-                                $detailService['montant'] = $paiement->montant;
+                            // Pour le Relica Primo et Primo Caisse, on prend directement le montant du paiement moins le timbre réel
+                            if ($serviceId == 46 || $serviceId == 47) {
+                                $detailService['montant'] = $paiement->montant - $paiement->timbre;
 
                                 $genre = strtoupper($paiement->dossier->vehicule->genre_vehicule ?? '');
 
@@ -217,6 +242,36 @@ class SendPaiementsToX3Job implements ShouldQueue
                         }
                     }
 
+                    // Condition spéciale PLQ : uniquement pour les dossiers Post-immatriculation (id_service=3)
+                    // en dehors de ceux qui sont fusionnés dans une facture Duplicata
+                    // (si le header de la facture est un Duplicata id_service=4, on ne passe pas ici)
+                    if ((int) ($dossier->id_service ?? 0) === 3 && (int) ($paiement->dossier->id_service ?? 0) === 3) {
+                        $triggerIds = [10, 28, 25];
+                        $serviceIdsInt = array_map('intval', $serviceIds);
+                        $hasTriggerService = !empty(array_intersect($serviceIdsInt, $triggerIds));
+
+                        if ($hasTriggerService) {
+                            // Chercher l'entrée "Changement de plaques" dans le breakdown du paiement
+                            $plqItem = $breakdown->first(function ($item) {
+                                return isset($item['element_facturation']) &&
+                                    stripos($item['element_facturation'], 'Changement de plaques') !== false;
+                            });
+
+                            if ($plqItem && isset($plqItem['montant'])) {
+                                $servicesAEnvoyer[] = [
+                                    'itmref' => 'PLQ',
+                                    'montant_ttc' => (float) $plqItem['montant']
+                                ];
+                            } else {
+                                Log::warning('Élément "Changement de plaques" introuvable dans le breakdown pour le service PLQ', [
+                                    'paiement_ref' => $paiement->reference,
+                                    'num_chrono' => $paiement->dossier->num_chrono,
+                                    'breakdown' => $breakdown->toArray()
+                                ]);
+                            }
+                        }
+                    }
+
                     // Fallback si aucun service mappé n'est trouvé dans le dossier
                     if (empty($servicesAEnvoyer)) {
                         Log::warning("Aucun service mappé trouvé pour le dossier, utilisation du fallback ARTICLE01", [
@@ -226,37 +281,64 @@ class SendPaiementsToX3Job implements ShouldQueue
                         ]);
                         $servicesAEnvoyer[] = [
                             'itmref' => "ARTICLE01",
-                            'montant_ttc' => $paiement->montant - 100
+                            'montant_ttc' => $paiement->montant - $paiement->timbre
                         ];
                     }
 
                     $vinVehicule = $paiement->dossier->vehicule->vin ?? $numFacture;
 
-                    // 4. Création des lignes
+                    // 4. Préparation des lignes
                     foreach ($servicesAEnvoyer as $service) {
                         $mtHT = $service['montant_ttc'] / 1.18;
+                        $mtTTC = $service['montant_ttc'];
 
-                        $ligneData = [
-                            'NUM' => $numFacture,
+                        $totalHT += (int) round($mtHT);
+                        $totalTTC += (int) round($mtTTC);
+
+                        $lignesAEnvoyer[] = [
                             'LIN' => $linCounter,
-                            "ITMREF" => $service['itmref'],
+                            'ITMREF' => $service['itmref'],
                             'CHRONO' => $paiement->dossier->num_chrono,
                             'VINVEHICULE' => $vinVehicule,
                             'QTYUS' => 1,
                             'NETPRIX' => (int) round($mtHT),
                             'MONTANTHTLN' => (int) round($mtHT),
-                            'MONTANTTTCLN' => (int) round($service['montant_ttc']),
+                            'MONTANTTTCLN' => (int) round($mtTTC),
                         ];
-
-                        Log::info('Création ligne facture X3 (Montant Réel)', $ligneData);
-                        $x3->createLigne($ligneData);
                         $linCounter += 1000;
                     }
                 }
 
+                // ÉTAPE 2 : Création de l'en-tête de la facture dans Sage X3
+                $headerTTC = $totalTTC + $totalTimbre;
+                $tva = $totalTTC - $totalHT;
+
+                $enteteData = [
+                    'NUM' => $numFacture,
+                    'DATINV' => $this->dateOperation, // Format YYYY-MM-DD
+                    'BPCINV' => 'C000016', // Code client
+                    'BPRNAM' => ($client ? $client->nom . ' ' . $client->prenom : 'Client'), // Nom client
+                    'TIMBRE' => $totalTimbre,
+                    'TVA' => $tva,
+                    'TOTALHT' => $totalHT, // Format entier
+                    'TOTALTTC' => $headerTTC, // Format entier
+                    'SITE' => $dossier->id_site,
+                    'CUR' => 'XOF'
+                ];
+
+                Log::info('Création entête facture X3', $enteteData);
+                $x3->createEntete($enteteData);
+
+                // ÉTAPE 3 : Création des lignes de la facture dans Sage X3
+                foreach ($lignesAEnvoyer as $ligne) {
+                    $ligneData = array_merge(['NUM' => $numFacture], $ligne);
+                    Log::info('Création ligne facture X3 (Montant Réel)', $ligneData);
+                    $x3->createLigne($ligneData);
+                }
+
                 Log::info('Facture X3 traitée avec succès', [
                     'num_facture' => $numFacture,
-                    'nombre_lignes' => $paiementsDuDossier->count()
+                    'nombre_lignes' => count($lignesAEnvoyer)
                 ]);
             } catch (\Illuminate\Http\Client\RequestException $e) {
                 Log::error('Erreur de requête API Sage X3', [
@@ -281,7 +363,7 @@ class SendPaiementsToX3Job implements ShouldQueue
 
         Log::info('Tous les paiements envoyés à X3', [
             'date' => $this->dateOperation,
-            'nombre_factures' => $groupedPaiements->count(),
+            'nombre_factures' => count($facturesAtraiter),
             'total_paiements' => $paiements->count()
         ]);
     }

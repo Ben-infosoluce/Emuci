@@ -87,7 +87,7 @@ class PaiementController extends Controller
             }
             //gère ici has_changement_plaque, suppression TVA
             $montant_dossier_lier_taxe = 0;
-            $montant_dossier_lier_ttc = $montant_dossier_lier_ht + 100; // Ajout du Timbre de 100F
+            $montant_dossier_lier_ttc = $montant_dossier_lier_ht; // Ajout du Timbre de 100F
 
 
             /*
@@ -121,6 +121,7 @@ class PaiementController extends Controller
                     'mode_paiement' => 'Cash',
                     'id_service' => $dossier_lier->id_service,
                     'id_vehicule' => $dossier_lier->id_vehicule,
+                    'timbre' => 0,
                     'user_id' => Auth::id(),
                     'description' => json_encode($validated['detailTypeServices_lier']),
                     'reference' => 'PAI' . strtoupper(uniqid()),
@@ -660,13 +661,11 @@ class PaiementController extends Controller
 
         // Filtre par VIN (via search_data) et num_chrono
         if ($search_data) {
-            // Récupérer les IDs des véhicules qui correspondent au VIN
-            $vehicules = Vehicule::where('vin', 'like', "%{$search_data}%")->pluck('id');
-
-            // Appliquer le filtre sur les dossiers
-            $query->where(function ($q) use ($search_data, $vehicules) {
-                $q->whereIn('id_vehicule', $vehicules)
-                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
+            $query->where(function ($q) use ($search_data) {
+                $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
+                    $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
+                })
+                ->orWhere('num_chrono', 'like', "%{$search_data}%");
             });
         }
 
@@ -848,8 +847,8 @@ class PaiementController extends Controller
                 'X-Token' => $token,
                 'Content-Type' => 'application/json'
             ])->post($notifyUrl, [
-                'numChronoCil' => $chrono
-            ]);
+                        'numChronoCil' => $chrono
+                    ]);
 
             \Illuminate\Support\Facades\Log::info("[notifierPaiementExterne] Réponse notification", [
                 'chrono' => $chrono,
