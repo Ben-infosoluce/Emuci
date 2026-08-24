@@ -889,11 +889,15 @@ const relicaDejaRegle = computed(() => {
     return 0;
 });
 
-// Reliquat = Prix total − Déjà réglé (ou montant fixe 7 800 F CFA pour les motos)
+// Reliquat = Prix total − Déjà réglé (ou montant fixe 7 800 F CFA pour les motos RELICA-PRIMO uniquement)
+// Pour PRIMO-ESPECE, on facture toujours le prix total (pas de reliquat)
 const relicaReliquat = computed(() => {
-    if (relicaGenreCategory.value === 'moto') {
+    const isPrimoEspece = props.dossier?.type === 'PRIMO-ESPECE';
+    if (relicaGenreCategory.value === 'moto' && !isPrimoEspece) {
+        // RELICA-PRIMO moto : reliquat fixe de 7 800 F CFA
         return 7800;
     }
+    // PRIMO-ESPECE (toute catégorie) ou RELICA-PRIMO non-moto : prix total − déjà réglé
     return Math.max(0, RELICA_PRIX[relicaGenreCategory.value] - relicaDejaRegle.value);
 });
 const relicaMontantHT = computed(() => relicaReliquat.value);
