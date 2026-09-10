@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\PdcController;
 use App\Http\Controllers\PaiementController;  // Ajout de l'import
+use App\Http\Controllers\RelicaPrimoController;
 
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -27,6 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Route pour importer les donnee de primo (relica et espece) vers pdc
     Route::post('/importer/primo/relica/caisse', [PdcController::class, 'ImportPrimoRelicaCaisse']);
+
+    // Route importer relica primo(table relica_primo)
+    Route::post('/import/relica/primo', [RelicaPrimoController::class, 'storeBulk']);
+    Route::post('/migrate/caisse/to/relica', [RelicaPrimoController::class, 'migrateToRelica']);
 });
 
 // Sync externe CIL - accessible sans auth Sanctum (appelé depuis l'interface interne)

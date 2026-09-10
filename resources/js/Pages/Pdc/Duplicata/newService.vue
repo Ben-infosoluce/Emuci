@@ -82,30 +82,33 @@ const props = defineProps({
 const selected = ref([])
 
 const filteredTypeServices = computed(() => {
+    if (!props.typeServices || !Array.isArray(props.typeServices)) return []
 
-    const genre = (props.data.genre || "").toLowerCase()
-    const nbPlaque = props.data.nb_plaque
+    const genre = (props.data?.genre || "").toLowerCase()
+    const nbPlaque = Number(props.data?.nb_plaque)
+
+    let filtered = []
 
     // cas remorque
     if (genre.includes("remorque")) {
-        return props.typeServices.filter(service =>
-            service.element_facturation.toLowerCase().includes("remorque")
+        filtered = props.typeServices.filter(service =>
+            service.element_facturation?.toLowerCase().includes("remorque")
+        )
+    } else if (nbPlaque === 1) {
+        // cas 1 plaque
+        filtered = props.typeServices.filter(service =>
+            service.element_facturation?.includes("une (01) plaque") &&
+            !service.element_facturation?.toLowerCase().includes("remorque")
+        )
+    } else {
+        // cas 2 plaques
+        filtered = props.typeServices.filter(service =>
+            service.element_facturation?.includes("deux (02) plaques")
         )
     }
 
-    // cas 1 plaque
-    if (nbPlaque === 1) {
-        return props.typeServices.filter(service =>
-            service.element_facturation.includes("une (01) plaque") &&
-            !service.element_facturation.toLowerCase().includes("remorque")
-        )
-    }
-
-    // cas 2 plaques
-    return props.typeServices.filter(service =>
-        service.element_facturation.includes("deux (02) plaques")
-    )
-
+    // Si le filtre ne retourne aucun élément (ex: libellé BDD différent en recette), on affiche tous les typeServices
+    return filtered.length > 0 ? filtered : props.typeServices
 })
 
 /**
@@ -153,7 +156,7 @@ onMounted(() => {
     console.log("postImtData:", props.postImtData)
     console.log("data:", props.data)
     console.log("typeServices:", props.typeServices)
-    console.log("genre:", props.data.genre)
+    console.log("genre:", props.data?.genre)
 })
 </script>
 

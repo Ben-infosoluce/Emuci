@@ -314,6 +314,10 @@ class PdcController extends Controller
         }
     }
 
+    /***********************************************
+     * Début gestion relica et espèce primo
+     ************************************************/
+
     public function SaveRelicaPrimo(Request $request)
     {
         $rules = [
@@ -1017,6 +1021,9 @@ class PdcController extends Controller
         }
     }
 
+    /***********************************************
+     * Fin gestion relica et espèce primo
+     ************************************************/
     public function updateFdsOps(Request $request)
     {
         $rules = [
@@ -1327,7 +1334,7 @@ class PdcController extends Controller
                 $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
                     $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
                 })
-                ->orWhere('num_chrono', 'like', "%{$search_data}%");
+                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
             });
         }
 
@@ -1983,7 +1990,7 @@ class PdcController extends Controller
                 $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
                     $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
                 })
-                ->orWhere('num_chrono', 'like', "%{$search_data}%");
+                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
             });
         }
 
@@ -2645,7 +2652,7 @@ class PdcController extends Controller
                 $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
                     $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
                 })
-                ->orWhere('num_chrono', 'like', "%{$search_data}%");
+                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
             });
         }
 
@@ -3041,7 +3048,7 @@ class PdcController extends Controller
                 $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
                     $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
                 })
-                ->orWhere('num_chrono', 'like', "%{$search_data}%");
+                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
             });
         }
 
@@ -3880,7 +3887,7 @@ class PdcController extends Controller
                 $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
                     $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
                 })
-                ->orWhere('num_chrono', 'like', "%{$search_data}%");
+                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
             });
         }
 
