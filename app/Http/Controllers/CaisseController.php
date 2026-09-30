@@ -283,18 +283,24 @@ class CaisseController extends Controller
             $query->where("statut", $statut);
         }
 
-        // Filtre par date de création (date_creation)
+        // Filtre par date de création (date_paiement)
         if ($date_start && $date_end) {
             try {
                 $start = Carbon::parse($date_start)->startOfDay();
                 $end = Carbon::parse($date_end)->endOfDay();
                 $query->whereBetween('date_paiement', [$start, $end]);
+                // Plage de dates définie : pagination normale sur toute la plage
+                $dossiers = $query->latest()->paginate($filtre_per_page);
             } catch (\Exception $e) {
-                // Optionnel : log ou ignorer si erreur de date
+                // En cas d'erreur de date, comportement par défaut
+                $latestIds = (clone $query)->latest()->limit(50)->pluck('id');
+                $dossiers = $query->whereIn('id', $latestIds)->latest()->paginate($filtre_per_page);
             }
+        } else {
+            // Pas de plage de dates : paginer dans les 50 derniers enregistrements, 10 par page
+            $latestIds = (clone $query)->latest()->limit(50)->pluck('id');
+            $dossiers = $query->whereIn('id', $latestIds)->latest()->paginate($filtre_per_page);
         }
-
-        $dossiers = $query->latest()->paginate($filtre_per_page);
 
         return response()->json([
             'dossiers' => $dossiers,
