@@ -6,6 +6,7 @@ import { computed } from 'vue';
 const props = defineProps({
   defaultValue: { type: [String, Number], required: false },
   modelValue: { type: [String, Number], required: false },
+  placeholder: { type: String, required: false },
   class: { type: null, required: false },
 });
 
@@ -22,9 +23,9 @@ function clearInput() {
 </script>
 
 <template>
-  <div class="relative w-full md:w-1/4">
+  <div class="relative w-full">
     <!-- Champ avec padding à droite pour laisser place à l'icône -->
-    <input placeholder="Recherche par vin ou chrono" v-model="modelValue" :class="cn(
+    <input :placeholder="placeholder || 'Rechercher par VIN ou Chrono...'" v-model="modelValue" :class="cn(
       'flex h-9 w-full rounded-md border  px-3 py-1 pr-10 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-200',
       props.class,
     )

@@ -26,8 +26,14 @@
                         <!-- Filtres -->
                         <div class="flex flex-wrap gap-4 items-center justify-between">
                             <!-- Recherche -->
-                            <Input_search v-model="form.search_data" @update:modelValue="onFilterChange"
-                                placeholder="Rechercher par VIN..." class="w-full " />
+                            <div class="flex items-center gap-2 w-full md:w-auto">
+                                <Input_search v-model="form.search_data" @keydown.enter="onFilterChange"
+                                    placeholder="Rechercher par VIN ou Chrono..." class="w-full md:w-80" />
+                                <Button @click="onFilterChange" type="button" class="flex items-center gap-2 shrink-0">
+                                    <Search class="w-4 h-4" />
+                                    Rechercher
+                                </Button>
+                            </div>
                             <!-- Statut -->
                             <Select v-model="form.statut_paiement" @update:modelValue="onFilterChange">
                                 <SelectTrigger class="w-40">
@@ -175,9 +181,10 @@
 import { onMounted, ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import Pagination from '@/components/Pagination.vue'
 import { Input_search } from '@/components/ui/Input_search'
-import { MoveRight, MoveLeft, Plus, RefreshCw } from 'lucide-vue-next'
+import { MoveRight, MoveLeft, Plus, RefreshCw, Search } from 'lucide-vue-next'
 import Control from "../Caisse/components/Control.vue";
 import { Skeleton } from '@/components/ui/skeleton'
 
