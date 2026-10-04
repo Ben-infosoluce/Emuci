@@ -3022,6 +3022,7 @@ class PdcController extends Controller
     {
         return inertia('Pdc/Duplicata/selectService');
     }
+
     //get immatriculation data
     public function getPdcDuplicataData(Request $request)
     {
@@ -3938,6 +3939,209 @@ class PdcController extends Controller
     public function showPdcGestionUsers()
     {
         return inertia('Pdc/GestionUtilisateur');
+    }
+
+
+    //Gestion Modification dossier primot pur encaissé les erreur DGTTC
+    public function showPdcModification()
+    {
+        return inertia('Pdc/Modification/index');
+    }
+
+    public function showPdcModificationSelect()
+    {
+        return inertia('Pdc/Modification/selectService');
+    }
+
+    public function showNewPdcModification()
+    {
+        $genres = DB::table('genre')->orderBy('nom')->get();
+        return inertia('Pdc/Modification/new', [
+            'genres' => $genres,
+        ]);
+    }
+
+    public function saveNewPdcModificationData(Request $request)
+    {
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'vin' => 'required|string|max:255',
+            'num_chrono' => 'required|string|max:255',
+            'genre' => 'required|string|max:255',
+            'statut_plaque' => 'required|in:1,2',
+        ], [
+            'nom.required' => 'Le nom est obligatoire.',
+            'prenom.required' => 'Le prénom est obligatoire.',
+            'vin.required' => 'Le numéro de châssis est obligatoire.',
+            'num_chrono.required' => 'Le N° Chrono est obligatoire.',
+            'genre.required' => 'Le genre de véhicule est obligatoire.',
+            'statut_plaque.required' => 'Le statut de la plaque est obligatoire.',
+            'statut_plaque.in' => 'Le statut de la plaque doit être 1 (posé) ou 2 (non posé).',
+        ]);
+
+        // Récupérer nb_plaque depuis le genre
+        $nbPlaque = DB::table('genre')
+            ->where('nom', $validated['genre'])
+            ->value('nb_plaque') ?? 0;
+
+        // Créer ou récupérer le véhicule
+        $vehicule = Vehicule::firstOrCreate(
+            ['vin' => $validated['vin']],
+            [
+                'genre_vehicule' => $validated['genre'],
+                'nb_plaque' => $nbPlaque,
+            ]
+        );
+
+        // Créer le client
+        $client = Client::create([
+            'nom' => $validated['nom'],
+            'prenom' => $validated['prenom'],
+            'statut' => 1,
+            'password' => generateStrongPassword(8),
+            'validite' => Carbon::now()->addMonths(3),
+        ]);
+
+        // Créer le dossier
+        $dossier = Dossier::create([
+            'id_vehicule' => $vehicule->id,
+            'id_client' => $client->id,
+            'id_user' => auth()->id(),
+            'id_service' => 7, // Modification
+            'num_chrono' => $validated['num_chrono'],
+            'detail' => '["48"]',
+            'type' => "MODIFICATION",
+            'id_site' => getIdSite(),
+            'statut' => 1,
+            'status_pose_plaque' => (int) $validated['statut_plaque'],
+            'date_creation' => Carbon::now()->toDateString(),
+        ]);
+
+        return redirect()->route('show.pdc.modification')
+            ->with('success', 'Dossier de modification créé avec succès.');
+    }
+    public function getPdcModificationData(Request $request)
+    {
+        $query = Dossier::with([
+            'r_dossier_vehicule',
+            'r_dossier_user',
+            'r_dossier_client',
+            'r_dossier_documents',
+            'r_dossier_services',
+            'r_dossier_services.r_service_types',
+            'r_dossier_transactions'
+        ])->where('id_service', 7);
+
+        $filtre_per_page = $request->input('filtre_per_page', 10);
+        $statut = $request->input('statut');
+        $filtre_type = $request->input('filtre_type');
+        $search_data = $request->input('search_data');
+        $date_start = $request->input('date_start');
+        $date_end = $request->input('date_end');
+
+        // Filtre par VIN (via search_data)
+        if ($search_data) {
+            $query->where(function ($q) use ($search_data) {
+                $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
+                    $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
+                })
+                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
+            });
+        }
+
+
+        // Filtre par statut
+        if ($statut) {
+            $query->where("statut", $statut);
+        }
+
+        // Filtre par date de création (created_at)
+        if ($date_start && $date_end) {
+            // On s'assure que ce sont des dates valides
+            try {
+                $start = $date_start;
+                $end = $date_end;
+                $query->whereBetween('date_creation', [$start, $end]);
+            } catch (\Exception $e) {
+                // Optionnel : log ou ignorer si erreur de date
+            }
+        }
+
+        $dossiers = $query->latest()->paginate($filtre_per_page);
+
+        return response()->json([
+            'dossiers' => $dossiers,
+            'filtres' => $request->only(
+                "filtre_per_page",
+                "statut",
+                "search_data",
+                "filtre_type",
+                "date_start",
+                "date_end"
+            )
+        ]);
+    }
+
+    public function showReceiptPdcModification($id)
+    {
+        // Charger le dossier principal
+        $dossier = Dossier::with([
+            'r_dossier_vehicule',
+            'r_dossier_user',
+            'r_dossier_client',
+            'r_dossier_services',
+            'r_dossier_services.r_service_types',
+            'r_dossier_transactions',
+        ])->findOrFail($id);
+
+
+        // Charger le dossier lié (post-immatriculation) seulement s'il existe
+        $dossier_lier = null;
+
+        if (!empty($dossier->id_dossier_lier)) {
+            $dossier_lier = Dossier::with([
+                'r_dossier_vehicule',
+                'r_dossier_user',
+                'r_dossier_client',
+                'r_dossier_services',
+                'r_dossier_services.r_service_types'
+            ])->find($dossier->id_dossier_lier); // find() au lieu de findOrFail()
+        }
+
+        // Récupération véhicule / client
+        $vehicule = $dossier->r_dossier_vehicule;
+        $client = $dossier->r_dossier_client;
+
+        // Charger l’entreprise seulement si elle existe
+        $entreprise = $vehicule->entreprise_id
+            ? Entreprise::find($vehicule->entreprise_id)
+            : null;
+
+        // Structure des données envoyées au reçu
+        $data = [
+            'receipt' => [
+                'num_immatriculation' => $vehicule->num_immatriculation,
+                'vin' => $vehicule->vin,
+                'marqueVehicule' => [
+                    'id' => $vehicule->marque_id,
+                    'nom' => $vehicule->marque,
+                ],
+                'modelVehicule' => [
+                    'id' => $vehicule->model_id,
+                    'nom' => $vehicule->modele,
+                ],
+            ],
+        ];
+
+        return inertia('Pdc/Modification/receipt', [
+            'dossier' => $dossier,
+            'dossier_lier' => $dossier_lier,
+            'entreprise' => $entreprise,
+            'vehicule' => $vehicule,
+            'client' => $client,
+            'data' => $data,
+        ]);
     }
 
     //**************** FIN POOL DE CONTROLE *****************//

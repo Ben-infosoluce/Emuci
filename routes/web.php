@@ -254,6 +254,7 @@ Route::group([
     Route::get('/pdc/duplicata', [PdcController::class, "showPdcDuplicata"])->name('show.pdc.duplicata');
     Route::get('/pdc/duplicata/select', [PdcController::class, "showPdcDuplicataSelect"])->name('show.pdc.duplicata.select');
 
+
     Route::get('/pdc/duplicata/data', [PdcController::class, "getPdcDuplicataData"])->name('get.pdc.duplicata.data');
     Route::get('/pdc/duplicata/new', [PdcController::class, "showNewPdcDuplicata"])->name('show.new.pdc.duplicata');
     Route::get('/pdc/duplicata/new/add/data', [PdcController::class, "showNewPdcDuplicataAddData"])->name('show.new.pdc.duplicata.add.data');
@@ -272,6 +273,18 @@ Route::group([
     //****************************************Correction****************************************//
     Route::get('/pdc/correction', [PdcController::class, "showPdcCorrection"])->name('show.pdc.correction');
     Route::get('/pdc/correction/data', [PdcController::class, "getPdcCorrectionData"])->name('get.pdc.correction.data');
+
+    //****************************************Modification****************************************//
+    Route::get('/pdc/modification', [PdcController::class, "showPdcModification"])->name('show.pdc.modification');
+    Route::get('/pdc/modification/select', [PdcController::class, "showPdcModificationSelect"])->name('show.pdc.modification.select');
+    Route::get('/pdc/modification/new', [PdcController::class, "showNewPdcModification"])->name('show.new.pdc.modification');
+    Route::post('/pdc/modification/new/save', [PdcController::class, 'saveNewPdcModificationData'])->name('save.pdc.modification.new');
+    Route::get('/pdc/modification/data', [PdcController::class, "getPdcModificationData"])->name('get.pdc.modification.data');
+    Route::get('/pdc/modification/data/{vin}', [PdcController::class, "showModificationGetData"])->name('show.modification.pdc.get.data');
+    Route::post('/pdc/modification/save/data', [PdcController::class, 'savePdcModificationData'])->name('save.pdc.modification.data');
+    Route::put('/pdc/modification/{id}/update', [PdcController::class, 'updatePdcModificationData'])->name('update.pdc.modification.data');
+    Route::get('/pdc/modification/receipt/{id}', [PdcController::class, "showReceiptPdcModification"])->name('show.receipt.pdc.modification');
+    Route::get('/pdc/modification/receipt/{id}', [PdcController::class, "showReceiptPdcModification"])->name('show.receipt.pdc.modification');
 });
 
 
@@ -314,6 +327,7 @@ Route::group([
     Route::post('/numerisation/document/update/single', [NumerisationController::class, 'updateSingleField'])->name('numerisation.document.update.single');
     Route::get('/numerisation/documents/dossier/edit/{id_dossier}', [NumerisationController::class, "EditlistDocuments"])->name('numerisation.dossier.edit.documentslist');
     Route::get('numerisation/get/data/modification/{vin}', [NumerisationController::class, "showModificationGetData"])->name('show.modification.numerisation.get.data');
+
 });
 
 

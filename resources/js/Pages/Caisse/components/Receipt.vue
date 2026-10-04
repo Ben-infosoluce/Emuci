@@ -57,6 +57,11 @@
             style="text-align: center; font-size: 0.7rem; color: #1d4ed8; font-weight: 600; margin-top: 0; margin-bottom: 1rem;">
             Paiement en Espèce - PRIMO
         </p>
+        <!-- Sous-titre MODIFICATION -->
+        <p v-if="isModification"
+            style="text-align: center; font-size: 0.7rem; color: #1d4ed8; font-weight: 600; margin-top: 0; margin-bottom: 1rem;">
+            Paiement - MODIFICATION ({{ props?.dossier?.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée' }})
+        </p>
         <!-- Info Table -->
         <div
             style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem;">
@@ -188,6 +193,11 @@ const RELICA_PRIX = { auto: 22600, moto: 14100, remorque: 15570 };
 
 const isRelica = props.dossier?.type === 'RELICA-PRIMO';
 const isPrimoEspece = props.dossier?.type === 'PRIMO-ESPECE';
+const isModification = props.dossier?.type === 'MODIFICATION';
+
+const modificationMontantHT = computed(() => {
+    return props.dossier?.status_pose_plaque == 1 ? 15000 : 25000;
+});
 
 const relicaPrefix = computed(() => {
     const chrono = props.dossier?.num_chrono || '';
@@ -250,6 +260,14 @@ const items = computed(() => {
         ];
     }
 
+    // ── Cas MODIFICATION : 15 000 (status_pose_plaque = 1) ou 25 000 (status_pose_plaque = 2) ──
+    if (isModification) {
+        const plaqueLabel = props.dossier?.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée';
+        return [
+            { name: `Modification (${plaqueLabel})`, amount: modificationMontantHT.value, isReliquat: true }
+        ];
+    }
+
     // ── Cas standard ──
     const result = [];
     if (hasTriggerService && props.autre_facturation) {
@@ -275,10 +293,12 @@ const totalHT = computed(() =>
 // Total TTC :
 // - RELICA-PRIMO : uniquement reliquat + timbre (les lignes Prix total et Déjà réglé sont informatives)
 // - PRIMO-ESPECE : total HT + timbre
+// - MODIFICATION : total HT + timbre (15 000 + 100 = 15 100 ou 25 000 + 100 = 25 100)
 // - Standard     : somme HT + timbre
 const totalTTC = computed(() => {
     if (isRelica) return relicaReliquat.value + 100;
     if (isPrimoEspece) return totalHT.value + 100;
+    if (isModification) return totalHT.value + 100;
     return totalHT.value + 100;
 });
 

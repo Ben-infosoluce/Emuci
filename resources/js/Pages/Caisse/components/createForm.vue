@@ -193,7 +193,7 @@
 
                     <Card>
                         <ScrollArea class="h-full w-full rounded-md border">
-                            <div class="m-8" v-if="dossier.type != 'RELICA-PRIMO' && dossier.type != 'PRIMO-ESPECE'">
+                            <div class="m-8" v-if="dossier.type != 'RELICA-PRIMO' && dossier.type != 'PRIMO-ESPECE' && dossier.type != 'MODIFICATION'">
                                 <h3 class="mt-6 text-center font-bold text-lg">
                                     PANIER DE PAIEMENT
                                 </h3>
@@ -301,6 +301,50 @@
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2">
                                         <span class="font-medium">TOTAL A PAYER :</span>
                                         <span class="font-bold">{{ formatMontant(relicaMontantTTC) }} F CFA</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BLOC MODIFICATION -->
+                            <div class="m-8" v-if="dossier.type == 'MODIFICATION'">
+                                <h3 class="mt-6 text-center font-bold text-lg">
+                                    PANIER DE PAIEMENT — MODIFICATION
+                                </h3>
+
+                                <!-- Infos dossier -->
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 space-y-1">
+                                    <p class="text-sm text-gray-600">
+                                        <strong>N° Chrono :</strong> {{ dossier.num_chrono }}
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        <strong>Genre du véhicule :</strong> {{ dossier.r_dossier_vehicule?.genre_vehicule }}
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        <strong>Statut plaque :</strong>
+                                        {{ dossier.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée' }}
+                                    </p>
+                                </div>
+
+                                <!-- Détail -->
+                                <div class="space-y-2 pt-4">
+                                    <h3 class="font-semibold text-gray-700">Éléments à facturer</h3>
+                                    <div class="flex justify-between px-2 py-2 border-b font-semibold">
+                                        <span>Modification
+                                            ({{ dossier.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée' }})
+                                        </span>
+                                        <span class="text-green-700">{{ formatMontant(modificationMontantHT) }} F CFA</span>
+                                    </div>
+                                </div>
+
+                                <!-- Récapitulatif -->
+                                <div class="space-y-2 pt-2 mt-4">
+                                    <div class="flex justify-between font-bold text-green-800">
+                                        <span class="font-medium">Timbre :</span>
+                                        <span class="font-bold">{{ formatMontant(100) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                        <span class="font-medium">TOTAL A PAYER :</span>
+                                        <span class="font-bold">{{ formatMontant(modificationMontantTTC) }} F CFA</span>
                                     </div>
                                 </div>
                             </div>
@@ -532,6 +576,45 @@
                                 </div>
                             </template>
 
+                            <!-- CAS MODIFICATION -->
+                            <template v-else-if="dossier.type == 'MODIFICATION'">
+                                <div class="space-y-2 pt-4">
+                                    <h3 class="font-semibold text-gray-700">Éléments à facturer — MODIFICATION</h3>
+
+                                    <!-- Infos dossier -->
+                                    <div class="p-3 bg-blue-50 rounded-lg border border-blue-200 space-y-1 mb-3">
+                                        <p class="text-sm text-gray-600">
+                                            <strong>N° Chrono :</strong> {{ dossier.num_chrono }}
+                                        </p>
+                                        <p class="text-sm text-gray-600">
+                                            <strong>Statut plaque :</strong>
+                                            {{ dossier.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée' }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Ligne montant -->
+                                    <div class="flex justify-between px-2 py-2 border-t border-b font-semibold">
+                                        <span>Modification ({{ dossier.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée' }})</span>
+                                        <span class="text-green-700">{{ formatMontant(modificationMontantHT) }} F CFA</span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 pt-2 mt-4">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">MONTANT HT :</span>
+                                        <span class="font-bold text-gray-700">{{ formatMontant(modificationMontantHT) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2">
+                                        <span class="font-medium">Timbre :</span>
+                                        <span class="font-bold">{{ formatMontant(100) }}</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-green-800 border-t pt-2 text-xl">
+                                        <span class="font-medium uppercase">Total à payer :</span>
+                                        <span class="font-bold">{{ formatMontant(modificationMontantTTC) }}</span>
+                                    </div>
+                                </div>
+                            </template>
+
                             <!-- CAS PRIMO-ESPECE -->
                             <template v-else-if="dossier.type == 'PRIMO-ESPECE'">
                                 <div class="space-y-2 pt-4">
@@ -628,10 +711,11 @@
                                                 class="max-w-xl mx-auto p-6 border rounded-xl shadow-sm bg-white text-gray-800">
                                                 <div class="flex items-center justify-between mb-2">
                                                     <span class="font-medium">PRIX HT:</span>
-                                                    <span class="font-bold">{{ formatMontant(
+                                                     <span class="font-bold">{{ formatMontant(
                                                         dossier.type === 'RELICA-PRIMO' ? relicaMontantHT :
                                                             dossier.type === 'PRIMO-ESPECE' ? relicaPrixTotal :
-                                                                getPrixHT()
+                                                                dossier.type === 'MODIFICATION' ? modificationMontantHT :
+                                                                    getPrixHT()
                                                     ) }} F</span>
                                                 </div>
                                                 <div class="flex items-center justify-between mb-2">
@@ -644,7 +728,8 @@
                                                         {{ formatMontant(
                                                             dossier.type === 'RELICA-PRIMO' ? relicaMontantTTC :
                                                                 dossier.type === 'PRIMO-ESPECE' ? (relicaPrixTotal + 100) :
-                                                                    getMontantTotal()
+                                                                    dossier.type === 'MODIFICATION' ? modificationMontantTTC :
+                                                                        getMontantTotal()
                                                         ) }}
                                                     </span>
                                                 </div>
@@ -903,6 +988,14 @@ const relicaReliquat = computed(() => {
 const relicaMontantHT = computed(() => relicaReliquat.value);
 const relicaMontantTTC = computed(() => relicaReliquat.value + 100);
 
+// ── MODIFICATION : prix selon statut plaque ───────────────────────────────────
+// status_pose_plaque = 1 → Plaque non posée → 15 000 F
+// status_pose_plaque = 2 → Plaque posée → 25 000 F
+const modificationMontantHT = computed(() => {
+    return props.dossier?.status_pose_plaque == 1 ? 15000 : 25000;
+});
+const modificationMontantTTC = computed(() => modificationMontantHT.value + 100);
+
 const formatedMontant = (items = []) => {
     return items.map(item => {
         // always use the montant property
@@ -931,12 +1024,21 @@ async function validerPaiement() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     const isRelica = props.dossier?.type === 'RELICA-PRIMO' || props.dossier?.type === 'PRIMO-ESPECE';
+    const isModification = props.dossier?.type === 'MODIFICATION';
 
     // Pour RELICA-PRIMO / PRIMO-ESPECE : détail = reliquat selon genre + site
     const relicaDetail = isRelica ? [{
         id: null,
         element_facturation: `Reliquat RELICA PRIMO — ${relicaGenreLabel.value} (${relicaPrefix.value})`,
         montant: relicaReliquat.value,
+        id_type_services: null,
+    }] : null;
+
+    // Pour MODIFICATION : détail forfaitaire selon statut plaque
+    const modificationDetail = isModification ? [{
+        id: null,
+        element_facturation: `Modification — ${ props.dossier?.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée' }`,
+        montant: modificationMontantHT.value,
         id_type_services: null,
     }] : null;
 
@@ -955,9 +1057,9 @@ async function validerPaiement() {
                 statut_paiement: nouveauStatut,
                 chrono: props.dossier.num_chrono,
                 chrono_lier: props.dossier_lier?.num_chrono,
-                detailTypeServices: isRelica ? relicaDetail : detailTypeServicesFormatted.value,
+                detailTypeServices: isRelica ? relicaDetail : (isModification ? modificationDetail : detailTypeServicesFormatted.value),
                 detailTypeServices_lier: detailTypeServicesLierFormatted.value,
-                montant_total: isRelica ? relicaMontantTTC.value : getMontantTotal(),
+                montant_total: isRelica ? relicaMontantTTC.value : (isModification ? modificationMontantTTC.value : getMontantTotal()),
                 caisse_ouverture_id: store.caisseOpened.caisse_id,
                 id_site: props.dossier.id_site,
                 has_changement_plaque: hasTriggerService,
@@ -1000,7 +1102,7 @@ async function validerPaiement() {
         console.error(error);
     }
 }
-
+console.log(props.dossier.status_pose_plaque);
 const entreprise = ref(null);
 
 async function fetchEntreprise(id) {

@@ -91,6 +91,11 @@ class CaisseController extends Controller
                 ->whereIn('id', $details)
                 // ->where('id_site', getIdSite())
                 ->get();
+        } elseif ($dossier->type == 'MODIFICATION') {
+            $detailTypeServices = DB::table('detail_type_services')
+                ->whereIn('id', $details)
+                // ->where('id_site', getIdSite())
+                ->get();
         } else {
             $detailTypeServices = DB::table('detail_type_services')
                 ->whereIn('id', $details)
@@ -241,6 +246,23 @@ class CaisseController extends Controller
                 ->where(function ($query) use ($userSiteId) {
                     $query->where('id_site', $userSiteId);
                 });
+        } elseif (in_array(21, $permissions)) {
+            // dd("ok");
+            $query = Dossier::with([
+                'r_dossier_vehicule',
+                'r_dossier_user',
+                'r_dossier_client',
+                'r_dossier_documents',
+                'r_dossier_services',
+                'r_dossier_services.r_service_types',
+                'r_dossier_transactions',
+            ])->where('type', 'MODIFICATION');
+            // Ce bloc gère l'exclusion : soit MON site, soit le site 0
+            // ->where(function ($query) use ($userSiteId) {
+            //     $query->where('id_site', $userSiteId)
+            //         ->orWhere('id_site', 0);
+            // }
+            // );
         } else {
             $query = Dossier::with([
                 'r_dossier_vehicule',
@@ -274,7 +296,7 @@ class CaisseController extends Controller
                 $q->whereIn('id_vehicule', function ($sub) use ($search_data) {
                     $sub->select('id')->from('vehicules')->where('vin', 'like', "%{$search_data}%");
                 })
-                ->orWhere('num_chrono', 'like', "%{$search_data}%");
+                    ->orWhere('num_chrono', 'like', "%{$search_data}%");
             });
         }
 
