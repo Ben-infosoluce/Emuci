@@ -241,11 +241,11 @@ class CaisseController extends Controller
                 'r_dossier_services',
                 'r_dossier_services.r_service_types',
                 'r_dossier_transactions',
-            ])->whereIn('type', $types)
-                // Ce bloc gère l'exclusion : soit MON site
-                ->where(function ($query) use ($userSiteId) {
-                    $query->where('id_site', $userSiteId);
-                });
+            ])->whereIn('type', $types);
+            // Ce bloc gère l'exclusion : soit MON site
+            // ->where(function ($query) use ($userSiteId) {
+            //     $query->where('id_site', $userSiteId);
+            // });
         } elseif (in_array(21, $permissions)) {
             // dd("ok");
             $query = Dossier::with([
