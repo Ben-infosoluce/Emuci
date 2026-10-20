@@ -467,7 +467,7 @@ const myAccount = () => {
         linnk = "admin";
     } else if (user_type == "Boss") {
         linnk = "boss";
-    } else if (user_type == "Raf") {
+    } else if (user_type == "Raf" || user_type == "Trésorier") {
         linnk = "raf";
     } else if (user_type == "Gestionnaire") {
         linnk = "gestionnaire/dashboard";

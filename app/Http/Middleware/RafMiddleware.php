@@ -17,7 +17,8 @@ class RafMiddleware
     public function handle(Request $request, Closure $next): Response
     {
 
-        if (!Gate::allows("Raf")) {
+        // Le RAF et le Trésorier partagent la même interface (consultation pour le Trésorier).
+        if (!Gate::allows("Raf") && !Gate::allows("Tresorier")) {
             return redirect()->route('home');
         }
         return $next($request);

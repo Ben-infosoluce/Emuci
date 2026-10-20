@@ -36,24 +36,25 @@
                                 CAISSE :
                             </p>
 
-                            <div class="px-3 py-2 text-sm">
-                                <div v-if="caisse" class="flex flex-row gap-8">
-                                    <p class="font-semibold">
-                                        {{ caisse.libelle }} ({{ caisse.code }})
-                                    </p>
-                                    <div class="flex flex-row gap-1">
-                                        <p class="font-semibold">
-                                            Statut de la caisse :
-                                        </p>
-                                        <p :class="statusCaisseClass" class="font-semibold">
-                                            {{ statusCaisseLabel }}
-                                        </p>
-                                    </div>
-                                </div>
+                            <select v-model="selectedCaisse" @change="onCaisseChange"
+                                class="border rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-gray-500 focus:border-amber-500 bg-background shadow-sm h-9">
+                                <option value="">-- Choisir une caisse --</option>
+                                <option v-for="c in caisses" :key="c.id" :value="c.id">
+                                    {{ c.libelle }} ({{ c.code }})
+                                </option>
+                            </select>
 
-                                <div v-else class="text-gray-500 text-sm">
-                                    Chargement de la caisse…
-                                </div>
+                            <div v-if="caisse" class="flex items-center gap-2 px-3 py-1 rounded bg-gray-50">
+                                <p class="text-sm font-semibold text-gray-700">
+                                    Statut :
+                                </p>
+                                <p :class="statusCaisseClass" class="font-semibold">
+                                    {{ statusCaisseLabel }}
+                                </p>
+                            </div>
+
+                            <div v-else class="text-gray-500 text-sm">
+                                Chargement de la caisse…
                             </div>
                         </div>
 
@@ -377,7 +378,7 @@
                                             </AlertDialogCancel>
                                             <Button @click="handleValidate"
                                                 class="bg-green-800 p-4 rounded hover:bg-gray-900 transition duration-300"
-                                                :disabled="loading || (isActionFermeture && !montantRecu)">
+                                                :disabled="loading">
                                                 Valider
                                                 <span v-if="loading" class="ml-2 animate-spin">⏳</span>
                                             </Button>
@@ -431,6 +432,7 @@ import DossierListTable from "@/components/Caisse/DossierListTable.vue";
 
 const paiements = ref([]);
 const selectedDate = ref(new Date().toISOString().split("T")[0]);
+const caisses = ref([]);
 const caisse = ref(null);
 const selectedCaisse = ref("");
 const montantRecu = ref("");
@@ -612,11 +614,15 @@ const formatDate = (dateStr) => {
 const fetchCaisse = async () => {
     try {
         const { data } = await axios.get("/caisse/of/user", {
-            params: { date: selectedDate.value },
+            params: {
+                date: selectedDate.value,
+                caisse_id: selectedCaisse.value || undefined,
+            },
         });
 
         // console.log("Données caisse:", data);
 
+        caisses.value = data.caisses || [];
         caisse.value = data.caisse || null;
         ouvertureDuJour.value = data.ouverture_du_jour || null;
         ouvertureNonFermee.value = data.ouverture_non_fermee || null;
@@ -661,7 +667,10 @@ const fetchCaisse = async () => {
 const fetchPaiements = async () => {
     try {
         const { data } = await axios.get("/paiement/data/stat", {
-            params: { date: selectedDate.value },
+            params: {
+                date: selectedDate.value,
+                caisse_id: selectedCaisse.value || undefined,
+            },
         });
 
         paiements.value = Array.isArray(data) ? data : [];
@@ -669,6 +678,11 @@ const fetchPaiements = async () => {
         console.error("Erreur lors du chargement des paiements :", error);
         toast.error("Impossible de charger les paiements.");
     }
+};
+
+//  Changement de caisse sélectionnée par le contrôleur
+const onCaisseChange = async () => {
+    await fetchPaiements_Caisse();
 };
 
 //  Recharger caisse + paiements
@@ -685,9 +699,13 @@ const handleValidate = async () => {
     }
     montantCaisse.value = montantRecu.value;
 
-    // Validation du montant en cas de fermeture
-    if (isActionFermeture.value && !montantRecu.value) {
-        toast.error("Veuillez saisir le montant reçu.");
+    // Le montant peut être 0 (aucun paiement) : on accepte 0 et on traite un champ vide comme 0
+    const montantControlleur = (montantRecu.value === null || montantRecu.value === "")
+        ? 0
+        : parseFloat(String(montantRecu.value).replace(/\s+/g, "").replace(/,/g, "."));
+
+    if (isNaN(montantControlleur) || montantControlleur < 0) {
+        toast.error("Veuillez saisir un montant valide.");
         return;
     }
 
@@ -707,13 +725,7 @@ const handleValidate = async () => {
 
     const payload = {
         montant_caisse: isActionFermeture.value ? totalBilletterieControlleur.value : 0,
-        montant_controlleur: isActionFermeture.value
-            ? parseFloat(
-                String(montantRecu.value)
-                    .replace(/\s+/g, "")
-                    .replace(/,/g, "."),
-            )
-            : 0,
+        montant_controlleur: isActionFermeture.value ? montantControlleur : 0,
         id_caisse: Number(selectedCaisse.value),
         code_caisse: selectedInfo?.code ?? "",
         id_site: selectedInfo?.site_id ?? null,

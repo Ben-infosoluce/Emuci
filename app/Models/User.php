@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Caisse;
 
 class User extends Authenticatable
 {
@@ -55,6 +56,11 @@ class User extends Authenticatable
     public function r_user_site(): BelongsTo
     {
         return $this->belongsTo(Site::class , 'id_site');
+    }
+
+    public function r_user_caisse(): BelongsTo
+    {
+        return $this->belongsTo(Caisse::class , 'caisse_id');
     }
 
     public function r_user_permissions(): BelongsToMany

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use App\Models\Caisse;
 
 class BossController extends Controller
 {
@@ -642,7 +643,15 @@ class BossController extends Controller
         }
 
         $idSite = getIdSite();
-        $idCaisse = getIdCaisse();
+
+        // Filtre optionnel par caisse (elle doit appartenir au site de l'utilisateur).
+        // Sans filtre, le contrôleur voit toutes les caisses de son site.
+        $idCaisse = null;
+        if ($request->filled('caisse_id')) {
+            $idCaisse = Caisse::where('id', (int) $request->query('caisse_id'))
+                ->where('site_id', $idSite)
+                ->value('id');
+        }
 
         $baseQuery = DB::table('paiements')
             ->whereBetween('paiements.created_at', [$startDate, $endDate])

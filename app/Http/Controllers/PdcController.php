@@ -3977,7 +3977,7 @@ class PdcController extends Controller
             'num_chrono.required' => 'Le N° Chrono est obligatoire.',
             'genre.required' => 'Le genre de véhicule est obligatoire.',
             'statut_plaque.required' => 'Le statut de la plaque est obligatoire.',
-            'statut_plaque.in' => 'Le statut de la plaque doit être 1 (posé) ou 2 (non posé).',
+            'statut_plaque.in' => 'Le statut de la plaque doit être 1 (non posé) ou 2 (posé).',
         ]);
 
         // Récupérer nb_plaque depuis le genre

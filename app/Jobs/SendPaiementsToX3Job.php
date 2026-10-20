@@ -71,8 +71,13 @@ class SendPaiementsToX3Job implements ShouldQueue
 
         $paiements = $query->get();
 
-        if ($paiements->isEmpty()) {
-            throw new Exception('Aucun paiement à envoyer');
+        // Rien à envoyer : aucun paiement ou montant total à 0 (on n'envoie pas de 0 dans X3)
+        if ($paiements->isEmpty() || (float) $paiements->sum('montant') <= 0) {
+            Log::info('Envoi Sage X3 ignoré : aucun paiement ou montant total à 0.', [
+                'date_operation' => $this->dateOperation,
+                'caisse_id' => $this->caisseId,
+            ]);
+            return;
         }
 
         // Grouper les paiements par dossier (num_chrono) pour créer une facture par dossier

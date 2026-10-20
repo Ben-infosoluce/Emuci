@@ -46,8 +46,21 @@
                         <!-- Filtres -->
                         <div class="flex flex-wrap gap-4 items-center justify-between">
                             <!-- Recherche -->
-                            <Input_search v-model="form.search_data" @update:modelValue="onFilterChange"
-                                placeholder="Rechercher par VIN..." class="w-full" />
+                            <div class="flex items-center gap-2 w-full md:w-auto">
+                                <input v-model="searchInput" @keyup.enter="applySearch" type="text"
+                                    placeholder="Rechercher par nom d'entité…"
+                                    class="w-full md:w-64 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:border-muted-foreground/50 focus:ring-1 focus:ring-muted-foreground/30" />
+                                <button @click="applySearch"
+                                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+                                    <Search class="w-4 h-4" />
+                                    Chercher
+                                </button>
+                                <button v-if="activeSearch" @click="clearSearch" title="Réinitialiser"
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-muted transition-colors text-muted-foreground shrink-0">
+                                    <X class="w-4 h-4" />
+                                    Réinitialiser
+                                </button>
+                            </div>
                             <!-- Statut -->
                             <Select v-model="form.statut" @update:modelValue="onFilterChange">
                                 <SelectTrigger class="w-40">
@@ -294,8 +307,7 @@ import { onMounted, ref } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { Input } from "@/components/ui/input";
 import Pagination from "@/components/Pagination.vue";
-import { Input_search } from "@/components/ui/Input_search";
-import { Plus } from "lucide-vue-next";
+import { Plus, Search, X } from "lucide-vue-next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster, toast } from "vue-sonner";
 
@@ -442,27 +454,47 @@ const handleEdit = async () => {
 
 // Pagination
 
+// Pré-remplir les filtres depuis l'URL
+const params = new URLSearchParams(window.location.search);
+
 const form = useForm({
-    search_data: "",
-    statut: "",
-    date_start: "",
-    date_end: "",
+    search_data: params.get("search_data") || "",
+    statut: params.get("statut") || "",
+    date_start: params.get("date_start") || "",
+    date_end: params.get("date_end") || "",
 });
+
+const searchInput = ref(form.search_data);
+const activeSearch = ref(form.search_data);
 
 // Filtres
 const onFilterChange = () => {
     loading.value = true;
-    router.get(route("entite.liste"), form, {
+    router.get(route("show.entite.list"), form.data(), {
         preserveScroll: true,
         preserveState: true,
         onFinish: () => (loading.value = false),
     });
 };
 
+const applySearch = () => {
+    searchInput.value = searchInput.value.trim();
+    form.search_data = searchInput.value;
+    activeSearch.value = searchInput.value;
+    onFilterChange();
+};
+
+const clearSearch = () => {
+    searchInput.value = "";
+    form.search_data = "";
+    activeSearch.value = "";
+    onFilterChange();
+};
+
 // Pagination
 const changePage = (page) => {
     loading.value = true;
-    router.get(route("entite.liste"), { ...form.data(), page }, {
+    router.get(route("show.entite.list"), { ...form.data(), page }, {
         preserveScroll: true,
         preserveState: true,
         onFinish: () => (loading.value = false),

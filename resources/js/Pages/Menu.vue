@@ -75,7 +75,7 @@
                         </a>
                     </Link>
                 </li>
-                 <li :class="{ 'active-page': $page.component.startsWith('Pdc/Modification') }"
+                <li :class="{ 'active-page': $page.component.startsWith('Pdc/Modification') }"
                     v-if="user_permissions.includes(21)">
                     <Link :href="route('show.pdc.modification.select')">
                         <a
@@ -249,6 +249,19 @@
                             class="flex items-center p-2 text-white hover:text-black rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <ArrowsUpFromLine />
                             <span class="flex-1 ms-3 whitespace-nowrap">Sites</span>
+                        </a>
+                    </Link>
+                </li>
+                <li :class="{
+                    'active-page':
+                        $page.component.startsWith('Admin/') &&
+                        $page.component == 'Admin/Caisse',
+                }">
+                    <Link :href="route('caisses.index')">
+                        <a
+                            class="flex items-center p-2 text-white hover:text-black rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <RectangleEllipsis />
+                            <span class="flex-1 ms-3 whitespace-nowrap">Caisse</span>
                         </a>
                     </Link>
                 </li>
@@ -442,8 +455,8 @@
             </ul>
         </template>
 
-        <!-- Raf -->
-        <template v-if="user_type == 'Raf'">
+        <!-- Raf / Trésorier (même interface, le Trésorier est en lecture seule) -->
+        <template v-if="['Raf', 'Trésorier'].includes(user_type)">
             <ul class="space-y-4 font-medium mt-6" v-if="true">
                 <li :class="{
                     'active-page': $page.component == 'RafCaisse/Dashbord'

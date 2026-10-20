@@ -33,11 +33,33 @@ function getIdSite()
 
 function getIdCaisse()
 {
-    $site_id = getIdSite();
-    if (!$site_id) {
+    $user = Auth::user();
+
+    if (!$user) {
         return null;
     }
-    $caisse = Caisse::where('site_id', $site_id)->first();
+
+    // Caisse explicitement affectée à l'utilisateur (multi-caisses par site)
+    if (!empty($user->caisse_id)) {
+        $caisse = Caisse::where('id', $user->caisse_id)
+            ->where('site_id', $user->id_site)
+            ->first();
+
+        if ($caisse) {
+            return (int) $caisse->id;
+        }
+    }
+
+    // Repli de rétro-compatibilité : première caisse active du site
+    if (!$user->id_site) {
+        return null;
+    }
+
+    $caisse = Caisse::where('site_id', $user->id_site)
+        ->where('is_active', 1)
+        ->orderBy('id')
+        ->first();
+
     return $caisse ? $caisse->id : null;
 }
 

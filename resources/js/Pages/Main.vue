@@ -298,8 +298,13 @@ const currentDate = new Date().toLocaleDateString("fr-FR");
 // 🔹 Fonction pour valider le montant reçu et fermer la caisse
 const handleValidate = async () => {
     try {
-        if (!fondDeCaisse.value) {
-            toast.error("Veuillez entrer le montant reçu avant de valider.");
+        // Le montant peut être 0 (aucun paiement) : on bloque seulement les valeurs invalides
+        if (
+            fondDeCaisse.value === null ||
+            fondDeCaisse.value === "" ||
+            isNaN(Number(fondDeCaisse.value))
+        ) {
+            toast.error("Veuillez entrer un montant valide avant de valider.");
             return;
         }
 

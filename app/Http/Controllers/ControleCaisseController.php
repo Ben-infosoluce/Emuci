@@ -232,6 +232,34 @@ class ControleCaisseController extends Controller
         ]);
     }
 
+    /**
+     * Caisse autorisée pour l'utilisateur connecté :
+     * - elle doit appartenir à son site ;
+     * - s'il est rattaché à une caisse précise, uniquement celle-ci.
+     */
+    private function resolveAuthorizedCaisse(int $caisseId): ?Caisse
+    {
+        $user = Auth::user();
+
+        if (!$user || !$user->id_site) {
+            return null;
+        }
+
+        $caisse = Caisse::where('id', $caisseId)
+            ->where('site_id', $user->id_site)
+            ->first();
+
+        if (!$caisse) {
+            return null;
+        }
+
+        if (!empty($user->caisse_id) && (int) $user->caisse_id !== (int) $caisse->id) {
+            return null;
+        }
+
+        return $caisse;
+    }
+
     public function validateMontant(Request $request)
     {
         // dd($request->all());
@@ -255,14 +283,21 @@ class ControleCaisseController extends Controller
             return response()->json(['message' => 'Caisse non trouvée.'], 404);
         }
 
+        // La caisse de l'ouverture doit être autorisée pour l'utilisateur connecté
+        $caisse = $this->resolveAuthorizedCaisse((int) $ouverture->caisse_id);
+
+        if (!$caisse) {
+            return response()->json(['message' => 'Caisse introuvable ou non autorisée.'], 403);
+        }
+
         // 🔹 Créer un enregistrement dans la table controlleur_caisse
         $controlleurCaisse = ControlleurCaisse::create([
-            'montant_caisse' => $ouverture->montant_caisse,
+            'montant_caisse' => $ouverture->montant_ouverture,
             'montant_controlleur' => $request->montant_controlleur,
-            'caisse_id' => $ouverture->id,
+            'caisse_id' => $caisse->id,
             'date' => now()->toDateString(),
-            'code_caisse' => $ouverture->code,
-            'id_site' => $ouverture->site_id,
+            'code_caisse' => $caisse->code,
+            'id_site' => $caisse->site_id,
         ]);
 
         return response()->json([
@@ -298,32 +333,46 @@ class ControleCaisseController extends Controller
 
     public function getCaisseOfAuthenticatedUser(Request $request)
     {
-        // $user = Auth::user();
+        $user = Auth::user();
 
         $date = $request->query('date', now()->toDateString());
 
-        // ✅ Source unique et fiable
+        // ✅ Le contrôleur est rattaché à un site (pas à une caisse unique)
         $idSite = getIdSite();
-        $idCaisse = getIdCaisse();
 
-        if (!$idSite || !$idCaisse) {
+        if (!$idSite) {
             return response()->json([
-                'message' => 'Utilisateur non correctement rattaché à un site ou une caisse.'
+                'message' => 'Utilisateur non correctement rattaché à un site.'
             ], 403);
         }
 
-        // ✅ Caisse strictement liée au site
-        $caisse = Caisse::where('id', $idCaisse)
-            ->where('site_id', $idSite)
-            ->first();
+        // ✅ Toutes les caisses actives du site : le contrôleur peut les piloter
+        $caisses = Caisse::where('site_id', $idSite)
+            ->where('is_active', 1)
+            ->select('id', 'code', 'libelle', 'site_id')
+            ->orderBy('libelle')
+            ->get();
+
+        // ✅ Caisse sélectionnée : paramètre explicite, sinon caisse affectée, sinon première du site
+        $caisse = null;
+
+        if ($request->filled('caisse_id')) {
+            $caisse = $caisses->firstWhere('id', (int) $request->query('caisse_id'));
+        } elseif (!empty($user->caisse_id)) {
+            $caisse = $caisses->firstWhere('id', (int) $user->caisse_id);
+        }
+
+        if (!$caisse) {
+            $caisse = $caisses->first();
+        }
 
         if (!$caisse) {
             return response()->json([
-                'message' => 'Caisse introuvable ou non autorisée.'
+                'message' => 'Aucune caisse active pour ce site.'
             ], 404);
         }
 
-        // ✅ Dernière ouverture non fermée (du bon site)
+        // ✅ Dernière ouverture non fermée pour cette caisse
         $ouvertureNonFermee = DB::table('controlleur_caisses')
             ->where('caisse_id', $caisse->id)
             ->where('id_site', $idSite)
@@ -331,7 +380,7 @@ class ControleCaisseController extends Controller
             ->orderByDesc('date_ouverture_controlleur')
             ->first();
 
-        // ✅ Ouverture du jour (du bon site)
+        // ✅ Ouverture du jour pour cette caisse
         $ouvertureCible = DB::table('controlleur_caisses')
             ->where('caisse_id', $caisse->id)
             ->where('id_site', $idSite)
@@ -341,9 +390,11 @@ class ControleCaisseController extends Controller
         // ✅ Récupérer la clôture de la caissière pour cette date
         $caisseOuverture = CaisseOuverture::where('caisse_id', $caisse->id)
             ->whereDate('date_ouverture', $date)
+            ->orderByDesc('date_ouverture')
             ->first();
 
         return response()->json([
+            'caisses' => $caisses,
             'caisse' => $caisse,
             'site_id' => $idSite,
             'date_cible' => $date,
@@ -382,9 +433,15 @@ class ControleCaisseController extends Controller
         // dd($request->all());
         $today = now()->toDateString();
 
+        $caisse = $this->resolveAuthorizedCaisse((int) $request->id_caisse);
+
+        if (!$caisse) {
+            return response()->json(['message' => 'Caisse introuvable ou non autorisée.'], 403);
+        }
+
         $record = ControlleurCaisse::firstOrCreate(
             [
-                'caisse_id' => $request->id_caisse,
+                'caisse_id' => $caisse->id,
                 'date' => $today,
             ],
             [
@@ -392,8 +449,8 @@ class ControleCaisseController extends Controller
                 'montant_controlleur' => 0,
                 'status' => 0,
                 'status_raf' => 0,
-                'code_caisse' => $request->code_caisse,
-                'id_site' => $request->id_site,
+                'code_caisse' => $caisse->code,
+                'id_site' => $caisse->site_id,
             ]
         );
         // dd($record);
@@ -429,6 +486,13 @@ class ControleCaisseController extends Controller
         $date = $request->date_operation; // ← c'est cette date qui compte
         $today = now()->toDateString();
         $yesterday = now()->subDay()->toDateString();
+
+        // La caisse demandée doit être autorisée pour l'utilisateur connecté
+        $caisse = $this->resolveAuthorizedCaisse((int) $request->id_caisse);
+
+        if (!$caisse) {
+            return response()->json(['message' => 'Caisse introuvable ou non autorisée.'], 403);
+        }
 
         // Vérifier que la date est autorisée
         if (!in_array($date, [$today, $yesterday])) {

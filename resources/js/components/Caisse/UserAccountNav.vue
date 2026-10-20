@@ -70,90 +70,72 @@
       </AlertDialogContent>
     </AlertDialog>
 
-    <AlertDialog :open="openProfile" @update:open="openProfile = $event">
-      <AlertDialogContent class="sm:max-w-[450px] overflow-hidden p-0 rounded-2xl border-none shadow-[0_20px_50px_rgba(0,0,0,0.15)] bg-white">
-        <!-- Premium Header with Pattern -->
-        <div class="relative h-40 bg-[#1e293b] overflow-hidden">
-          <div class="absolute inset-0 opacity-30">
-            <div class="absolute -top-24 -left-20 w-64 h-64 bg-amber-500 rounded-full blur-[80px]"></div>
-            <div class="absolute -bottom-24 -right-20 w-64 h-64 bg-blue-600 rounded-full blur-[80px]"></div>
-          </div>
-          
-          <div class="absolute top-5 right-5 z-20">
-            <button @click="openProfile = false" class="p-2 rounded-full bg-white/10 text-white/80 hover:bg-white/20 hover:text-white transition-all backdrop-blur-md">
-              <X class="h-4 w-4" />
-            </button>
-          </div>
-          
-          <div class="absolute bottom-0 left-1/2 -translate-x-1/2 z-99">
-            <div class="relative group">
-              <div class="absolute -inset-1 bg-gradient-to-tr from-amber-500 to-amber-200 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <Avatar class="h-28 w-28 border-[6px] border-white shadow-2xl relative">
-                <AvatarFallback class="text-3xl font-black bg-gray-100 text-slate-800 tracking-tighter">
-                  {{ getInitials() }}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
+    <Dialog v-model:open="openProfile">
+      <DialogContent class="sm:max-w-[480px] gap-0 p-0 overflow-hidden">
+        <DialogHeader class="border-b px-6 py-5 text-left">
+          <DialogTitle class="text-lg font-semibold text-slate-900">
+            Mon profil
+          </DialogTitle>
+          <DialogDescription class="text-sm text-slate-500">
+            Informations associées à votre compte.
+          </DialogDescription>
+        </DialogHeader>
 
-        <!-- Content Area -->
-        <div class="pt-16 pb-10 px-8">
-          <div class="text-center space-y-1 mb-8">
-            <h2 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-              {{ user?.nom }} {{ user?.prenom }}
-            </h2>
-            <div class="flex items-center justify-center gap-2">
-              <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold uppercase tracking-widest border border-amber-100/50 shadow-sm">
-                {{ user?.r_user_role?.nom_role }}
+        <div class="space-y-5 px-6 py-5">
+          <!-- Identité -->
+          <div class="flex items-center gap-4">
+            <Avatar class="h-14 w-14">
+              <AvatarFallback class="bg-amber-100 text-lg font-bold text-amber-700">
+                {{ getInitials() }}
+              </AvatarFallback>
+            </Avatar>
+            <div class="min-w-0">
+              <p class="truncate text-base font-semibold text-slate-900">
+                {{ user?.nom }} {{ user?.prenom }}
+              </p>
+              <span
+                class="mt-1 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                {{ user?.r_user_role?.nom_role || "—" }}
               </span>
             </div>
           </div>
 
-          <div class="grid gap-3">
-            <!-- Info Card: Email -->
-            <div class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:border-amber-200 hover:bg-white hover:shadow-md transition-all duration-300">
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:bg-amber-50 group-hover:border-amber-100 transition-colors">
-                <span class="text-slate-400 group-hover:text-amber-600"><User class="h-5 w-5" /></span>
-              </div>
-              <div class="flex-1">
-                <p class="text-[10px] font-bold uppercase tracking-tighter text-slate-400 mb-0.5">Identifiant Email</p>
-                <p class="text-sm font-semibold text-slate-700 truncate">{{ user?.email }}</p>
+          <!-- Détails du compte -->
+          <div class="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
+            <div class="flex items-start gap-3 px-4 py-3">
+              <Mail class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Email</p>
+                <p class="break-all text-sm font-medium text-slate-700">{{ user?.email || "—" }}</p>
               </div>
             </div>
 
-            <!-- Info Card: Site -->
-            <div class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:border-blue-200 hover:bg-white hover:shadow-md transition-all duration-300">
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
-                <span class="text-slate-400 group-hover:text-blue-600"><Settings class="h-5 w-5" /></span>
-              </div>
-              <div class="flex-1">
-                <p class="text-[10px] font-bold uppercase tracking-tighter text-slate-400 mb-0.5">Localisation de service</p>
-                <p class="text-sm font-semibold text-slate-700">
-                  {{ user?.r_user_site?.nom_site }}
-                  <span class="text-slate-300 mx-1">/</span>
-                  <span class="text-slate-500 font-medium">{{ user?.r_user_site?.region }}</span>
+            <div class="flex items-start gap-3 px-4 py-3">
+              <MapPin class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Site</p>
+                <p class="text-sm font-medium text-slate-700">{{ user?.r_user_site?.nom_site || "—" }}</p>
+                <p v-if="user?.r_user_site?.region" class="text-xs text-slate-400">
+                  {{ user.r_user_site.region }}
                 </p>
               </div>
             </div>
 
-            <!-- Info Card: Agency Type -->
-            <div class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:border-emerald-200 hover:bg-white hover:shadow-md transition-all duration-300">
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
-                <span class="text-slate-400 group-hover:text-emerald-600"><LockKeyhole class="h-5 w-5" /></span>
-              </div>
-              <div class="flex-1">
-                <p class="text-[10px] font-bold uppercase tracking-tighter text-slate-400 mb-0.5">Type d'établissement</p>
-                <p class="text-sm font-semibold text-slate-700">{{ user?.r_user_site?.type_site || 'N/A' }}</p>
+            <div class="flex items-start gap-3 px-4 py-3">
+              <Building2 class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Type d'établissement</p>
+                <p class="text-sm font-medium text-slate-700">{{ user?.r_user_site?.type_site || "—" }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Decorative Footer -->
-        <div class="h-1.5 w-full bg-gradient-to-r from-amber-500 via-amber-300 to-blue-600 opacity-80"></div>
-      </AlertDialogContent>
-    </AlertDialog>
+        <DialogFooter class="border-t bg-slate-50/60 px-6 py-4">
+          <Button variant="outline" @click="openProfile = false">Fermer</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -167,13 +149,16 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, 
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup 
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User, X, LockKeyhole } from "lucide-vue-next";
+import { LogOut, Settings, User, Mail, MapPin, Building2 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
 
 defineProps({
   showSidebarToggle: {

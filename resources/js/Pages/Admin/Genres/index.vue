@@ -1,6 +1,187 @@
+<template>
+    <div>
+        <!-- Titre + bouton création -->
+        <div class="flex flex-col space-y-4 mx-8 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <h4 class="text-2xl font-bold tracking-tight">Liste des genres</h4>
+            <Toaster position="top-right" />
+
+            <Button @click="openCreateModal">
+                <Plus class="w-4 h-4 mr-2" /> Ajouter un genre
+            </Button>
+        </div>
+
+        <div class="rounded-lg dark:border-gray-700">
+            <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                <Card class="h-full flex flex-col">
+                    <div class="space-y-4 p-8">
+                        <!-- Recherche -->
+                        <div class="flex justify-start w-full">
+                            <div class="flex items-center gap-2">
+                                <input v-model="searchInput" @keyup.enter="applySearch" type="text"
+                                    placeholder="Rechercher un genre…"
+                                    class="w-64 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:border-muted-foreground/50 focus:ring-1 focus:ring-muted-foreground/30" />
+                                <button @click="applySearch"
+                                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                                    <Search class="w-4 h-4" />
+                                    Chercher
+                                </button>
+                                <button v-if="activeSearch" @click="clearSearch" title="Réinitialiser"
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-muted transition-colors text-muted-foreground">
+                                    <X class="w-4 h-4" />
+                                    Réinitialiser
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tableau -->
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Nom</TableHead>
+                                    <TableHead>Nombre de plaques</TableHead>
+                                    <TableHead class="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="(genre, index) in paginatedGenres" :key="genre.id">
+                                    <TableCell>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</TableCell>
+                                    <TableCell>{{ genre.nom }}</TableCell>
+                                    <TableCell>
+                                        <Badge :variant="genre.nb_plaque === 2 ? 'info' : 'success'">
+                                            {{ genre.nb_plaque }} plaque(s)
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreVertical class="w-4 h-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                <DropdownMenuItem @click="openEditModal(genre)">Modifier</DropdownMenuItem>
+                                                <DropdownMenuItem class="text-red-500"
+                                                    @click="openDeleteModal(genre.id)">
+                                                    Supprimer
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow v-if="paginatedGenres.length === 0">
+                                    <TableCell colspan="4" class="text-center py-8 text-muted-foreground">
+                                        Aucun genre trouvé
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+
+                        <!-- Pagination -->
+                        <div class="flex items-center justify-between pt-4 border-t">
+                            <p class="text-sm text-muted-foreground">
+                                {{ filteredGenres.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1 }}–{{
+                                    Math.min(currentPage * itemsPerPage, filteredGenres.length) }}
+                                sur {{ filteredGenres.length }} genre(s)
+                            </p>
+                            <div class="flex items-center gap-1">
+                                <Button variant="outline" size="icon" :disabled="currentPage === 1"
+                                    @click="goToPage(1)" title="Première page">
+                                    <ChevronsLeft class="w-4 h-4" />
+                                </Button>
+                                <Button variant="outline" size="icon" :disabled="currentPage === 1"
+                                    @click="goToPage(currentPage - 1)" title="Page précédente">
+                                    <ChevronLeft class="w-4 h-4" />
+                                </Button>
+                                <template v-for="page in pageNumbers" :key="page">
+                                    <span v-if="page === '...'" class="px-2 text-muted-foreground">…</span>
+                                    <Button v-else :variant="page === currentPage ? 'default' : 'outline'" size="icon"
+                                        @click="goToPage(page)">
+                                        {{ page }}
+                                    </Button>
+                                </template>
+                                <Button variant="outline" size="icon" :disabled="currentPage === totalPages"
+                                    @click="goToPage(currentPage + 1)" title="Page suivante">
+                                    <ChevronRight class="w-4 h-4" />
+                                </Button>
+                                <Button variant="outline" size="icon" :disabled="currentPage === totalPages"
+                                    @click="goToPage(totalPages)" title="Dernière page">
+                                    <ChevronsRight class="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+            </main>
+
+            <!-- Add/Edit Modal -->
+            <Dialog :open="isAddEditModalOpen" @update:open="closeAddEditModal">
+                <DialogContent class="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {{ editingId ? 'Modifier le genre' : 'Ajouter un genre' }}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {{ editingId ? 'Modifiez les informations du genre ci-dessous.' :
+                                'Remplissez les informations pour créer un nouveau genre.' }}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form @submit.prevent="submit" class="space-y-4 mt-4">
+                        <div class="space-y-2">
+                            <Label for="nom">Nom</Label>
+                            <Input id="nom" v-model="form.nom" placeholder="Entrez le nom du genre"
+                                :class="{ 'border-red-500': form.errors.nom }" />
+                            <p v-if="form.errors.nom" class="text-sm text-red-500">{{ form.errors.nom }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="nb_plaque">Nombre de plaques</Label>
+                            <Input id="nb_plaque" v-model="form.nb_plaque" type="number" min="1" max="2"
+                                placeholder="Entrez le nombre de plaques (1 ou 2)"
+                                :class="{ 'border-red-500': form.errors.nb_plaque }" />
+                            <p v-if="form.errors.nb_plaque" class="text-sm text-red-500">{{ form.errors.nb_plaque }}</p>
+                        </div>
+
+                        <DialogFooter class="mt-6">
+                            <Button type="button" variant="outline" @click="closeAddEditModal">
+                                Annuler
+                            </Button>
+                            <Button type="submit" :disabled="form.processing">
+                                {{ form.processing ? 'Enregistrement...' : (editingId ? 'Modifier' : 'Ajouter') }}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <!-- Delete Confirmation Modal -->
+            <AlertDialog :open="isDeleteModalOpen" @update:open="closeDeleteModal">
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir supprimer ce genre ? Cette action est irréversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel @click="closeDeleteModal">Annuler</AlertDialogCancel>
+                        <AlertDialogAction @click="confirmDelete" class="bg-red-600 hover:bg-red-700 text-white">
+                            Supprimer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    </div>
+</template>
+
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
+import { Toaster, toast } from 'vue-sonner'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import {
     Dialog,
     DialogContent,
@@ -30,28 +211,82 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+    Plus,
+    Search,
+    X,
+    MoreVertical,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+} from 'lucide-vue-next'
 
 const props = defineProps({
-    genres: Array
+    genres: Array,
 })
+
+// Recherche
+const searchInput = ref('')
+const activeSearch = ref('')
 
 // Pagination
 const currentPage = ref(1)
-const itemsPerPage = 20
+const itemsPerPage = 10
 
-const totalPages = computed(() => Math.ceil(props.genres.length / itemsPerPage))
+const filteredGenres = computed(() => {
+    const all = props.genres ?? []
+    if (!activeSearch.value) return all
+    const q = activeSearch.value.toLowerCase()
+    return all.filter(genre =>
+        (genre.nom ?? '').toLowerCase().includes(q) ||
+        String(genre.nb_plaque ?? '').includes(q)
+    )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredGenres.value.length / itemsPerPage)))
+
+watch(totalPages, (total) => {
+    if (currentPage.value > total) currentPage.value = total
+})
 
 const paginatedGenres = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return props.genres.slice(start, end)
+    return filteredGenres.value.slice(start, start + itemsPerPage)
+})
+
+const pageNumbers = computed(() => {
+    const total = totalPages.value
+    const current = currentPage.value
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+    const pages = [1]
+    if (current > 3) pages.push('...')
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
+    if (current < total - 2) pages.push('...')
+    pages.push(total)
+    return pages
 })
 
 const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-    }
+    if (page === '...' || page < 1 || page > totalPages.value) return
+    currentPage.value = page
+}
+
+const applySearch = () => {
+    activeSearch.value = searchInput.value.trim()
+    currentPage.value = 1
+}
+
+const clearSearch = () => {
+    searchInput.value = ''
+    activeSearch.value = ''
+    currentPage.value = 1
 }
 
 // Modals state
@@ -63,7 +298,7 @@ const deletingId = ref(null)
 // Form
 const form = useForm({
     nom: '',
-    nb_plaque: ''
+    nb_plaque: '',
 })
 
 // Open modal for create
@@ -91,7 +326,7 @@ const openDeleteModal = (id) => {
 const submit = () => {
     const payload = {
         ...form.data(),
-        nb_plaque: parseInt(form.nb_plaque)
+        nb_plaque: parseInt(form.nb_plaque),
     }
 
     if (editingId.value) {
@@ -100,14 +335,16 @@ const submit = () => {
                 isAddEditModalOpen.value = false
                 form.reset()
                 editingId.value = null
-            }
+                toast.success('Genre modifié avec succès.')
+            },
         })
     } else {
         form.transform(() => payload).post(route('genres.store'), {
             onSuccess: () => {
                 isAddEditModalOpen.value = false
                 form.reset()
-            }
+                toast.success('Genre ajouté avec succès.')
+            },
         })
     }
 }
@@ -119,7 +356,8 @@ const confirmDelete = () => {
             onSuccess: () => {
                 isDeleteModalOpen.value = false
                 deletingId.value = null
-            }
+                toast.success('Genre supprimé avec succès.')
+            },
         })
     }
 }
@@ -141,137 +379,3 @@ const closeDeleteModal = () => {
 import Main from '/resources/js/Pages/Main.vue';
 export default { layout: Main };
 </script>
-
-<template>
-    <div class="p-4 max-w-7xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-xl font-bold text-gray-900">Gestion des Genres</h1>
-            <Button @click="openCreateModal">
-                <Plus class="w-4 h-4 mr-2" />
-                Ajouter un genre
-            </Button>
-        </div>
-
-        <!-- Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden border p-2">
-            <Table>
-                <TableHeader>
-                    <TableRow class="bg-gray-50">
-                        <TableHead class="font-semibold text-gray-700">ID</TableHead>
-                        <TableHead class="font-semibold text-gray-700">Nom</TableHead>
-                        <TableHead class="font-semibold text-gray-700">Nombre de Plaques</TableHead>
-                        <TableHead class="font-semibold text-gray-700 text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    <TableRow v-for="(genre, index) in paginatedGenres" :key="genre.id" class="hover:bg-gray-50">
-                        <TableCell class="font-medium">{{ index + 1 }}</TableCell>
-                        <TableCell>{{ genre.nom }}</TableCell>
-                        <TableCell>
-                            <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                :class="genre.nb_plaque === 2 ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
-                            >
-                                {{ genre.nb_plaque }} plaque(s)
-                            </span>
-                        </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button variant="outline" size="sm" @click="openEditModal(genre)"
-                                class="border-yellow-500 text-yellow-600 hover:bg-yellow-50">
-                                <Pencil class="w-4 h-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" @click="openDeleteModal(genre.id)"
-                                class="border-red-500 text-red-600 hover:bg-red-50">
-                                <Trash2 class="w-4 h-4" />
-                            </Button>
-                        </TableCell>
-                    </TableRow>
-                    <TableRow v-if="paginatedGenres.length === 0">
-                        <TableCell colspan="4" class="text-center py-8 text-gray-500">
-                            Aucun genre trouvé
-                        </TableCell>
-                    </TableRow>
-                </TableBody>
-            </Table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="flex items-center justify-between mt-4" v-if="totalPages > 1">
-            <div class="text-sm text-gray-600">
-                Affichage de {{ (currentPage - 1) * itemsPerPage + 1 }} à
-                {{ Math.min(currentPage * itemsPerPage, genres.length) }} sur {{ genres.length }} genres
-            </div>
-            <div class="flex items-center space-x-2">
-                <Button variant="outline" size="sm" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1">
-                    <ChevronLeft class="w-4 h-4" />
-                </Button>
-                <span class="text-sm text-gray-600">
-                    Page {{ currentPage }} sur {{ totalPages }}
-                </span>
-                <Button variant="outline" size="sm" @click="goToPage(currentPage + 1)"
-                    :disabled="currentPage === totalPages">
-                    <ChevronRight class="w-4 h-4" />
-                </Button>
-            </div>
-        </div>
-
-        <!-- Add/Edit Modal -->
-        <Dialog :open="isAddEditModalOpen" @update:open="closeAddEditModal">
-            <DialogContent class="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{ editingId ? 'Modifier le genre' : 'Ajouter un genre' }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {{ editingId ? 'Modifiez les informations du genre ci-dessous.' :
-                            'Remplissez les informations pour créer un nouveau genre.' }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form @submit.prevent="submit" class="space-y-4 mt-4">
-                    <div class="space-y-2">
-                        <Label for="nom">Nom</Label>
-                        <Input id="nom" v-model="form.nom" placeholder="Entrez le nom du genre"
-                            :class="{ 'border-red-500': form.errors.nom }" />
-                        <p v-if="form.errors.nom" class="text-sm text-red-500">{{ form.errors.nom }}</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label for="nb_plaque">Nombre de plaques</Label>
-                        <Input id="nb_plaque" v-model="form.nb_plaque" type="number" min="1" max="2"
-                            placeholder="Entrez le nombre de plaques (1 ou 2)"
-                            :class="{ 'border-red-500': form.errors.nb_plaque }" />
-                        <p v-if="form.errors.nb_plaque" class="text-sm text-red-500">{{ form.errors.nb_plaque }}</p>
-                    </div>
-
-                    <DialogFooter class="mt-6">
-                        <Button type="button" variant="outline" @click="closeAddEditModal">
-                            Annuler
-                        </Button>
-                        <Button type="submit" :disabled="form.processing">
-                            {{ form.processing ? 'Enregistrement...' : (editingId ? 'Modifier' : 'Ajouter') }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
-
-        <!-- Delete Confirmation Modal -->
-        <AlertDialog :open="isDeleteModalOpen" @update:open="closeDeleteModal">
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir supprimer ce genre ? Cette action est irréversible.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel @click="closeDeleteModal">Annuler</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmDelete" class="bg-red-600 hover:bg-red-700 text-white">
-                        Supprimer
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    </div>
-</template>

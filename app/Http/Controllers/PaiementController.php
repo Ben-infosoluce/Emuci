@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Caisse;
 use App\Models\Dossier;
+use App\Models\CaisseOuverture;
 use App\Models\Entite;
 use App\Models\Paiement;
 use App\Models\Service;
@@ -55,6 +57,16 @@ class PaiementController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Vous n’êtes pas autorisé à valider ce paiement.',
+            ], 403);
+        }
+
+        // 4️⃣ Session de caisse ouverte de l'utilisateur (traçabilité)
+        $caisseOuvertureId = $this->resolveCurrentCaisseOuvertureId();
+
+        if (!$caisseOuvertureId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aucune caisse ouverte. Veuillez ouvrir votre caisse avant d\'enregistrer un paiement.',
             ], 403);
         }
 
@@ -125,7 +137,7 @@ class PaiementController extends Controller
                     'user_id' => Auth::id(),
                     'description' => json_encode($validated['detailTypeServices_lier']),
                     'reference' => 'PAI' . strtoupper(uniqid()),
-                    'caisse_ouverture_id' => $validated['caisse_ouverture_id'],
+                    'caisse_ouverture_id' => $caisseOuvertureId,
                     'id_site' => getIdSite(),
                     'caisse_id' => getIdCaisse(),
                     'created_at' => now(),
@@ -156,7 +168,7 @@ class PaiementController extends Controller
                 'user_id' => Auth::id(),
                 'description' => json_encode($validated['detailTypeServices']),
                 'reference' => 'PAI' . strtoupper(uniqid()),
-                'caisse_ouverture_id' => $validated['caisse_ouverture_id'],
+                'caisse_ouverture_id' => $caisseOuvertureId,
                 'id_site' => getIdSite(),
                 'caisse_id' => getIdCaisse(),
                 'created_at' => now(),
@@ -228,6 +240,16 @@ class PaiementController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Vous n\'êtes pas autorisé à valider ce paiement.',
+            ], 403);
+        }
+
+        // 4️⃣ Session de caisse ouverte de l'utilisateur (traçabilité)
+        $caisseOuvertureId = $this->resolveCurrentCaisseOuvertureId();
+
+        if (!$caisseOuvertureId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aucune caisse ouverte. Veuillez ouvrir votre caisse avant d\'enregistrer un paiement.',
             ], 403);
         }
 
@@ -365,7 +387,7 @@ class PaiementController extends Controller
                     'user_id' => Auth::id(),
                     'description' => json_encode($validated['detailTypeServices_lier'] ?? []),
                     'reference' => 'PAI' . strtoupper(uniqid()),
-                    'caisse_ouverture_id' => $validated['caisse_ouverture_id'],
+                    'caisse_ouverture_id' => $caisseOuvertureId,
                     'id_site' => getIdSite(),
                     'caisse_id' => getIdCaisse(),
                     'created_at' => now(),
@@ -402,7 +424,7 @@ class PaiementController extends Controller
                 'user_id' => Auth::id(),
                 'description' => json_encode($detailServicesPrincipal), // Contient maintenant le changement de plaque
                 'reference' => 'PAI' . strtoupper(uniqid()),
-                'caisse_ouverture_id' => $validated['caisse_ouverture_id'],
+                'caisse_ouverture_id' => $caisseOuvertureId,
                 'id_site' => getIdSite(),
                 'caisse_id' => getIdCaisse(),
                 'created_at' => now(),
@@ -611,8 +633,39 @@ class PaiementController extends Controller
     {
         $date = $request->query('date'); // ex: "2025-10-15"
 
-        // 🔹 Récupération automatique de la caisse
-        $caisseId = getIdCaisse();
+        $user = Auth::user();
+        $siteId = getIdSite();
+        $caisseId = null;
+
+        if ($request->filled('caisse_id')) {
+            // Caisse explicitement demandée : elle doit appartenir au site de l'utilisateur
+            $caisse = Caisse::where('id', (int) $request->query('caisse_id'))
+                ->where('site_id', $siteId)
+                ->first();
+
+            if (!$caisse) {
+                return response()->json([
+                    'message' => 'Caisse introuvable ou non autorisée pour cet utilisateur'
+                ], 403);
+            }
+
+            // Un utilisateur rattaché à une caisse précise (caissier) ne peut pas consulter une autre caisse
+            if (!empty($user->caisse_id) && (int) $user->caisse_id !== (int) $caisse->id) {
+                return response()->json([
+                    'message' => 'Caisse non autorisée pour cet utilisateur'
+                ], 403);
+            }
+
+            $caisseId = $caisse->id;
+        } elseif (!empty($user->caisse_id)) {
+            $caisseId = (int) $user->caisse_id;
+        }
+
+        if (!$caisseId && !$siteId) {
+            return response()->json([
+                'message' => 'Aucune caisse active trouvée pour cet utilisateur'
+            ], 403);
+        }
 
         $query = Paiement::query();
 
@@ -621,13 +674,12 @@ class PaiementController extends Controller
             $query->whereDate('created_at', $date);
         }
 
-        // Filtre par caisse (obligatoire maintenant)
+        // Filtre par caisse si l'utilisateur est rattaché à une caisse,
+        // sinon toutes les caisses de son site (contrôleur, boss, raf…)
         if ($caisseId) {
             $query->where('caisse_id', $caisseId);
         } else {
-            return response()->json([
-                'message' => 'Aucune caisse active trouvée pour cet utilisateur'
-            ], 403);
+            $query->where('id_site', $siteId);
         }
 
         $paiements = $query->with([
@@ -801,6 +853,25 @@ class PaiementController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Identifiant de la session de caisse ouverte de l'utilisateur connecté.
+     * Garantit la traçabilité : paiements.caisse_id et paiements.caisse_ouverture_id
+     * pointent vers la même caisse / session.
+     */
+    private function resolveCurrentCaisseOuvertureId(): ?int
+    {
+        $caisseId = getIdCaisse();
+
+        if (!$caisseId) {
+            return null;
+        }
+
+        return CaisseOuverture::where('caisse_id', $caisseId)
+            ->where('statut', 'ouvert')
+            ->latest('date_ouverture')
+            ->value('id');
     }
 
     private function notifierPaiementExterne($chrono)

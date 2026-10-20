@@ -109,26 +109,33 @@
             <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                 <Card class="h-full flex flex-col">
                     <div class="space-y-4 p-8">
-                        <!-- Filtres -->
-                        <div class="flex flex-wrap gap-4 items-center justify-between">
-                            <!-- Recherche -->
-                            <Input_search v-model="form.search_data" @update:modelValue="onFilterChange"
-                                placeholder="Rechercher par VIN..." class="w-full" />
-                            <!-- Statut -->
-                            <Select v-model="form.statut" @update:modelValue="onFilterChange">
-                                <SelectTrigger class="w-40">
-                                    <SelectValue placeholder="Statut" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectLabel>Statut</SelectLabel>
-                                        <SelectItem value="0">Tous</SelectItem>
-                                        <SelectItem value="1">En attente</SelectItem>
-                                        <SelectItem value="2">Validé</SelectItem>
-                                        <SelectItem value="3">Refusé</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
+                        <!-- Recherche -->
+                        <div class="flex justify-start w-full">
+                            <div class="flex items-center gap-2">
+                                <input
+                                    v-model="searchInput"
+                                    @keyup.enter="applySearch"
+                                    type="text"
+                                    placeholder="Rechercher par nom d'élément…"
+                                    class="w-64 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:border-muted-foreground/50 focus:ring-1 focus:ring-muted-foreground/30"
+                                />
+                                <button
+                                    @click="applySearch"
+                                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                                >
+                                    <Search class="w-4 h-4" />
+                                    Chercher
+                                </button>
+                                <button
+                                    v-if="activeSearch"
+                                    @click="clearSearch"
+                                    title="Réinitialiser"
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-muted transition-colors text-muted-foreground"
+                                >
+                                    <X class="w-4 h-4" />
+                                    Réinitialiser
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Tableau -->
@@ -184,9 +191,7 @@
                                     </TableRow>
                                 </template>
                                 <template v-else>
-                                    <TableRow v-for="(
-element, index
-                                        ) in props.elementFacturation" :key="index">
+                                    <TableRow v-for="(element, index) in paginatedElements" :key="index">
                                         <TableCell>{{ index + 1 }}</TableCell>
                                         <TableCell>{{
                                             element?.element_facturation || "—"
@@ -266,8 +271,61 @@ element, index
                                 </template>
                             </TableBody>
                         </Table>
+
                         <!-- Pagination -->
-                        <!-- <Pagination v-if="meta" :meta="meta" @page-change="changePage" /> -->
+                        <div class="flex items-center justify-between pt-4 border-t">
+                            <p class="text-sm text-muted-foreground">
+                                {{ filteredElements.length === 0 ? 0 : (elemCurrentPage - 1) * elemPerPage + 1 }}–{{ Math.min(elemCurrentPage * elemPerPage, filteredElements.length) }}
+                                sur {{ filteredElements.length }} élément(s)
+                            </p>
+                            <div class="flex items-center gap-1">
+                                <button
+                                    :disabled="elemCurrentPage === 1"
+                                    @click="elemCurrentPage = 1"
+                                    title="Première page"
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-md border hover:bg-muted disabled:opacity-40 transition-colors"
+                                >
+                                    <ChevronsLeft class="w-4 h-4" />
+                                </button>
+                                <button
+                                    :disabled="elemCurrentPage === 1"
+                                    @click="elemCurrentPage--"
+                                    title="Page précédente"
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-md border hover:bg-muted disabled:opacity-40 transition-colors"
+                                >
+                                    <ChevronLeft class="w-4 h-4" />
+                                </button>
+                                <template v-for="page in pageNumbers" :key="page">
+                                    <span v-if="page === '...'" class="px-2 text-muted-foreground">…</span>
+                                    <button
+                                        v-else
+                                        @click="elemCurrentPage = page"
+                                        :class="[
+                                            'inline-flex items-center justify-center w-8 h-8 rounded-md border text-sm transition-colors',
+                                            page === elemCurrentPage ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
+                                        ]"
+                                    >
+                                        {{ page }}
+                                    </button>
+                                </template>
+                                <button
+                                    :disabled="elemCurrentPage === totalPages"
+                                    @click="elemCurrentPage++"
+                                    title="Page suivante"
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-md border hover:bg-muted disabled:opacity-40 transition-colors"
+                                >
+                                    <ChevronRight class="w-4 h-4" />
+                                </button>
+                                <button
+                                    :disabled="elemCurrentPage === totalPages"
+                                    @click="elemCurrentPage = totalPages"
+                                    title="Dernière page"
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-md border hover:bg-muted disabled:opacity-40 transition-colors"
+                                >
+                                    <ChevronsRight class="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </Card>
             </main>
@@ -433,12 +491,10 @@ element, index
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { Input } from "@/components/ui/input";
-import Pagination from "@/components/Pagination.vue";
-import { Input_search } from "@/components/ui/Input_search";
-import { Plus } from "lucide-vue-next";
+import { Plus, Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-vue-next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster, toast } from "vue-sonner";
 
@@ -476,7 +532,58 @@ const props = defineProps({
     entites: Array,
     type_services: Array,
 });
-// console.log(props.elementFacturation);
+
+// ── Recherche ──────────────────────────────────────────────
+const searchInput  = ref('');
+const activeSearch = ref('');
+
+const applySearch = () => {
+    activeSearch.value   = searchInput.value.trim();
+    elemCurrentPage.value = 1;
+};
+
+const clearSearch = () => {
+    searchInput.value    = '';
+    activeSearch.value   = '';
+    elemCurrentPage.value = 1;
+};
+
+// ── Pagination ──────────────────────────────────────────────
+const elemPerPage     = 10;
+const elemCurrentPage = ref(1);
+
+const filteredElements = computed(() => {
+    const all = props.elementFacturation ?? [];
+    if (!activeSearch.value) return all;
+    const q = activeSearch.value.toLowerCase();
+    return all.filter(e =>
+        (e.element_facturation ?? '').toLowerCase().includes(q)
+    );
+});
+
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(filteredElements.value.length / elemPerPage))
+);
+
+const paginatedElements = computed(() => {
+    const start = (elemCurrentPage.value - 1) * elemPerPage;
+    return filteredElements.value.slice(start, start + elemPerPage);
+});
+
+const pageNumbers = computed(() => {
+    const total   = totalPages.value;
+    const current = elemCurrentPage.value;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages = [1];
+    if (current > 3)          pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 2)  pages.push('...');
+    pages.push(total);
+    return pages;
+});
+
+watch(() => props.elementFacturation, () => { elemCurrentPage.value = 1; });
+// ────────────────────────────────────────────────────────────
 
 // const refreshData = (el) => {
 //   router.reload({

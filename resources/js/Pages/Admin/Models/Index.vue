@@ -1,139 +1,267 @@
 <template>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <!-- Messages de succès -->
-                    <div v-if="$page.props.flash?.success"
-                        class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                        {{ $page.props.flash?.success }}
-                    </div>
+    <div>
+        <!-- Titre + bouton création -->
+        <div class="flex flex-col space-y-4 mx-8 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <h4 class="text-2xl font-bold tracking-tight">Liste des modèles</h4>
+            <Toaster position="top-right" />
 
-                    <!-- Bouton créer -->
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                        <h3 class="text-xl font-bold">Gestion des Modèles</h3>
-                        <div class="flex items-center gap-3 w-full md:w-auto">
-                            <div class="relative w-full md:w-64">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                </span>
-                                <input v-model="searchQuery" type="text" placeholder="Modèle ou marque..."
-                                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 sm:text-sm transition shadow-sm" />
+            <Button @click="router.visit('/models/new')">
+                <Plus class="w-4 h-4 mr-2" /> Nouveau modèle
+            </Button>
+        </div>
+
+        <div class="rounded-lg dark:border-gray-700">
+            <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                <Card class="h-full flex flex-col">
+                    <div class="space-y-4 p-8">
+                        <!-- Recherche -->
+                        <div class="flex justify-start w-full">
+                            <div class="flex items-center gap-2">
+                                <input v-model="searchInput" @keyup.enter="applySearch" type="text"
+                                    placeholder="Rechercher par modèle ou marque…"
+                                    class="w-64 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:border-muted-foreground/50 focus:ring-1 focus:ring-muted-foreground/30" />
+                                <button @click="applySearch"
+                                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                                    <Search class="w-4 h-4" />
+                                    Chercher
+                                </button>
+                                <button v-if="activeSearch" @click="clearSearch" title="Réinitialiser"
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-muted transition-colors text-muted-foreground">
+                                    <X class="w-4 h-4" />
+                                    Réinitialiser
+                                </button>
                             </div>
-                            <Link href="/models/new" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm whitespace-nowrap">
-                                + Nouveau Modèle
-                            </Link>
                         </div>
-                    </div>
 
-                    <div v-if="loading" class="flex justify-center items-center py-10">
-                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-                        <span class="ml-3 text-lg">Chargement...</span>
-                    </div>
-
-                    <!-- Tableau -->
-                    <div v-else class="overflow-x-auto">
-                        <table class="min-w-full border-collapse border border-gray-300">
-                            <thead class="bg-gray-100 dark:bg-gray-700">
-                                <tr>
-                                    <th class="border border-gray-300 px-4 py-2 text-left">ID</th>
-                                    <th class="border border-gray-300 px-4 py-2 text-left">Marque</th>
-                                    <th class="border border-gray-300 px-4 py-2 text-left">Nom</th>
-                                    <th class="border border-gray-300 px-4 py-2 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="model in modelsData.data" :key="model.id"
-                                    class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="border border-gray-300 px-4 py-2">{{ model.id }}</td>
-                                    <td class="border border-gray-300 px-4 py-2">
-                                        <span
-                                            class="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
-                                            {{ model.marque?.nom || '-' }}
-                                        </span>
-                                    </td>
-                                    <td class="border border-gray-300 px-4 py-2 font-semibold">{{ model.nom }}</td>
-                                    <td class="border border-gray-300 px-4 py-2 text-center">
-                                        <Link :href="`/models/edit/${model.id}`"
-                                            class="text-blue-500 hover:text-blue-700 mr-3">
-                                            Éditer
-                                        </Link>
-                                        <button @click="deleteModel(model.id)" class="text-red-500 hover:text-red-700">
-                                            Supprimer
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <!-- Tableau -->
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Marque</TableHead>
+                                    <TableHead>Nom</TableHead>
+                                    <TableHead class="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <template v-if="loading">
+                                    <TableRow v-for="i in 10" :key="i">
+                                        <TableCell v-for="n in 4" :key="n" class="p-4">
+                                            <Skeleton class="h-4 w-20" />
+                                        </TableCell>
+                                    </TableRow>
+                                </template>
+                                <template v-else>
+                                    <TableRow v-for="model in modelsData.data" :key="model.id">
+                                        <TableCell>{{ model.id }}</TableCell>
+                                        <TableCell>{{ model.marque?.nom || '—' }}</TableCell>
+                                        <TableCell>{{ model.nom || '—' }}</TableCell>
+                                        <TableCell class="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger as-child>
+                                                    <Button variant="ghost" size="icon">
+                                                        <MoreVertical class="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent>
+                                                    <DropdownMenuItem
+                                                        @click="router.visit(`/models/edit/${model.id}`)">
+                                                        Modifier
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem class="text-red-500"
+                                                        @click="openDeleteModal(model.id)">
+                                                        Supprimer
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow v-if="modelsData.data.length === 0">
+                                        <TableCell colspan="4" class="text-center py-8 text-muted-foreground">
+                                            Aucun modèle trouvé
+                                        </TableCell>
+                                    </TableRow>
+                                </template>
+                            </TableBody>
+                        </Table>
 
                         <!-- Pagination -->
-                        <div class="mt-4 flex justify-between items-center">
-                            <button v-if="modelsData.prev_page_url" @click="fetchModels(modelsData.prev_page_url)"
-                                class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
-                                Précédent
-                            </button>
-                            <span class="text-gray-600">
-                                Page {{ modelsData.current_page }} sur {{ modelsData.last_page }}
-                            </span>
-                            <button v-if="modelsData.next_page_url" @click="fetchModels(modelsData.next_page_url)"
-                                class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
-                                Suivant
-                            </button>
+                        <div class="flex items-center justify-between pt-4 border-t">
+                            <p class="text-sm text-muted-foreground">
+                                {{ modelsData.total === 0 ? 0 : (modelsData.current_page - 1) * modelsData.per_page + 1 }}–{{
+                                    Math.min(modelsData.current_page * modelsData.per_page, modelsData.total) }}
+                                sur {{ modelsData.total }} modèle(s)
+                            </p>
+                            <div class="flex items-center gap-1">
+                                <Button variant="outline" size="icon" :disabled="modelsData.current_page === 1"
+                                    @click="goToPage(1)" title="Première page">
+                                    <ChevronsLeft class="w-4 h-4" />
+                                </Button>
+                                <Button variant="outline" size="icon" :disabled="modelsData.current_page === 1"
+                                    @click="goToPage(modelsData.current_page - 1)" title="Page précédente">
+                                    <ChevronLeft class="w-4 h-4" />
+                                </Button>
+                                <template v-for="page in pageNumbers" :key="page">
+                                    <span v-if="page === '...'" class="px-2 text-muted-foreground">…</span>
+                                    <Button v-else :variant="page === modelsData.current_page ? 'default' : 'outline'"
+                                        size="icon" @click="goToPage(page)">
+                                        {{ page }}
+                                    </Button>
+                                </template>
+                                <Button variant="outline" size="icon"
+                                    :disabled="modelsData.current_page === modelsData.last_page"
+                                    @click="goToPage(modelsData.current_page + 1)" title="Page suivante">
+                                    <ChevronRight class="w-4 h-4" />
+                                </Button>
+                                <Button variant="outline" size="icon"
+                                    :disabled="modelsData.current_page === modelsData.last_page"
+                                    @click="goToPage(modelsData.last_page)" title="Dernière page">
+                                    <ChevronsRight class="w-4 h-4" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </Card>
+            </main>
+
+            <!-- Confirmation de suppression -->
+            <AlertDialog :open="deleteModal">
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer le modèle ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Cette action est irréversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter class="flex gap-2">
+                        <AlertDialogCancel @click="deleteModal = false">Annuler</AlertDialogCancel>
+                        <Button variant="destructive" @click="confirmDelete">Supprimer</Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     </div>
 </template>
 
 <script setup>
-import { Link, router } from '@inertiajs/vue3';
-import { ref, onMounted, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import axios from 'axios';
+import { Toaster, toast } from 'vue-sonner';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+    Table,
+    TableHeader,
+    TableBody,
+    TableRow,
+    TableHead,
+    TableCell,
+} from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+    Plus,
+    Search,
+    X,
+    MoreVertical,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+} from 'lucide-vue-next';
 
-const modelsData = ref({ data: [], current_page: 1, last_page: 1 });
+const modelsData = ref({ data: [], current_page: 1, last_page: 1, per_page: 15, total: 0 });
 const loading = ref(true);
-const searchQuery = ref('');
+const searchInput = ref('');
+const activeSearch = ref('');
+
+const deleteModal = ref(false);
+const deletingId = ref(null);
 
 const fetchModels = async (url = '/models/get/data') => {
     loading.value = true;
     try {
         const separator = url.includes('?') ? '&' : '?';
-        const searchParam = searchQuery.value ? `${separator}search=${encodeURIComponent(searchQuery.value)}` : '';
+        const searchParam = activeSearch.value
+            ? `${separator}search=${encodeURIComponent(activeSearch.value)}`
+            : '';
         const response = await axios.get(`${url}${searchParam}`);
         modelsData.value = response.data.models;
     } catch (error) {
-        console.error("Erreur lors du chargement des modèles:", error);
+        console.error('Erreur lors du chargement des modèles:', error);
+        toast.error('Erreur lors du chargement des modèles.');
     } finally {
         loading.value = false;
     }
 };
 
-// Debounce search
-let searchTimeout = null;
-watch(searchQuery, () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        fetchModels();
-    }, 500);
+const applySearch = () => {
+    searchInput.value = searchInput.value.trim();
+    activeSearch.value = searchInput.value;
+    fetchModels();
+};
+
+const clearSearch = () => {
+    searchInput.value = '';
+    activeSearch.value = '';
+    fetchModels();
+};
+
+const goToPage = (page) => {
+    if (page === '...' || page < 1 || page > modelsData.value.last_page) return;
+    if (page === modelsData.value.current_page) return;
+    fetchModels(`/models/get/data?page=${page}`);
+};
+
+const pageNumbers = computed(() => {
+    const total = modelsData.value.last_page || 1;
+    const current = modelsData.value.current_page || 1;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages = [1];
+    if (current > 3) pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+    return pages;
 });
+
+const openDeleteModal = (id) => {
+    deletingId.value = id;
+    deleteModal.value = true;
+};
+
+const confirmDelete = async () => {
+    if (!deletingId.value) return;
+    try {
+        await axios.delete(`/models/delete/${deletingId.value}`);
+        toast.success('Modèle supprimé avec succès.');
+        deleteModal.value = false;
+        fetchModels();
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        toast.error('Une erreur est survenue lors de la suppression.');
+    }
+};
 
 onMounted(() => {
     fetchModels();
 });
-
-const deleteModel = (id) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce modèle ?')) {
-        router.delete(`/models/delete/${id}`, {
-            onSuccess: () => fetchModels()
-        });
-    }
-};
 </script>
-
 
 <script>
 import Main from '/resources/js/Pages/Main.vue';

@@ -327,7 +327,6 @@ Route::group([
     Route::post('/numerisation/document/update/single', [NumerisationController::class, 'updateSingleField'])->name('numerisation.document.update.single');
     Route::get('/numerisation/documents/dossier/edit/{id_dossier}', [NumerisationController::class, "EditlistDocuments"])->name('numerisation.dossier.edit.documentslist');
     Route::get('numerisation/get/data/modification/{vin}', [NumerisationController::class, "showModificationGetData"])->name('show.modification.numerisation.get.data');
-
 });
 
 
@@ -356,6 +355,12 @@ Route::group([
     Route::put('/site/update/{id}', [SiteController::class, "updateSite"])->name('update.admin');
     Route::delete('/site/delete/{id}', [SiteController::class, "deleteSite"])->name('delete.admin');
     Route::get('/site/view/{id}', [SiteController::class, "showViewSite"])->name('show.view.admin');
+
+    Route::get('/caisses', [CaisseController::class, 'indexAdmin'])->name('caisses.index');
+    Route::post('/caisses', [CaisseController::class, 'storeAdmin'])->name('caisses.store');
+    Route::get('/caisses/{id}/edit', [CaisseController::class, 'showAdminEdit'])->name('caisses.edit');
+    Route::put('/caisses/{id}', [CaisseController::class, 'updateAdmin'])->name('caisses.update');
+    Route::delete('/caisses/{id}', [CaisseController::class, 'destroyAdmin'])->name('caisses.destroy');
 
     //*******************************Marques & Modèles***************************** */
 
@@ -416,6 +421,7 @@ Route::group([
     Route::put('/users/{id}', [UserController::class, 'update'])->name('user.update');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('user.destroy');
     Route::put('/users/{id}/statut', [UserController::class, 'updateStatut'])->name('user.statut');
+    Route::get('/caisses/by-site/{siteId}', [UserController::class, 'caissesBySite'])->name('caisses.by.site');
 
     // Clients
     Route::get('/clients', [ClientController::class, 'clientListe'])->name('client.liste');
@@ -486,6 +492,12 @@ Route::group(
         Route::get('/raf/caisse/liste', [RafCaisseController::class, 'getRafCaisseListe']);
         // Infos RAF pour une caisse spécifique
         Route::get('/raf/caisse/info', [RafCaisseController::class, 'getRafCaisseInfo']);
+        // Liste des sites avec statut RAF agrégé
+        Route::get('/raf/site/liste', [RafCaisseController::class, 'getRafSiteListe']);
+        // Détail RAF d'un site (caisses, statuts, totaux du jour)
+        Route::get('/raf/site/info', [RafCaisseController::class, 'getRafSiteInfo']);
+        // Ouverture / fermeture RAF de toutes les caisses d'un site
+        Route::post('/raf/site/controller/validate', [RafCaisseController::class, 'validateRafSite']);
         // Validation ouverture/fermeture RAF
         Route::post('/raf/caisse/controller/validate', [RafCaisseController::class, 'validateRafControlleurMontant']);
         // Statistiques paiements RAF

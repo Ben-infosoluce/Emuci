@@ -13,8 +13,21 @@
                         <!-- Filtres -->
                         <div class="flex flex-wrap gap-4 items-center justify-between">
 
-                            <Input_search v-model="form.search_data" @update:modelValue="onFilterChange"
-                                placeholder="Rechercher un client..." class="w-full" />
+                            <div class="flex items-center gap-2 w-full md:w-auto">
+                                <input v-model="searchInput" @keyup.enter="applySearch" type="text"
+                                    placeholder="Rechercher un client…"
+                                    class="w-full md:w-64 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:border-muted-foreground/50 focus:ring-1 focus:ring-muted-foreground/30" />
+                                <button @click="applySearch"
+                                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+                                    <Search class="w-4 h-4" />
+                                    Chercher
+                                </button>
+                                <button v-if="activeSearch" @click="clearSearch" title="Réinitialiser"
+                                    class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-muted transition-colors text-muted-foreground shrink-0">
+                                    <X class="w-4 h-4" />
+                                    Réinitialiser
+                                </button>
+                            </div>
 
                             <!-- <Select v-model="form.statut" @update:modelValue="onFilterChange">
                                 <SelectTrigger class="w-40">
@@ -131,6 +144,7 @@
 <script setup>
 import { ref } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
+import { Search, X } from "lucide-vue-next";
 
 import {
     Pagination,
@@ -156,15 +170,32 @@ const form = useForm({
     statut: params.get("statut") || "",
 });
 
+const searchInput = ref(form.search_data);
+const activeSearch = ref(form.search_data);
+
 // Filtres
 const onFilterChange = () => {
     loading.value = true;
 
-    router.get(route("client.liste"), form, {
+    router.get(route("client.liste"), form.data(), {
         preserveScroll: true,
         preserveState: true,
         onFinish: () => loading.value = false
     });
+};
+
+const applySearch = () => {
+    searchInput.value = searchInput.value.trim();
+    form.search_data = searchInput.value;
+    activeSearch.value = searchInput.value;
+    onFilterChange();
+};
+
+const clearSearch = () => {
+    searchInput.value = "";
+    form.search_data = "";
+    activeSearch.value = "";
+    onFilterChange();
 };
 
 // Pagination
@@ -221,7 +252,6 @@ import {
 import { router, useForm } from "@inertiajs/vue3";
 // import { Input } from "@/components/ui/input";
 // import Pagination from "@/components/Pagination.vue";
-import { Input_search } from "@/components/ui/Input_search";
 import { Plus } from "lucide-vue-next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster, toast } from "vue-sonner";

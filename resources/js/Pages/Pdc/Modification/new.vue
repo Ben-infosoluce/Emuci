@@ -112,8 +112,8 @@
                                     <SelectContent>
                                         <SelectGroup>
                                             <SelectLabel>Statut</SelectLabel>
-                                            <SelectItem value="1">Plaque posé</SelectItem>
-                                            <SelectItem value="2">Plaque non posé</SelectItem>
+                                            <SelectItem value="1">Plaque non posé</SelectItem>
+                                            <SelectItem value="2">Plaque posé</SelectItem>
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>

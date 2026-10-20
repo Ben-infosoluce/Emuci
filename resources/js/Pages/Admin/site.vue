@@ -45,8 +45,21 @@
                     <!-- Filtres -->
                     <div class="flex flex-wrap gap-4 items-center justify-between">
                         <!-- Recherche -->
-                        <Input_search v-model="form.search_data" @update:modelValue="onFilterChange"
-                            placeholder="Rechercher par VIN..." class="w-full " />
+                        <div class="flex items-center gap-2 w-full md:w-auto">
+                            <input v-model="searchInput" @keyup.enter="applySearch" type="text"
+                                placeholder="Rechercher par nom de site…"
+                                class="w-full md:w-64 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:border-muted-foreground/50 focus:ring-1 focus:ring-muted-foreground/30" />
+                            <button @click="applySearch"
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+                                <Search class="w-4 h-4" />
+                                Chercher
+                            </button>
+                            <button v-if="activeSearch" @click="clearSearch" title="Réinitialiser"
+                                class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-muted transition-colors text-muted-foreground shrink-0">
+                                <X class="w-4 h-4" />
+                                Réinitialiser
+                            </button>
+                        </div>
                         <!-- Statut -->
                         <!-- <Select v-model="form.statut" @update:modelValue="onFilterChange">
                             <SelectTrigger class="w-40">
@@ -280,8 +293,7 @@ import { onMounted, ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { Input } from '@/components/ui/input'
 import Pagination from '@/components/Pagination.vue'
-import { Input_search } from '@/components/ui/Input_search'
-import { MoveRight, MoveLeft, Plus, Eye, Pen, ReceiptText, MoreVertical } from 'lucide-vue-next'
+import { MoveRight, MoveLeft, Plus, Eye, Pen, ReceiptText, MoreVertical, Search, X } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Toaster, toast } from 'vue-sonner'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -334,6 +346,9 @@ const form = useForm({
     statut: initialParams.statut,
 })
 
+const searchInput = ref(initialParams.search_data)
+const activeSearch = ref(initialParams.search_data)
+
 page.value = initialParams.page
 
 // URL dans l'historique
@@ -376,6 +391,22 @@ function onFilterChange() {
     fetchSites()
 }
 
+const applySearch = () => {
+    searchInput.value = searchInput.value.trim()
+    form.search_data = searchInput.value
+    activeSearch.value = searchInput.value
+    page.value = 1
+    fetchSites()
+}
+
+const clearSearch = () => {
+    searchInput.value = ''
+    form.search_data = ''
+    activeSearch.value = ''
+    page.value = 1
+    fetchSites()
+}
+
 function changePage(p) {
     const newPage = parseInt(p)
     if (!isNaN(newPage) && newPage > 0) {
@@ -390,6 +421,8 @@ window.addEventListener('popstate', () => {
     page.value = parsePageParam(params.get('page'))
     form.search_data = params.get('search_data') || ''
     form.statut = params.get('statut') || ''
+    searchInput.value = form.search_data
+    activeSearch.value = form.search_data
     fetchSites()
 })
 

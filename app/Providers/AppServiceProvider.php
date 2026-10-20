@@ -67,6 +67,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define("Raf", function (User $user) {
             return $user->hasRole("Raf");
         });
+        Gate::define("Tresorier", function (User $user) {
+            return $user->hasRole("Trésorier");
+        });
 
         //********************Client*************************
         //gestion de role

@@ -9,6 +9,7 @@ use App\Models\Dossier;
 use App\Models\Service;
 use App\Models\Vehicule;
 use App\Models\ReplicaPrimo;
+use App\Models\Site;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
@@ -31,6 +32,62 @@ class CaisseController extends Controller
     public function showNewCaisse()
     {
         return inertia('Caisse/new');
+    }
+
+    public function indexAdmin()
+    {
+        return inertia('Admin/Caisse', [
+            'caisses' => Caisse::with('site')->orderBy('id')->get(),
+            'sites' => Site::select('id', 'nom_site')->orderBy('id')->get(),
+        ]);
+    }
+
+    public function storeAdmin(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:255', 'unique:caisses,code'],
+            'libelle' => ['required', 'string', 'max:255'],
+            'site_id' => ['required', 'exists:sites,id'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $validated['is_active'] = $validated['is_active'] ?? 1;
+
+        $caisse = Caisse::create($validated);
+
+        return response()->json($caisse->load('site'));
+    }
+
+    public function showAdminEdit($id)
+    {
+        $caisse = Caisse::with('site')->findOrFail($id);
+
+        return response()->json($caisse);
+    }
+
+    public function updateAdmin(Request $request, $id)
+    {
+        $caisse = Caisse::findOrFail($id);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:255', 'unique:caisses,code,' . $caisse->id],
+            'libelle' => ['required', 'string', 'max:255'],
+            'site_id' => ['required', 'exists:sites,id'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $validated['is_active'] = $validated['is_active'] ?? $caisse->is_active ?? 1;
+        $caisse->update($validated);
+
+        return response()->json($caisse->fresh()->load('site'));
+    }
+
+    public function destroyAdmin($id)
+    {
+        $caisse = Caisse::findOrFail($id);
+        $caisse->delete();
+
+        return response()->json(['message' => 'Caisse supprimée avec succès.']);
     }
 
     public function showCaisseGetData($vin)
@@ -341,8 +398,32 @@ class CaisseController extends Controller
 
     // *************************Gestion ouverture & Fermeture de la caisse *************************//
 
+    /**
+     * Caisse active affectée à l'utilisateur connecté.
+     * (getIdCaisse() gère le repli sur la première caisse active du site)
+     */
+    private function resolveCaisseForCurrentUser(): ?Caisse
+    {
+        $caisseId = getIdCaisse();
+
+        if (!$caisseId) {
+            return null;
+        }
+
+        return Caisse::where('id', $caisseId)
+            ->where('is_active', 1)
+            ->first();
+    }
+
     public function open(Request $request)
     {
+        // Le Trésorier est en consultation : aucune ouverture de caisse autorisée.
+        if (Auth::user()?->hasRole('Trésorier')) {
+            return response()->json([
+                'message' => "Le rôle Trésorier ne peut pas ouvrir une caisse.",
+            ], 403);
+        }
+
         $request->validate([
             'fond_de_caisse' => 'required|numeric|min:0',
         ], [
@@ -353,13 +434,12 @@ class CaisseController extends Controller
 
         $user = Auth::user();
         $today = Carbon::now()->toDateString();
-        // 🔹 Récupère la caisse liée au site de l'utilisateur
-        $caisse = Caisse::where('site_id', $user->id_site)->first();
-        // $controleurAlreadyOpen = ControlleurCaisse::where('caisse_id', $caisse->id)
+        // 🔹 Récupère la caisse affectée à l'utilisateur (multi-caisses par site)
+        $caisse = $this->resolveCaisseForCurrentUser();
 
         if (!$caisse) {
             return response()->json([
-                'message' => 'Aucune caisse trouvée pour ce site.',
+                'message' => 'Aucune caisse active ne vous est attribuée.',
             ], 404);
         }
 
@@ -427,6 +507,13 @@ class CaisseController extends Controller
 
     public function close(Request $request, $id)
     {
+        // Le Trésorier est en consultation : aucune fermeture de caisse autorisée.
+        if (Auth::user()?->hasRole('Trésorier')) {
+            return response()->json([
+                'message' => "Le rôle Trésorier ne peut pas fermer une caisse.",
+            ], 403);
+        }
+
         // dd($id);
 
         $validated = $request->validate([
@@ -459,12 +546,11 @@ class CaisseController extends Controller
 
     public function statut()
     {
-        $userSiteId = getIdSite();
-        $caisse = Caisse::where('site_id', $userSiteId)->first();
+        $caisse = $this->resolveCaisseForCurrentUser();
 
         if (!$caisse) {
             return response()->json([
-                'statut' => 'aucune caisse définie pour ce site',
+                'statut' => 'aucune caisse active attribuée à cet utilisateur',
             ]);
         }
 
@@ -633,9 +719,8 @@ class CaisseController extends Controller
     public function getLastClosure()
     {
         $user = Auth::user();
-        $userSiteId = getIdSite();
 
-        $caisse = Caisse::where('site_id', $userSiteId)->first();
+        $caisse = $this->resolveCaisseForCurrentUser();
         if (!$caisse) {
             return response()->json(null);
         }

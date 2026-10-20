@@ -70,6 +70,7 @@ class AuthenticateController extends Controller
             case "CaisseController":
                 return 'show.caisse.controller.dashboard';
             case "Raf":
+            case "Trésorier":
                 return 'show.raf.dashboard';
             case "Gestionnaire":
                 return 'show.gestionnaire.dashboard';

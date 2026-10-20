@@ -20,8 +20,21 @@
                     <!-- Filtres -->
                     <div class="flex flex-wrap gap-4 items-center justify-between">
                         <!-- Recherche -->
-                        <Input_search v-model="form.search_data" @update:modelValue="onFilterChange"
-                            placeholder="Rechercher par VIN..." class="w-full " />
+                        <div class="flex items-center gap-2">
+                            <input v-model="searchInput" @keyup.enter="applySearch" type="text"
+                                placeholder="Rechercher par VIN ou Num chrono…"
+                                class="w-64 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:border-muted-foreground/50 focus:ring-1 focus:ring-muted-foreground/30" />
+                            <button @click="applySearch"
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                                <Search class="w-4 h-4" />
+                                Chercher
+                            </button>
+                            <button v-if="activeSearch" @click="clearSearch" title="Réinitialiser"
+                                class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-muted transition-colors text-muted-foreground">
+                                <X class="w-4 h-4" />
+                                Réinitialiser
+                            </button>
+                        </div>
                         <!-- Statut -->
                         <Select v-model="form.statut" @update:modelValue="onFilterChange">
                             <SelectTrigger class="w-40">
@@ -182,9 +195,9 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
+import { Search, X } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 import Pagination from '@/components/Pagination.vue'
-import { Input_search } from '@/components/ui/Input_search'
 import { Skeleton } from '@/components/ui/skeleton'
 
 
@@ -203,6 +216,23 @@ const form = useForm({
     date_start: params.get('date_start') || '',
     date_end: params.get('date_end') || ''
 })
+
+// Recherche : VIN ou num_chrono, les deux dans le même champ
+const searchInput = ref(form.search_data)
+const activeSearch = ref(form.search_data)
+
+function applySearch() {
+    activeSearch.value = searchInput.value.trim()
+    form.search_data = activeSearch.value
+    onFilterChange()
+}
+
+function clearSearch() {
+    searchInput.value = ''
+    activeSearch.value = ''
+    form.search_data = ''
+    onFilterChange()
+}
 
 // URL dans l'historique
 function updateURL() {
@@ -253,6 +283,8 @@ window.addEventListener('popstate', () => {
     form.statut = params.get('statut') || ''
     form.date_start = params.get('date_start') || ''
     form.date_end = params.get('date_end') || ''
+    searchInput.value = form.search_data
+    activeSearch.value = form.search_data
     fetchDossiers()
 })
 
