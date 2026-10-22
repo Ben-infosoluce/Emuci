@@ -1,9 +1,27 @@
+# ATTENTION — Nixpacks ne peut pas épingler une version *patch* de PHP ou de
+# Node.js : le provider installe un paquet de nixpkgs (php83, nodejs_24), dont
+# le correctif dépend du canal au moment du build.
+#
+# Les garde-fous de la phase "install" font donc échouer le build si les
+# versions fournies sont vulnérables :
+#   - php2shell : CVE-2026-109618 / CVE-2026-109619
+#   - Brotli    : CVE-2026-111497 (Node.js)
+#
+# Pour un contrôle exact et reproductible, basculer le build pack Coolify sur
+# "Dockerfile" (php:8.3.36-fpm-alpine et node:24.22.1-alpine).
+
 [phases.install]
 dependsOn = ["setup"]
 cmds = [
+    # Garde-fou php2shell : logique par branche (8.2.35 / 8.3.36 / 8.4.27 /
+    # 8.5.12). Un simple ">= 8.3.36" laisserait passer 8.4.0 à 8.4.26.
+    "bash scripts/php2shell-check.sh --no-containers",
+    # Garde-fou Node.js Brotli : CVE-2026-111497, corrigé en 22.23.4 /
+    # 24.22.1 / 26.12.1. Échoue aussi sur les branches EOL (20, 23, 25).
+    "bash scripts/node-brotli-check.sh",
     # L'ajout de "-vvv" est CRUCIAL ici pour afficher les logs détaillés de l'erreur
     "composer install --no-dev --optimize-autoloader -vvv",
-    "npm install"
+    "npm ci"
 ]
 
 [variables]

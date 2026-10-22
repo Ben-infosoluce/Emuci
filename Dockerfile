@@ -1,13 +1,26 @@
 # Stage 1: Build frontend assets
-FROM node:20-alpine AS build-stage
+# Version épinglée volontairement : 24.22.1 corrige CVE-2026-111497 (décodeur
+# Brotli de Node.js). Ne pas revenir à un tag flottant (node:24-alpine) : le
+# correctif serait perdu silencieusement au prochain rebuild.
+FROM node:24.22.1-alpine AS build-stage
+
+# Garde-fou : le tag doit réellement correspondre à la version corrigée.
+RUN [ "$(node -p 'process.versions.node')" = "24.22.1" ]
+
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
 
 # Stage 2: Production PHP & Nginx
-FROM php:8.2-fpm-alpine
+# Version épinglée volontairement : 8.3.36 corrige CVE-2026-109618 / CVE-2026-109619.
+# Ne pas revenir à un tag flottant (php:8.3-fpm-alpine) : le patch serait perdu
+# silencieusement au prochain rebuild.
+FROM php:8.3.36-fpm-alpine
+
+# Garde-fou : le tag doit réellement correspondre à la version corrigée.
+RUN php -r 'exit(PHP_VERSION === "8.3.36" ? 0 : 1);'
 
 # Install system dependencies
 RUN apk add --no-cache \
