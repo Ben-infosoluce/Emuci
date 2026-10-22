@@ -8,7 +8,7 @@
 #
 # Codes de sortie :
 #   0  toutes les cibles sont corrigées
-#   2  au moins une cible vulnérable ou en fin de vie
+#   2  au moins une cible vulnérable, en fin de vie, ou illisible (fail-closed)
 #   3  aucune cible inspectable
 #
 # Usage :
@@ -40,6 +40,7 @@ done
 
 VULN=0
 EOL=0
+UNKNOWN=0
 OK=0
 SEEN=0
 
@@ -86,16 +87,30 @@ verdict() {
   echo "UNKNOWN"
 }
 
+# Nettoie la sortie de PHP : les warnings de démarrage (ex. "Module xml is
+# already loaded") peuvent être écrits sur stdout et polluer PHP_VERSION.
+clean_version() {
+  local cleaned
+  cleaned=$(printf '%s' "$1" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1)
+  printf '%s' "${cleaned:-$1}"
+}
+
 record() {
-  local label="$1" ver="$2" v
+  local label="$1" raw_ver="$2" ver display_ver v
   SEEN=$((SEEN + 1))
+  ver=$(clean_version "$raw_ver")
+  case "$ver" in
+    ''|*[!0-9.]*) display_ver="-" ;;
+    *)            display_ver="$ver" ;;
+  esac
   v=$(verdict "$ver")
   case "$v" in
-    FIXED) OK=$((OK + 1)) ;;
-    VULN)  VULN=$((VULN + 1)) ;;
-    EOL)   EOL=$((EOL + 1)); v="EOL (aucun correctif amont)" ;;
+    FIXED)   OK=$((OK + 1)) ;;
+    VULN)    VULN=$((VULN + 1)) ;;
+    EOL)     EOL=$((EOL + 1)); v="EOL (aucun correctif amont)" ;;
+    UNKNOWN) UNKNOWN=$((UNKNOWN + 1)); v="UNKNOWN (version illisible)" ;;
   esac
-  say "$(printf '%-34s %-16s %s' "$label" "$ver" "$v")"
+  say "$(printf '%-34s %-16s %s' "$label" "$display_ver" "$v")"
 }
 
 say ""
@@ -107,8 +122,12 @@ say "-----------------------------------------------------------------------"
 
 # --- 1. PHP local -----------------------------------------------------------
 if command -v php >/dev/null 2>&1; then
-  record "local ($(php -r 'echo PHP_SAPI;' 2>/dev/null || echo cli))" \
-         "$(php -r 'echo PHP_VERSION;' 2>/dev/null)"
+  # -n évite les warnings de php.ini ; le filtrage couvre les warnings sur stdout.
+  LOCAL_SAPI=$(php -n -r 'echo PHP_SAPI;' 2>/dev/null \
+    | grep -Eo '(cli|fpm-fcgi|apache2handler|cgi-fcgi|phpdbg)' | tail -n 1)
+  [ -n "$LOCAL_SAPI" ] || LOCAL_SAPI=cli
+  record "local ($LOCAL_SAPI)" \
+         "$(php -n -r 'echo PHP_VERSION;' 2>/dev/null)"
 else
   say "$(printf '%-34s %-16s %s' 'local' '-' 'php introuvable')"
 fi
@@ -116,7 +135,7 @@ fi
 # --- 2. PHP distant via SSH --------------------------------------------------
 if [ -n "$SSH_TARGET" ]; then
   REMOTE_VER=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "$SSH_TARGET" \
-    'php -r "echo PHP_VERSION;"' 2>/dev/null)
+    'php -n -r "echo PHP_VERSION;"' 2>/dev/null)
   if [ -n "$REMOTE_VER" ]; then
     record "ssh:$SSH_TARGET" "$REMOTE_VER"
   else
@@ -131,12 +150,11 @@ if [ "$CHECK_CONTAINERS" -eq 1 ] && command -v docker >/dev/null 2>&1 \
   while IFS= read -r cname; do
     [ -z "$cname" ] && continue
     FOUND=1
-    CVER=$(docker exec "$cname" php -r 'echo PHP_VERSION;' 2>/dev/null)
+    CVER=$(docker exec "$cname" php -n -r 'echo PHP_VERSION;' 2>/dev/null)
     if [ -n "$CVER" ]; then
       record "docker:$cname" "$CVER"
     else
-      IMG=$(docker inspect --format '{{.Config.Image}}' "$cname" 2>/dev/null)
-      record "docker:$cname (sans php)" "${IMG:--}"
+      say "$(printf '%-34s %-16s %s' "docker:$cname" '-' 'sans php — non inspecté')"
     fi
   done < <(docker ps --format '{{.Names}}' 2>/dev/null)
   [ "$FOUND" -eq 0 ] && say "$(printf '%-34s %-16s %s' 'docker' '-' 'aucun conteneur actif')"
@@ -151,12 +169,18 @@ if [ "$SEEN" -eq 0 ]; then
   exit 3
 fi
 
-say "Corrigées : $OK | Vulnérables : $VULN | Fin de vie : $EOL"
+say "Corrigées : $OK | Vulnérables : $VULN | Fin de vie : $EOL | Illisibles : $UNKNOWN"
 say ""
 
-if [ "$VULN" -gt 0 ] || [ "$EOL" -gt 0 ]; then
-  [ "$QUIET" -eq 0 ] && say "ACTION REQUISE — viser 8.2.35 / 8.3.36 / 8.4.27 / 8.5.12."
-  [ "$QUIET" -eq 0 ] && say ""
+if [ "$VULN" -gt 0 ] || [ "$EOL" -gt 0 ] || [ "$UNKNOWN" -gt 0 ]; then
+  if [ "$QUIET" -eq 0 ]; then
+    if [ "$UNKNOWN" -gt 0 ]; then
+      say "ACTION REQUISE — impossible de lire la version PHP ; vérifier manuellement."
+    else
+      say "ACTION REQUISE — viser 8.2.35 / 8.3.36 / 8.4.27 / 8.5.12."
+    fi
+    say ""
+  fi
   exit 2
 fi
 

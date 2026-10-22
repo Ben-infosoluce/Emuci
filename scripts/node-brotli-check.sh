@@ -9,7 +9,7 @@
 # Codes de sortie :
 #   0  version corrigée
 #   2  version vulnérable ou branche EOL
-#   3  node introuvable
+#   3  node introuvable ou version illisible
 #
 # Usage :
 #   bash scripts/node-brotli-check.sh
@@ -87,7 +87,8 @@ if ! command -v node >/dev/null 2>&1; then
   exit 3
 fi
 
-NODE_VER=$(node -p 'process.versions.node' 2>/dev/null)
+NODE_VER=$(node -p 'process.versions.node' 2>/dev/null \
+  | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1)
 if [ -z "$NODE_VER" ]; then
   say "$(printf '%-34s %-16s %s' 'local' '-' 'version illisible')"
   say ""
