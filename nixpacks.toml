@@ -1,14 +1,24 @@
-# ATTENTION — Nixpacks ne peut pas épingler une version *patch* de PHP ou de
-# Node.js : le provider installe un paquet de nixpkgs (php83, nodejs_24), dont
-# le correctif dépend du canal au moment du build.
+# Nixpacks utilise l'archive nixpkgs épinglée ci-dessous pour garantir des
+# versions corrigées et reproductibles :
+#   - PHP 8.3.36   (php2shell, CVE-2026-109618 / CVE-2026-109619)
+#   - Node 22.23.4 (Brotli, CVE-2026-111497)
 #
-# Les garde-fous de la phase "install" font donc échouer le build si les
-# versions fournies sont vulnérables :
+# Node 24.22.1 n'est pas encore disponible dans la même archive nixpkgs.
+# NIXPACKS_NODE_VERSION=22 (voir [variables]) force la branche 22.23.4.
+# Sans cela, package.json/engines force nodejs_24 et le garde-fou Node refuse
+# 24.21.0, qui est vulnérable.
+#
+# Les garde-fous de la phase "install" font échouer le build si les versions
+# fournies sont vulnérables :
 #   - php2shell : CVE-2026-109618 / CVE-2026-109619
 #   - Brotli    : CVE-2026-111497 (Node.js)
 #
-# Pour un contrôle exact et reproductible, basculer le build pack Coolify sur
+# Pour un contrôle exact avec Node 24.22.1, basculer le build pack Coolify sur
 # "Dockerfile" (php:8.3.36-fpm-alpine et node:24.22.1-alpine).
+
+[phases.setup]
+# Archive nixpkgs du 21/10/2026 : PHP 8.3.36 + Node 22.23.4 corrigés.
+nixpkgsArchive = "c53532a938651ed45ebef072c8da6e74256e7072"
 
 [phases.install]
 dependsOn = ["setup"]
@@ -25,6 +35,9 @@ cmds = [
 ]
 
 [variables]
+# Force Node 22.23.4, seule version corrigée disponible dans l'archive
+# nixpkgs épinglée ci-dessus (Node 24 y est 24.21.0, vulnérable).
+NIXPACKS_NODE_VERSION = "22"
 NODE_OPTIONS = "--dns-result-order=ipv4first"
 # On enlève la limite de mémoire de Composer pour éviter les crashs silencieux
 COMPOSER_MEMORY_LIMIT = "-1"
