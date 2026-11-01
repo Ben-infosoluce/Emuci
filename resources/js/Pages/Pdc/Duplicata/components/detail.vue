@@ -24,22 +24,22 @@
                             <!-- Informations du propriétaire -->
                             <div>
                                 <h4 class="text-lg font-semibold mb-4">Informations du propriétaire :
-                                    <samp class="text-[#ca7600]"> {{ data.r_vehicule_client.civilite }} {{
-                                        data.r_vehicule_client.nom }} {{
-                                            data.r_vehicule_client.prenom }}</samp>
+                                    <samp class="text-[#ca7600]"> {{ data.r_vehicule_client?.civilite }} {{
+                                        data.r_vehicule_client?.nom }} {{
+                                            data.r_vehicule_client?.prenom }}</samp>
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <p><strong>Email :</strong> {{ data.r_vehicule_client.email }}</p>
-                                    <p><strong>Adresse :</strong> {{ data.r_vehicule_client.adresse }}</p>
-                                    <p><strong>Ville de naissance :</strong> {{ data.r_vehicule_client.ville_naissance
+                                    <p><strong>Email :</strong> {{ data.r_vehicule_client?.email }}</p>
+                                    <p><strong>Adresse :</strong> {{ data.r_vehicule_client?.adresse }}</p>
+                                    <p><strong>Ville de naissance :</strong> {{ data.r_vehicule_client?.ville_naissance
                                         }}
                                     </p>
-                                    <p><strong>Téléphone :</strong> {{ data.r_vehicule_client.telephone }}</p>
-                                    <!-- <p><strong>Type de personne :</strong> {{ data.r_vehicule_client.typePersonne }}</p> -->
-                                    <p><strong>Date de naissance :</strong> {{ data.r_vehicule_client.date_naissance }}
+                                    <p><strong>Téléphone :</strong> {{ data.r_vehicule_client?.telephone }}</p>
+                                    <!-- <p><strong>Type de personne :</strong> {{ data.r_vehicule_client?.typePersonne }}</p> -->
+                                    <p><strong>Date de naissance :</strong> {{ data.r_vehicule_client?.date_naissance }}
                                     </p>
-                                    <p v-if="data.r_vehicule_client.district_client"><strong>District :</strong> {{
-                                        data.r_vehicule_client.district_client }}
+                                    <p v-if="data.r_vehicule_client?.district_client"><strong>District :</strong> {{
+                                        data.r_vehicule_client?.district_client }}
 
                                     </p>
                                 </div>
@@ -80,27 +80,27 @@
                             <!-- Informations de l'entreprise (si type Morale) -->
                             <div v-if="data.physique_morale == 'Physiques'">
                                 <h4 class="text-lg font-semibold mb-4">Informations de l'entreprise :
-                                    <samp class="text-[#ca7600]">{{ data.r_vehicule_entreprise.nom_entreprise }}</samp>
+                                    <samp class="text-[#ca7600]">{{ data.r_vehicule_entreprise?.nom_entreprise }}</samp>
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <p><strong>Nom entreprise :</strong> {{ data.r_vehicule_entreprise.nom_entreprise }}
+                                    <p><strong>Nom entreprise :</strong> {{ data.r_vehicule_entreprise?.nom_entreprise }}
                                     </p>
                                     <p><strong>Registre de commerce :</strong> {{
-                                        data.r_vehicule_entreprise.registre_commerce }}</p>
+                                        data.r_vehicule_entreprise?.registre_commerce }}</p>
                                     <p><strong>Représentant légal :</strong> {{
-                                        data.r_vehicule_entreprise.nom_representant_legal }}</p>
+                                        data.r_vehicule_entreprise?.nom_representant_legal }}</p>
                                     <p><strong>Téléphone :</strong> {{
-                                        data.r_vehicule_entreprise.telephone_representant_legal }}</p>
+                                        data.r_vehicule_entreprise?.telephone_representant_legal }}</p>
                                     <p><strong>Compte contribuable :</strong> {{
-                                        data.r_vehicule_entreprise.compte_contribuale }}</p>
-                                    <p><strong>Préfecture :</strong> {{ data.r_vehicule_entreprise.prefecture }}</p>
-                                    <p><strong>Sous-préfecture :</strong> {{ data.r_vehicule_entreprise.sous_prefecture
+                                        data.r_vehicule_entreprise?.compte_contribuale }}</p>
+                                    <p><strong>Préfecture :</strong> {{ data.r_vehicule_entreprise?.prefecture }}</p>
+                                    <p><strong>Sous-préfecture :</strong> {{ data.r_vehicule_entreprise?.sous_prefecture
                                         }}</p>
-                                    <p><strong>Région :</strong> {{ data.r_vehicule_entreprise.region }}</p>
+                                    <p><strong>Région :</strong> {{ data.r_vehicule_entreprise?.region }}</p>
                                     <p><strong>Profession représentant :</strong> {{
-                                        data.r_vehicule_entreprise.profession_representant_legal }}</p>
+                                        data.r_vehicule_entreprise?.profession_representant_legal }}</p>
                                     <p><strong>Date naissance représentant :</strong> {{
-                                        data.r_vehicule_entreprise.date_de_naissance_representant_legal
+                                        data.r_vehicule_entreprise?.date_de_naissance_representant_legal
                                         }}</p>
                                 </div>
                             </div>
@@ -151,15 +151,15 @@ const props = defineProps({
 });
 
 // Accès direct aux données via props.data.immatriculation
-const data = computed(() => props.data.immatriculation || {});
+const data = computed(() => props.data?.immatriculation || {});
 
 // Initialisation au montage du composant
 onMounted(() => {
-    console.log('Données reçues:', props.data.immatriculation);
+    console.log('Données reçues:', props.data?.immatriculation);
 });
 
 const newDuplicata = () => {
-    const vinWithGenre = `${props.data.immatriculation.vin}_${props.data.immatriculation.genre_vehicule.nb_plaque}`;
+    const vinWithGenre = `${props.data?.immatriculation?.vin}_${props.data?.immatriculation?.genre_vehicule?.nb_plaque}`;
     const donne = {
         vinWithGenre: vinWithGenre
     };

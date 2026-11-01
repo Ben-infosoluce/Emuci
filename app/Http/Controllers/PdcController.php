@@ -2030,11 +2030,11 @@ class PdcController extends Controller
     public function savePdcReImmatriculationData(Request $request)
     {
 
-        // dd($request->all());
+        dd($request->all());
         // Définition des règles de validation
         $rules = [
-            'DateNaissance' => 'required|string',
-            'adresse' => 'required|string',
+            'DateNaissance' => 'nullable|string',
+            'adresse' => 'nullable|string',
             'carrosserie' => 'required|string',
             'vin' => 'required|string',
             'couleurVehicule' => 'required|string',
@@ -2045,27 +2045,27 @@ class PdcController extends Controller
             'lastname' => 'required|string',
             'marqueVehicule' => 'required|array',
             'modelVehicule' => 'required|array',
-            'nombreEssieux' => 'required|integer',
-            'phone' => 'required|string',
+            'nombreEssieux' => 'nullable|integer',
+            'phone' => 'nullable|string',
             'placesAssises' => 'required|integer',
             'prefecture' => 'nullable|string',
-            'ptac' => 'required|integer',
-            'pu' => 'required|integer',
+            'ptac' => 'nullable|integer',
+            'pu' => 'nullable|integer',
             'puissance' => 'required|string',
-            'pv' => 'required|string',
+            'pv' => 'nullable|string',
             'region' => 'nullable|string',
             'usage' => 'nullable|string',
             'sourcesEnergie' => 'required|string',
             'sousPrefecture' => 'nullable|string',
             'type' => 'required|string',
             'typePersonne' => 'required|string',
-            'typeTechnique' => 'required|string',
-            'controleurTechnique' => 'required|string',
+            'typeTechnique' => 'nullable|string',
+            'controleurTechnique' => 'nullable|string',
             'villeNaissance' => 'required|string',
-            'anneeProduction' => 'required|string',
-            'dateCirculation' => 'required|string',
+            'anneeProduction' => 'nullable|string',
+            'dateCirculation' => 'nullable|string',
             'cylindree' => 'required|string',
-            'num_immatriculation_precedant' => 'required|string',
+            'num_immatriculation_precedant' => 'nullable|string',
             'codeRegion' => 'required|string',
             'sex' => 'required|string',
         ];
@@ -2190,10 +2190,10 @@ class PdcController extends Controller
             $client = Client::create([
                 'nom' => $validated['firstname'],
                 'prenom' => $validated['lastname'],
-                'date_naissance' => $validated['DateNaissance'],
+                'date_naissance' => $validated['DateNaissance'] ?? null,
                 'ville_naissance' => $validated['villeNaissance'],
-                'adresse' => $validated['adresse'],
-                'telephone' => $validated['phone'],
+                'adresse' => $validated['adresse'] ?? null,
+                'telephone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
                 'civilite' => $validated['sex'],
                 'district_client' => $validated['district'] ?? null,
@@ -2234,26 +2234,26 @@ class PdcController extends Controller
 
                 // Données à créer ou mettre à jour
                 [
-                    'annee_production' => $validated['anneeProduction'],
+                    'annee_production' => $validated['anneeProduction'] ?? null,
                     'marque' => $validated['marqueVehicule']['nom'],
                     'modele' => $validated['modelVehicule']['nom'],
                     'couleur' => $validated['couleurVehicule'],
                     'source_energie' => $validated['sourcesEnergie'],
                     'genre_vehicule' => $validated['genre'],
-                    'poids_total_charge' => $validated['ptac'],
-                    'poids_utile' => $validated['pu'],
-                    'poids_vide' => $validated['pv'],
+                    'poids_total_charge' => $validated['ptac'] ?? null,
+                    'poids_utile' => $validated['pu'] ?? null,
+                    'poids_vide' => $validated['pv'] ?? null,
                     'puissance_administrative' => $validated['puissance'],
                     'places_assises' => intval(preg_replace('/\D/', '', $validated['placesAssises'])),
-                    'nombre_essieux' => intval(preg_replace('/\D/', '', $validated['nombreEssieux'])),
-                    'date_mise_circulation' => $validated['dateCirculation'],
+                    'nombre_essieux' => isset($validated['nombreEssieux']) && $validated['nombreEssieux'] !== '' ? intval(preg_replace('/\D/', '', $validated['nombreEssieux'])) : null,
+                    'date_mise_circulation' => $validated['dateCirculation'] ?? null,
                     'id_site' => getIdSite(),
-                    'num_immatriculation_precedant' => $validated['num_immatriculation_precedant'],
+                    'num_immatriculation_precedant' => $validated['num_immatriculation_precedant'] ?? null,
                     'carrosserie' => $validated['carrosserie'],
-                    'type_technique' => $validated['typeTechnique'],
-                    'controleur_technique' => $validated['controleurTechnique'],
+                    'type_technique' => $validated['typeTechnique'] ?? null,
+                    'controleur_technique' => $validated['controleurTechnique'] ?? null,
                     'code_de_region' => $validated['codeRegion'],
-                    'usage_vehicule' => $validated['usage'],
+                    'usage_vehicule' => $validated['usage'] ?? null,
                     'physique_morale' => $validated['type'],
                     'entreprise_id' => $entreprise?->id,
                     'id_client' => $client->id,
@@ -2268,10 +2268,10 @@ class PdcController extends Controller
             $detail = []; // tableau vide
             $detail[] = $request->input('detail');
             $id_type_service = 0;
-            if ($request->input('detail') == 'Ré-immatriculation Diplomatique') {
-                $id_type_service = 1;
-            } else if ($request->input('detail') == 'Ré-immatriculation Ordinaire') {
-                $id_type_service = 2;
+            if ($request->input('detail') == 1) {
+                $id_type_service = 1; // Ré-immatriculation Diplomatique
+            } else if ($request->input('detail') == 2) {
+                $id_type_service = 2; // Ré-immatriculation Ordinaire
             }
 
             // Création du dossier

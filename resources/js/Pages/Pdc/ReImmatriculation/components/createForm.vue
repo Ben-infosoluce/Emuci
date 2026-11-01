@@ -130,57 +130,7 @@
                                     </FormField>
                                 </div>
                                 <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
-                                    <FormField v-slot="{ componentField }" name="phone">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Numéro de téléphone*</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="0701020304" v-bind="componentField"
-                                                    autocomplete="phone" v-model="form.phone"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                    <!-- adresse -->
-                                    <FormField v-slot="{ componentField }" name="adresse">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Adresse*</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Abidjan,Cocody" v-bind="componentField"
-                                                    autocomplete="adresse" v-model="form.adresse" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                    <!-- typePersonne -->
-                                    <!-- Date de naissance -->
-                                    <FormField v-slot="{ componentField }" name="DateNaissance">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Date de naissance*</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="01-01-1984" v-bind="componentField"
-                                                    autocomplete="DateNaissance" v-model="form.DateNaissance"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
-                                                    @input="form.DateNaissance = formatDateCirculation($event.target.value)" />
-
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                </div>
-                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
-                                    <!-- ville de naissance  -->
-                                    <!-- <FormField v-slot="{ componentField }" name="villeNaissance">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Ville de naissance*</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Bouaké" v-bind="componentField"
-                                                    autocomplete="villeNaissance" v-model="form.villeNaissance" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField> -->
-                                    <!-- ici -->
+                                    <!-- Pays de naissance (obligatoire) -->
                                     <FormField v-slot="{ componentField }" name="villeNaissance">
                                         <FormItem v-auto-animate class="relative">
                                             <FormLabel>Pays de naissance*</FormLabel>
@@ -205,7 +155,45 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
+                                    <!-- Numéro de téléphone (non obligatoire) -->
+                                    <FormField v-slot="{ componentField }" name="phone">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Numéro de téléphone</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="0701020304" v-bind="componentField"
+                                                    autocomplete="phone" v-model="form.phone"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                    <!-- adresse (non obligatoire) -->
+                                    <FormField v-slot="{ componentField }" name="adresse">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Adresse</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Abidjan,Cocody" v-bind="componentField"
+                                                    autocomplete="adresse" v-model="form.adresse" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                </div>
+                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
+                                    <!-- Date de naissance (non obligatoire) -->
+                                    <FormField v-slot="{ componentField }" name="DateNaissance">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Date de naissance</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="01-01-1984" v-bind="componentField"
+                                                    autocomplete="DateNaissance" v-model="form.DateNaissance"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
+                                                    @input="form.DateNaissance = formatDateCirculation($event.target.value)" />
 
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
                                     <!-- Email -->
                                     <FormField v-slot="{ componentField }" name="email">
                                         <FormItem v-auto-animate>
@@ -251,10 +239,6 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
-
-
-
-
                                 </div>
                             </div>
 
@@ -299,7 +283,7 @@
                                 <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
                                     <FormField v-slot="{ componentField }" name="couleurVehicule">
                                         <FormItem v-auto-animate>
-                                            <FormLabel>Couleur du véhicule</FormLabel>
+                                            <FormLabel>Couleur du véhicule *</FormLabel>
                                             <FormControl>
                                                 <Select v-bind="componentField" autocomplete="couleurVehicule"
                                                     v-model="form.couleurVehicule">
@@ -341,22 +325,7 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
-                                    <!-- typeTechnique -->
 
-                                    <FormField v-slot="{ componentField }" name="typeTechnique">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Type Technique *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Type Technique " v-bind="componentField"
-                                                    autocomplete="typeTechnique" v-model="form.typeTechnique" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-
-
-                                </div>
-                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
                                     <!-- genre -->
                                     <FormField v-slot="{ componentField }" name="genre">
                                         <FormItem v-auto-animate>
@@ -381,45 +350,8 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
-
-                                    <!-- PTAC -->
-                                    <FormField v-slot="{ componentField }" name="ptac">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Poids total en charge (PTAC) *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="500 (KG)" v-bind="componentField"
-                                                    autocomplete="ptac" v-model="form.ptac"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                    <!-- PU -->
-                                    <FormField v-slot="{ componentField }" name="pu">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Poids Utile (PU) *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="200 (KG)" v-bind="componentField" autocomplete="pu"
-                                                    v-model="form.pu"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
                                 </div>
                                 <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
-                                    <!-- PU -->
-                                    <FormField v-slot="{ componentField }" name="pv">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Poids à Vide (PV) *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="150 (KG)" v-bind="componentField" autocomplete="pv"
-                                                    v-model="form.pv"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
                                     <!-- Puissance administrative -->
                                     <FormField v-slot="{ componentField }" name="puissance">
                                         <FormItem v-auto-animate>
@@ -444,9 +376,7 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
-                                </div>
-                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
-                                    <!-- Places assises -->
+                                    <!-- Usage -->
                                     <FormField v-slot="{ componentField }" name="usage">
                                         <FormItem v-auto-animate>
                                             <FormLabel>Usage *</FormLabel>
@@ -468,10 +398,12 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
+                                </div>
+                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
                                     <!-- Sources d’énergie -->
                                     <FormField v-slot="{ componentField }" name="sourcesEnergie">
                                         <FormItem v-auto-animate>
-                                            <FormLabel>Sources d’énergie</FormLabel>
+                                            <FormLabel>Sources d’énergie *</FormLabel>
                                             <FormControl>
                                                 <Select v-bind="componentField" autocomplete="sourcesEnergie"
                                                     v-model="form.sourcesEnergie">
@@ -493,22 +425,7 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
-                                    <!-- Nombre d’essieux -->
-                                    <FormField v-slot="{ componentField }" name="nombreEssieux">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Nombre d’essieux *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="5" v-bind="componentField"
-                                                    autocomplete="nombreEssieux" v-model="form.nombreEssieux"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                </div>
-                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
-                                    <!-- Places assises -->
-
+                                    <!-- Code de région -->
                                     <FormField v-slot="{ componentField }" name="codeRegion">
                                         <FormItem v-auto-animate>
                                             <FormLabel>Code de région *</FormLabel>
@@ -535,45 +452,6 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
-
-                                    <!-- Date de naissance -->
-                                    <FormField v-slot="{ componentField }" name="DateCirculation">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Date de mise en circulation *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="01-01-1984" v-bind="componentField"
-                                                    autocomplete="DateCirculation" v-model="form.DateCirculation"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
-                                                    @input="form.DateCirculation = formatDateCirculation($event.target.value)" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                    <!-- Année de production -->
-                                    <FormField v-slot="{ componentField }" name="AnneeProduction">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Année de production *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="01-01-1984" v-bind="componentField"
-                                                    autocomplete="AnneeProduction" v-model="form.AnneeProduction"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
-                                                    @input="form.AnneeProduction = formatDateCirculation($event.target.value)" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                    <!-- N° d'immatriculation précédente-->
-                                    <FormField v-slot="{ componentField }" name="num_immatriculation_precedant">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>N° d'immatriculation précédente *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="AA1905" v-bind="componentField"
-                                                    autocomplete="num_immatriculation_precedant"
-                                                    v-model="form.num_immatriculation_precedant" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
                                     <!-- Cylindrée -->
                                     <FormField v-slot="{ componentField }" name="Cylindree">
                                         <FormItem v-auto-animate>
@@ -586,10 +464,113 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
+                                </div>
+                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
+                                    <!-- typeTechnique -->
+                                    <FormField v-slot="{ componentField }" name="typeTechnique">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Type Technique</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Type Technique " v-bind="componentField"
+                                                    autocomplete="typeTechnique" v-model="form.typeTechnique" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                    <!-- PTAC -->
+                                    <FormField v-slot="{ componentField }" name="ptac">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Poids total en charge (PTAC)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="500 (KG)" v-bind="componentField"
+                                                    autocomplete="ptac" v-model="form.ptac"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                    <!-- PU -->
+                                    <FormField v-slot="{ componentField }" name="pu">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Poids Utile (PU)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="200 (KG)" v-bind="componentField" autocomplete="pu"
+                                                    v-model="form.pu"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                </div>
+                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
+                                    <!-- PV -->
+                                    <FormField v-slot="{ componentField }" name="pv">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Poids à Vide (PV)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="150 (KG)" v-bind="componentField" autocomplete="pv"
+                                                    v-model="form.pv"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                    <!-- Nombre d’essieux -->
+                                    <FormField v-slot="{ componentField }" name="nombreEssieux">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Nombre d’essieux</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="5" v-bind="componentField"
+                                                    autocomplete="nombreEssieux" v-model="form.nombreEssieux"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                    <!-- Date de mise en circulation -->
+                                    <FormField v-slot="{ componentField }" name="DateCirculation">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Date de mise en circulation</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="01-01-1984" v-bind="componentField"
+                                                    autocomplete="DateCirculation" v-model="form.DateCirculation"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
+                                                    @input="form.DateCirculation = formatDateCirculation($event.target.value)" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                </div>
+                                <div class="grid gap-3 md:grid-cols-2 md:gap-10 lg:grid-cols-3 mb-5">
+                                    <!-- Année de production -->
+                                    <FormField v-slot="{ componentField }" name="AnneeProduction">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Année de production</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="01-01-1984" v-bind="componentField"
+                                                    autocomplete="AnneeProduction" v-model="form.AnneeProduction"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
+                                                    @input="form.AnneeProduction = formatDateCirculation($event.target.value)" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                    <!-- N° d'immatriculation précédente-->
+                                    <FormField v-slot="{ componentField }" name="num_immatriculation_precedant">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>N° d'immatriculation précédente</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="AA1905" v-bind="componentField"
+                                                    autocomplete="num_immatriculation_precedant"
+                                                    v-model="form.num_immatriculation_precedant" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
                                     <!-- controlleur technique -->
                                     <FormField v-slot="{ componentField }" name="controleurTechnique">
                                         <FormItem v-auto-animate>
-                                            <FormLabel>Contrôleur technique *</FormLabel>
+                                            <FormLabel>Contrôleur technique</FormLabel>
                                             <FormControl>
                                                 <Select v-bind="componentField" v-model="form.controleurTechnique"
                                                     autocomplete="controleurTechnique">
@@ -657,19 +638,6 @@
                                         </FormItem>
                                     </FormField>
 
-                                    <!-- Téléphone du représentant légal -->
-                                    <FormField v-slot="{ componentField }" name="numeroTelephone">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Téléphone du représentant légal *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="0701020304" v-bind="componentField"
-                                                    v-model="form.numeroTelephone"
-                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-
                                     <!-- Date de naissance du représentant légal -->
                                     <FormField v-slot="{ componentField }" name="DateNaissanceRepresantant">
                                         <FormItem v-auto-animate>
@@ -684,18 +652,7 @@
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
-                                    <!-- Profession du représentant légal -->
-                                    <FormField v-slot="{ componentField }" name="ProfessionRepresantant">
-                                        <FormItem v-auto-animate>
-                                            <FormLabel>Profession du représentant légal *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Profession" v-bind="componentField"
-                                                    autocomplete="ProfessionRepresantant"
-                                                    v-model="form.ProfessionRepresantant" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
+
                                     <!-- Numéro de compte contribuable -->
                                     <FormField v-slot="{ componentField }" name="compteContribuable">
                                         <FormItem v-auto-animate>
@@ -703,6 +660,32 @@
                                             <FormControl>
                                                 <Input v-bind="componentField" v-model="form.compteContribuable"
                                                     class="py-0 h-9" placeholder="123456789" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+
+                                    <!-- Téléphone du représentant légal -->
+                                    <FormField v-slot="{ componentField }" name="numeroTelephone">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Téléphone du représentant légal</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="0701020304" v-bind="componentField"
+                                                    v-model="form.numeroTelephone"
+                                                    @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+
+                                    <!-- Profession du représentant légal -->
+                                    <FormField v-slot="{ componentField }" name="ProfessionRepresantant">
+                                        <FormItem v-auto-animate>
+                                            <FormLabel>Profession du représentant légal</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Profession" v-bind="componentField"
+                                                    autocomplete="ProfessionRepresantant"
+                                                    v-model="form.ProfessionRepresantant" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -1195,65 +1178,73 @@ const formSchema = toTypedSchema(z.object({
         .max(30, {
             message: "Le Prénom doit contenir au plus 30 caractères.",
         }),
+    email: z
+        .string()
+        .nullable()
+        .optional()
+        .refine(
+            (val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+            {
+                message: "L'adresse email n'est pas valide.",
+            }
+        ),
     adresse: z
-        .string({
-            required_error: "L'adresse est obligatoire.",
-        })
-        .min(3, {
-            message: "L'adresse doit contenir au moins 3 caractères.",
-        })
+        .string()
         .max(50, {
             message: "L'adresse doit contenir au plus 50 caractères.",
-        }),
+        })
+        .nullable()
+        .optional(),
 
     phone: z
-        .string({
-            required_error: "Le numéro de téléphone est obligatoire.",
-        })
-        .min(10, {
-            message: "Le numéro de téléphone doit contenir au moins 10 caractères (ex: 0125003212).",
-        })
-        .max(10, {
-            message: "Le numéro de téléphone doit contenir au plus 10 caractères (ex: 0125003212).",
-        })
-        .regex(
-            /^0\d{9}$/,
-            "Le format doit être un numéro à 10 chiffres commençant par 0 (ex: 0125003212)."
+        .string()
+        .nullable()
+        .optional()
+        .refine(
+            (val) => !val || /^0\d{9}$/.test(val),
+            {
+                message: "Le format doit être un numéro à 10 chiffres commençant par 0 (ex: 0125003212).",
+            }
         ),
 
 
     DateNaissance: z
         .string()
-        .min(10, 'La date de naissance est obligatoire.')
-        .regex(
-            /^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/,
-            'Le format doit être jj-mm-aaaa (ex: 01-01-1984).'
+        .nullable()
+        .optional()
+        .refine(
+            (val) => !val || /^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/.test(val),
+            {
+                message: 'Le format doit être jj-mm-aaaa (ex: 01-01-1984).',
+            }
         ),
     DateCirculation: z
         .string()
-        .min(10, 'La date de mise en circulation est obligatoire.')
-        .max(10, 'La date de mise en circulation doit contenir au plus 10 caractères.')
-        .regex(
-            /^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/,
-            'Le format doit être jj-mm-aaaa (ex: 01-01-1984).'
+        .nullable()
+        .optional()
+        .refine(
+            (val) => !val || /^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/.test(val),
+            {
+                message: 'Le format doit être jj-mm-aaaa (ex: 01-01-1984).',
+            }
         ),
     AnneeProduction: z
         .string()
-        .min(10, 'L\'année de production est obligatoire.')
-        .regex(
-            /^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/,
-            'Le format doit être jj-mm-aaaa (ex: 01-01-1984).'
+        .nullable()
+        .optional()
+        .refine(
+            (val) => !val || /^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/.test(val),
+            {
+                message: 'Le format doit être jj-mm-aaaa (ex: 01-01-1984).',
+            }
         ),
     num_immatriculation_precedant: z
-        .string({
-            required_error: "Le N° d'immatriculation précédente est obligatoire.",
-        })
-        .min(5, {
-            message: 'Le N° d\'immatriculation précédente doit contenir au moins 5 caractères.',
-        })
+        .string()
         .max(20, {
             message: "Le N° d'immatriculation précédente doit contenir au plus 20 caractères.",
-        }),
+        })
+        .nullable()
+        .optional(),
     Cylindree: z
         .string({
             required_error: "La cylindrée est obligatoire.",
@@ -1299,25 +1290,19 @@ const formSchema = toTypedSchema(z.object({
         }),
 
     typeTechnique: z
-        .string({
-            required_error: "Le type technique est obligatoire.",
-        })
-        .min(3, {
-            message: "Le type technique doit contenir au moins 3 caractères.",
-        })
+        .string()
         .max(20, {
             message: "Le type technique doit contenir au plus 20 caractères.",
-        }),
+        })
+        .nullable()
+        .optional(),
     controleurTechnique: z
-        .string({
-            required_error: "Le controleur technique est obligatoire.",
-        })
-        .min(3, {
-            message: "Le controleur technique doit contenir au moins 3 caractères.",
-        })
+        .string()
         .max(20, {
             message: "Le controleur technique doit contenir au plus 20 caractères.",
-        }),
+        })
+        .nullable()
+        .optional(),
 
     genre: z
         .string({
@@ -1328,44 +1313,29 @@ const formSchema = toTypedSchema(z.object({
         }),
 
     ptac: z
-        .string({
-            required_error: "Le poids total en charge (PTAC) est obligatoire.",
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .refine((val) => val === '' || val === null || val === undefined || (!isNaN(Number(val)) && String(val).length <= 5), {
+            message: "Le poids total en charge (PTAC) doit être un nombre d'au plus 5 caractères.",
         })
-        .min(2, {
-            message: "Le poids total en charge (PTAC) doit contenir au moins 2 caractères.",
-        })
-        .max(5, {
-            message: "Le poids total en charge (PTAC) doit contenir au plus 5 caractères.",
-        })
-        .refine((val) => !isNaN(Number(val)), {
-            message: "Le poids total en charge (PTAC) doit être un nombre.",
-        })
-        .transform((val) => Number(val)),
+        .transform((val) => (val !== '' && val !== null && val !== undefined ? Number(val) : null)),
 
     pu: z
-        .string({
-            required_error: "Le poids utile (PU) est obligatoire.",
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .refine((val) => val === '' || val === null || val === undefined || (!isNaN(Number(val)) && String(val).length <= 5), {
+            message: "Le poids utile (PU) doit être un nombre d'au plus 5 caractères.",
         })
-        .min(2, {
-            message: "Le poids utile utile (PU) doit contenir au moins 2 caractères.",
-        })
-        .max(5, {
-            message: "Le poids utile (PU) doit contenir au plus 5 caractères.",
-        })
-        .refine((val) => !isNaN(Number(val)), {
-            message: "Le poids utile (PU) doit être un nombre.",
-        })
-        .transform((val) => Number(val)),
+        .transform((val) => (val !== '' && val !== null && val !== undefined ? Number(val) : null)),
     pv: z
-        .string({
-            required_error: "Le poids à vide (PV) est obligatoire.",
-        })
-        .min(3, {
-            message: "Le poids à vide (PV) doit contenir au moins 3 caractères.",
-        })
+        .string()
         .max(5, {
             message: "Le poids à vide (PV) doit contenir au plus 5 caractères.",
-        }),
+        })
+        .nullable()
+        .optional(),
 
     puissance: z
         .string({
@@ -1403,28 +1373,22 @@ const formSchema = toTypedSchema(z.object({
         }),
 
     nombreEssieux: z
-        .string({
-            required_error: "Le nombre d'essieux est obligatoire.",
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .refine((val) => val === '' || val === null || val === undefined || (!isNaN(Number(val)) && String(val).length <= 2), {
+            message: "Le nombre d'essieux doit être un nombre d'au plus 2 caractères.",
         })
-        .min(1, {
-            message: "Le nombre d'essieux doit contenir au moins 1 caractères.",
-        })
-        .max(2, {
-            message: "Le nombre d'essieux doit contenir au plus 2 caractères.",
-        })
-        .refine((val) => !isNaN(Number(val)), {
-            message: "Le nombre d'essieux doit être un nombre.",
-        })
-        .transform((val) => Number(val)),
+        .transform((val) => (val !== '' && val !== null && val !== undefined ? Number(val) : null)),
 
     numeroTelephone: z
         .string()
         .nullable()
         .optional()
         .refine(
-            (val) => form.value.type === 'Physique' || (val && /^0\d{9}$/.test(val)),
+            (val) => !val || /^0\d{9}$/.test(val),
             {
-                message: "Le numéro de téléphone du représentant légal est obligatoire et doit être au format : 0112170023",
+                message: "Le numéro de téléphone du représentant légal doit être au format : 0112170023",
             }
         ),
 
@@ -1487,17 +1451,11 @@ const formSchema = toTypedSchema(z.object({
 
     ProfessionRepresantant: z
         .string()
+        .max(20, {
+            message: "La profession du représentant légal doit contenir au plus 20 caractères.",
+        })
         .nullable()
-        .optional()
-        .refine(
-            (val) =>
-                form.value.type === "Physique" ||
-                (typeof val === "string" && val.length >= 3 && val.length <= 20),
-            {
-                message:
-                    "La profession du représentant légal doit contenir entre 3 et 20 caractères pour les types Morale.",
-            }
-        ),
+        .optional(),
 
 
     compteContribuable: z
@@ -1776,7 +1734,7 @@ const onSubmit = handleSubmit((values) => {
         codeRegion: form.value.codeRegion,
         marqueVehicule: selectedMarque.value,
         modelVehicule: selectedModele.value,
-        detail: nomTypeService.value,
+        detail: nomTypeService.value === 'Ré-immatriculation Diplomatique' ? 1 : (nomTypeService.value === 'Ré-immatriculation Ordinaire' ? 2 : null),
         reserverNumero: form.value.reserverNumero,
         numeroDiplomatique: form.value.numeroDiplomatique,
         vin: props.vin,
