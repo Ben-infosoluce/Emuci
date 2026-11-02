@@ -29,7 +29,7 @@ class PdcController extends Controller
     //dashbord
     public function showPdcDashboard()
     {
-        return inertia('Pdc/Dashbord', );
+        return inertia('Pdc/Dashbord',);
     }
     //verifie vin
     public function verifieVin($vin)
@@ -2030,7 +2030,7 @@ class PdcController extends Controller
     public function savePdcReImmatriculationData(Request $request)
     {
 
-        dd($request->all());
+        // dd($request->all());
         // Définition des règles de validation
         $rules = [
             'DateNaissance' => 'nullable|string',
