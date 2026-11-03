@@ -118,7 +118,7 @@ function generateChronoNumber(string $service)
 {
     $sites = [
         'POST' => 'ABJ1',
-        'REIM' => 'KGO',
+        'REIM' => 'ABJ',
         'DUPL' => 'BKE',
         'OPSP' => 'ABJ2',
     ];

@@ -2275,7 +2275,7 @@ class PdcController extends Controller
             }
 
             if (strtoupper(trim((string) $request->input('genre'))) === 'MOTOCYCLETTE') {
-                $id_type_service = 46; // Ré-immatriculation Motocyclette
+                $detail = [46]; // Ré-immatriculation Motocyclette
             }
 
             // Création du dossier
