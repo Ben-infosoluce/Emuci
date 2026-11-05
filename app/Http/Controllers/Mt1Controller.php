@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Models\Document;
 use App\Models\Dossier;
+use App\Models\Entreprise;
 use App\Models\ModificationLog;
 use App\Models\Vehicule;
 use Illuminate\Http\Request;
@@ -200,28 +202,62 @@ class Mt1Controller extends Controller
     //Pour valider post immatriculation(metre les valeurs dans les bonnes tables)
     private function validatePostImmatriculation($modificationLog)
     {
-        $new = json_decode($modificationLog->new_values, true);
+        $new = json_decode($modificationLog->new_values, true) ?? [];
+        $vehicule = Vehicule::find($modificationLog->model_id);
+
+        if (!$vehicule) {
+            return false;
+        }
+
+        // CLIENT : mise à jour, ou création si le véhicule n'avait pas encore de client
+        if (!empty($new['client'])) {
+            $clientData = $new['client'];
+            $clientId = $clientData['id'] ?? null;
+            unset($clientData['id']);
+
+            $client = $clientId
+                ? Client::find($clientId)
+                : $vehicule->r_vehicule_client;
+
+            if ($client) {
+                $client->update($clientData);
+            } else {
+                $client = Client::create(array_merge($clientData, [
+                    'password' => generateStrongPassword(8),
+                    'statut' => 1,
+                    'validite' => now()->addMonths(3),
+                ]));
+            }
+
+            $vehicule->id_client = $client->id;
+            $vehicule->save();
+        }
+
+        // ENTREPRISE : mise à jour, ou création si nécessaire
+        if (!empty($new['entreprise'])) {
+            $entrepriseData = $new['entreprise'];
+            $entrepriseId = $entrepriseData['id'] ?? null;
+            unset($entrepriseData['id']);
+
+            $entreprise = $entrepriseId
+                ? Entreprise::find($entrepriseId)
+                : $vehicule->r_vehicule_entreprise;
+
+            if ($entreprise) {
+                $entreprise->update($entrepriseData);
+            } else {
+                $entreprise = Entreprise::create($entrepriseData);
+            }
+
+            $vehicule->entreprise_id = $entreprise->id;
+            $vehicule->save();
+        }
 
         // VEHICULE
         if (!empty($new['vehicule'])) {
-            Vehicule::where('id', $modificationLog->model_id)
-                ->update($new['vehicule']);
-        }
-
-        // CLIENT
-        if (!empty($new['client'])) {
-            $vehicule = Vehicule::find($modificationLog->model_id);
-            if ($vehicule && $vehicule->r_vehicule_client) {
-                $vehicule->r_vehicule_client->update($new['client']);
-            }
-        }
-
-        // ENTREPRISE
-        if (!empty($new['entreprise'])) {
-            $vehicule = Vehicule::find($modificationLog->model_id);
-            if ($vehicule && $vehicule->r_vehicule_entreprise) {
-                $vehicule->r_vehicule_entreprise->update($new['entreprise']);
-            }
+            $vehiculeData = $new['vehicule'];
+            unset($vehiculeData['id']);
+            $vehicule->update($vehiculeData);
         }
 
         return true;

@@ -1301,9 +1301,9 @@ const form = ref({
     pu: data.pu || "",
     pv: data.pv || "",
     puissance: data.puissance || "",
-    placesAssises: data.placesAssises.toString() || "",
+    placesAssises: data.placesAssises?.toString() || "",
     sourcesEnergie: data.sourcesEnergie || "",
-    nombreEssieux: data.nombreEssieux.toString() || "",
+    nombreEssieux: data.nombreEssieux?.toString() || "",
     type: data.typePersonne || "",
     usage: data.usage || "",
     codeRegion: data.codeRegion || "",
@@ -1451,6 +1451,10 @@ const onSubmit = handleSubmit((values) => {
 function submitFinal() {
     const data = {
         ...formDataSummary.value,
+        // On privilégie les objets complets sélectionnés dans le formulaire,
+        // sinon on retombe sur les données initiales (véhicules importés sans ids).
+        marqueVehicule: selectedMarque.value || form.value.marqueVehicule || null,
+        modelVehicule: selectedModele.value || form.value.modelVehicule || null,
         id: props.data.immatriculation.id,
         selected: selected.value,  // Liste des IDs des services sélectionnés
         mutation: mutation.value, // ID de la mutation (ou null)
@@ -1501,7 +1505,7 @@ const fetchModeles = async () => {
 // Initialisation au montage du composant
 onMounted(async () => {
     await fetchMarques();
-    initializeForm();
+    await initializeForm();
 
     const params = new URLSearchParams(window.location.search);
     const ids = [];
@@ -1530,8 +1534,42 @@ const getTypeService = () => {
     }
 };
 
+// Recherche une marque par son id ou, à défaut, par son nom
+const resolveMarque = (marque) => {
+    if (!marque) return null;
+
+    if (marque.id) {
+        const byId = marques.value.find((item) => Number(item.id) === Number(marque.id));
+        if (byId) return byId;
+    }
+
+    if (marque.nom) {
+        const nom = marque.nom.toString().trim().toLowerCase();
+        return marques.value.find((item) => (item.nom || "").toString().trim().toLowerCase() === nom) || null;
+    }
+
+    return null;
+};
+
+// Recherche un modèle par son id ou, à défaut, par son nom
+const resolveModele = (modele) => {
+    if (!modele) return null;
+
+    if (modele.id) {
+        const byId = modeles.value.find((item) => Number(item.id) === Number(modele.id));
+        if (byId) return byId;
+    }
+
+    if (modele.nom) {
+        const nom = modele.nom.toString().trim().toLowerCase();
+        return modeles.value.find((item) => (item.nom || "").toString().trim().toLowerCase() === nom) || null;
+    }
+
+    return null;
+};
+
 // Initialisation du formulaire avec les données existantes
-const initializeForm = () => {
+const initializeForm = async () => {
     if (props.data && props.data.immatriculation) {
         const data = props.data.immatriculation;
         form.value = {
@@ -1554,9 +1592,9 @@ const initializeForm = () => {
             pu: data.pu || "",
             pv: data.pv || "",
             puissance: data.puissance || "",
-            placesAssises: data.placesAssises.toString() || "",
+            placesAssises: data.placesAssises?.toString() || "",
             sourcesEnergie: data.sourcesEnergie || "",
-            nombreEssieux: data.nombreEssieux.toString() || "",
+            nombreEssieux: data.nombreEssieux?.toString() || "",
             type: data.typePersonne || "",
             usage: data.usage || "",
             codeRegion: data.codeRegion || "",
@@ -1576,13 +1614,21 @@ const initializeForm = () => {
             modelVehicule: data.modelVehicule || null,
             gage: data.gage || null,
         };
-        if (data.marqueVehicule && data.marqueVehicule.id) {
-            selectedMarqueId.value = data.marqueVehicule.id;
-            fetchModeles().then(() => {
-                if (data.modelVehicule && data.modelVehicule.id) {
-                    selectedModeleId.value = data.modelVehicule.id;
-                }
-            });
+
+        // Les véhicules importés n'ont parfois pas de marque_id / model_id :
+        // on retrouve alors la marque et le modèle à partir de leurs libellés.
+        const marque = resolveMarque(data.marqueVehicule);
+        if (marque) {
+            selectedMarqueId.value = marque.id;
+            await fetchModeles();
+
+            const modele = resolveModele(data.modelVehicule);
+            if (modele) {
+                selectedModeleId.value = modele.id;
+            }
+
+            form.value.marqueVehicule = marque;
+            form.value.modelVehicule = selectedModele.value || data.modelVehicule || null;
         }
     }
 };

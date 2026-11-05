@@ -2832,7 +2832,7 @@ class PdcController extends Controller
     public function savePostImmatriculationDraft(Request $request, $vehiculeId)
     {
         // dd($request->all());
-        $typePersonne = $request->input('typePersonne');
+        $typePersonne = $request->input('typePersonne') ?? $request->input('type');
 
         // Récupération des modèles
         $vehicule = Vehicule::findOrFail($vehiculeId);
@@ -2846,6 +2846,9 @@ class PdcController extends Controller
             'date_naissance' => $request->input('DateNaissance'),
             'ville_naissance' => $request->input('villeNaissance'),
             'adresse' => $request->input('adresse'),
+            'district_client' => $request->input('district'),
+            'prefecture_client' => $request->input('prefecture'),
+            'sous_prefecture_client' => $request->input('sousPrefecture'),
             'telephone' => $request->input('phone'),
             'email' => $request->input('email'),
             'civilite' => $request->input('sex'),
@@ -2854,6 +2857,7 @@ class PdcController extends Controller
         $donneesEntreprise = null;
         if ($typePersonne != 'Physique') {
             $donneesEntreprise = [
+                'id' => $entreprise?->id,
                 'nom_entreprise' => $request->input('nomEntreprise'),
                 'nom_representant_legal' => $request->input('representantLegal'),
                 'telephone_representant_legal' => $request->input('numeroTelephone'),
@@ -2862,16 +2866,62 @@ class PdcController extends Controller
                 'prefecture' => $request->input('prefecture'),
                 'sous_prefecture' => $request->input('sousPrefecture'),
                 'region' => $request->input('region'),
-                'date_de_naissance_representant_legal' => $request->input('dateNaissanceRepresantant'),
-                'profession_representant_legal' => $request->input('professionRepresantant'),
+                'date_de_naissance_representant_legal' => $request->input('dateNaissanceRepresantant', $request->input('DateNaissanceRepresantant')),
+                'profession_representant_legal' => $request->input('professionRepresantant', $request->input('ProfessionRepresantant')),
             ];
         }
 
+        // Résolution de la marque et du modèle.
+        // Certains véhicules importés n'ont pas de marque_id / model_id (seulement les libellés).
+        $marqueRequest = $request->input('marqueVehicule');
+        $modelRequest = $request->input('modelVehicule');
+
+        $marqueNom = is_array($marqueRequest) ? ($marqueRequest['nom'] ?? null) : null;
+        $marqueNom = $marqueNom ?: $vehicule->marque;
+        $marqueId = is_array($marqueRequest) ? ($marqueRequest['id'] ?? null) : null;
+        if (empty($marqueId) && $marqueNom) {
+            $marqueId = DB::table('marque')->where('nom', $marqueNom)->value('id');
+        }
+
+        $modeleNom = is_array($modelRequest) ? ($modelRequest['nom'] ?? null) : null;
+        $modeleNom = $modeleNom ?: $vehicule->modele;
+        $modeleId = is_array($modelRequest) ? ($modelRequest['id'] ?? null) : null;
+        if (empty($modeleId) && $modeleNom) {
+            $modeleQuery = DB::table('model')->where('nom', $modeleNom);
+            if ($marqueId) {
+                $modeleQuery->where('marque_id', $marqueId);
+            }
+            $modeleId = $modeleQuery->value('id');
+        }
+
+        // Anciennes valeurs (avant toute création éventuelle de client)
+        $oldClient = $client ? $client->toArray() : [];
+
+        // Un véhicule importé peut ne pas encore avoir de client : on le crée
+        // pour que le dossier soit exploitable lors de la validation.
+        if (!$client) {
+            if (!$request->filled('firstname') || !$request->filled('lastname')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Le nom et le prénom du client sont obligatoires.',
+                ], 422);
+            }
+
+            $client = Client::create(array_merge($donneesClient, [
+                'password' => generateStrongPassword(8),
+                'statut' => 1,
+                'validite' => now()->addMonths(3),
+            ]));
+        }
+
+        $donneesClient['id'] = $client->id;
+
         $donneesVehicule = [
-            'annee_production' => $request->input('anneeProduction'),
+            'id' => $vehicule->id,
+            'annee_production' => $request->input('anneeProduction', $request->input('AnneeProduction')),
             'vin' => $request->input('vin'),
-            'marque' => $request->marqueVehicule['nom'],
-            'modele' => $request->modelVehicule['nom'],
+            'marque' => $marqueNom,
+            'modele' => $modeleNom,
             'couleur' => $request->input('couleurVehicule'),
             'source_energie' => $request->input('sourcesEnergie'),
             'genre_vehicule' => $request->input('genre'),
@@ -2879,17 +2929,18 @@ class PdcController extends Controller
             'poids_utile' => $request->input('pu'),
             'poids_vide' => $request->input('pv'),
             'puissance_administrative' => $request->input('puissance'),
-            'places_assises' => intval(preg_replace('/\D/', '', $request->input('placesAssises'))),
-            'nombre_essieux' => intval(preg_replace('/\D/', '', $request->input('nombreEssieux'))),
-            'date_mise_circulation' => $request->input('dateCirculation'),
+            'places_assises' => intval(preg_replace('/\D/', '', (string) $request->input('placesAssises'))),
+            'nombre_essieux' => intval(preg_replace('/\D/', '', (string) $request->input('nombreEssieux'))),
+            'date_mise_circulation' => $request->input('dateCirculation', $request->input('DateCirculation')),
             'carrosserie' => $request->input('carrosserie'),
             'type_technique' => $request->input('typeTechnique'),
             'code_de_region' => $request->input('codeRegion'),
             'usage_vehicule' => $request->input('usage'),
             'physique_morale' => $typePersonne,
-            'model_id' => $request->modelVehicule['id'],
-            'marque_id' => $request->marqueVehicule['id'],
+            'model_id' => $modeleId,
+            'marque_id' => $marqueId,
             'entreprise_id' => $typePersonne != 'Physique' && $entreprise ? $entreprise->id : null,
+            'id_client' => $client->id,
             'gage' => $request->input('gage') === 'gage' ? 'gage' : null,
         ];
 
@@ -2900,7 +2951,7 @@ class PdcController extends Controller
             'user_id' => getConnectedUserId(),
             'old_values' => json_encode([
                 'vehicule' => $vehicule->toArray(),
-                'client' => $client->toArray(),
+                'client' => $oldClient,
                 'entreprise' => $entreprise ? $entreprise->toArray() : null,
             ], JSON_UNESCAPED_UNICODE),
             'new_values' => json_encode([
@@ -2948,23 +2999,57 @@ class PdcController extends Controller
 
         DB::beginTransaction();
         try {
-            // Mise à jour client
-            $client = Client::findOrFail($newValues['client']['id'] ?? null);
-            $client->update($newValues['client']);
+            $vehicule = Vehicule::findOrFail($newValues['vehicule']['id'] ?? $log->model_id);
+
+            // Mise à jour (ou création) du client
+            $client = null;
+            if (!empty($newValues['client'])) {
+                $clientData = $newValues['client'];
+                $clientId = $clientData['id'] ?? null;
+                unset($clientData['id']);
+
+                $client = $clientId
+                    ? Client::find($clientId)
+                    : $vehicule->r_vehicule_client;
+
+                if ($client) {
+                    $client->update($clientData);
+                } else {
+                    $client = Client::create(array_merge($clientData, [
+                        'password' => generateStrongPassword(8),
+                        'statut' => 1,
+                        'validite' => now()->addMonths(3),
+                    ]));
+                }
+
+                $vehicule->id_client = $client->id;
+            }
 
             // Mise à jour entreprise si nécessaire
-            if (isset($newValues['entreprise'])) {
-                $entreprise = Entreprise::find($newValues['entreprise']['id'] ?? null);
+            $entreprise = null;
+            if (!empty($newValues['entreprise'])) {
+                $entrepriseData = $newValues['entreprise'];
+                $entrepriseId = $entrepriseData['id'] ?? null;
+                unset($entrepriseData['id']);
+
+                $entreprise = $entrepriseId
+                    ? Entreprise::find($entrepriseId)
+                    : $vehicule->r_vehicule_entreprise;
+
                 if ($entreprise) {
-                    $entreprise->update($newValues['entreprise']);
+                    $entreprise->update($entrepriseData);
                 } else {
-                    $entreprise = Entreprise::create($newValues['entreprise']);
+                    $entreprise = Entreprise::create($entrepriseData);
                 }
+
+                $vehicule->entreprise_id = $entreprise->id;
             }
 
             // Mise à jour véhicule
-            $vehicule = Vehicule::findOrFail($newValues['vehicule']['id']);
-            $vehicule->update($newValues['vehicule']);
+            $vehiculeData = $newValues['vehicule'];
+            unset($vehiculeData['id']);
+            $vehicule->update($vehiculeData);
+            $vehicule->save();
 
             DB::commit();
 
@@ -3121,7 +3206,9 @@ class PdcController extends Controller
         $validated = $request->validate([
             'payload.vehicule_id' => 'required|integer|exists:vehicules,id',
             'payload.detail' => 'required|array|min:1',
-            'payload.client_id' => 'required|integer|exists:clients,id',
+            // Un véhicule importé peut ne pas avoir de client : le duplicata
+            // doit malgré tout pouvoir être créé.
+            'payload.client_id' => 'nullable|integer|exists:clients,id',
         ]);
 
         // Vérifier duplicata existant
@@ -3170,13 +3257,29 @@ class PdcController extends Controller
                     'date_naissance' => $postImtData['DateNaissance'] ?? null,
                     'ville_naissance' => $postImtData['villeNaissance'] ?? null,
                     'adresse' => $postImtData['adresse'] ?? null,
+                    'district_client' => $postImtData['district'] ?? null,
+                    'prefecture_client' => $postImtData['prefecture'] ?? null,
+                    'sous_prefecture_client' => $postImtData['sousPrefecture'] ?? null,
                     'telephone' => $postImtData['phone'] ?? null,
                     'email' => $postImtData['email'] ?? null,
                     'civilite' => $postImtData['sex'] ?? null,
                 ];
 
-                $oldClientData = $client->getOriginal();
-                $client->update($donneesClient);
+                $oldClientData = $client ? $client->getOriginal() : [];
+
+                if ($client) {
+                    $client->update($donneesClient);
+                } elseif (!empty($donneesClient['nom']) && !empty($donneesClient['prenom'])) {
+                    $client = Client::create(array_merge($donneesClient, [
+                        'password' => generateStrongPassword(8),
+                        'statut' => 1,
+                        'validite' => now()->addMonths(3),
+                    ]));
+                }
+
+                if ($client) {
+                    $donneesClient['id'] = $client->id;
+                }
 
                 /*
             |--------------------------------------------------------------------------
@@ -3190,6 +3293,7 @@ class PdcController extends Controller
                 if ($typePersonne != 'Physique') {
 
                     $donneesEntreprise = [
+                        'id' => $entreprise?->id,
                         'nom_entreprise' => $postImtData['nomEntreprise'] ?? null,
                         'nom_representant_legal' => $postImtData['representantLegal'] ?? null,
                         'telephone_representant_legal' => $postImtData['numeroTelephone'] ?? null,
@@ -3198,8 +3302,8 @@ class PdcController extends Controller
                         'prefecture' => $postImtData['prefecture'] ?? null,
                         'sous_prefecture' => $postImtData['sousPrefecture'] ?? null,
                         'region' => $postImtData['region'] ?? null,
-                        'date_de_naissance_representant_legal' => $postImtData['DateNaissanceRepresantant'] ?? null,
-                        'profession_representant_legal' => $postImtData['professionRepresantant'] ?? null,
+                        'date_de_naissance_representant_legal' => $postImtData['dateNaissanceRepresantant'] ?? $postImtData['DateNaissanceRepresantant'] ?? null,
+                        'profession_representant_legal' => $postImtData['professionRepresantant'] ?? $postImtData['ProfessionRepresantant'] ?? null,
                     ];
 
                     if (!$entreprise) {
@@ -3216,12 +3320,35 @@ class PdcController extends Controller
             |--------------------------------------------------------------------------
             */
 
+                // Résolution de la marque et du modèle (véhicules importés sans IDs)
+                $marqueRequest = $postImtData['marqueVehicule'] ?? null;
+                $modelRequest = $postImtData['modelVehicule'] ?? null;
+
+                $marqueNom = is_array($marqueRequest) ? ($marqueRequest['nom'] ?? null) : null;
+                $marqueNom = $marqueNom ?: $vehicule->marque;
+                $marqueId = is_array($marqueRequest) ? ($marqueRequest['id'] ?? null) : null;
+                if (empty($marqueId) && $marqueNom) {
+                    $marqueId = DB::table('marque')->where('nom', $marqueNom)->value('id');
+                }
+
+                $modeleNom = is_array($modelRequest) ? ($modelRequest['nom'] ?? null) : null;
+                $modeleNom = $modeleNom ?: $vehicule->modele;
+                $modeleId = is_array($modelRequest) ? ($modelRequest['id'] ?? null) : null;
+                if (empty($modeleId) && $modeleNom) {
+                    $modeleQuery = DB::table('model')->where('nom', $modeleNom);
+                    if ($marqueId) {
+                        $modeleQuery->where('marque_id', $marqueId);
+                    }
+                    $modeleId = $modeleQuery->value('id');
+                }
+
                 $donneesVehicule = [
 
-                    'annee_production' => $postImtData['AnneeProduction'] ?? null,
+                    'id' => $vehicule->id,
+                    'annee_production' => $postImtData['AnneeProduction'] ?? $postImtData['anneeProduction'] ?? null,
                     'vin' => $postImtData['vin'] ?? null,
-                    'marque' => $postImtData['marqueVehicule']['nom'] ?? null,
-                    'modele' => $postImtData['modelVehicule']['nom'] ?? null,
+                    'marque' => $marqueNom,
+                    'modele' => $modeleNom,
                     'couleur' => $postImtData['couleurVehicule'] ?? null,
                     'source_energie' => $postImtData['sourcesEnergie'] ?? null,
                     'genre_vehicule' => $postImtData['genre'] ?? null,
@@ -3230,10 +3357,10 @@ class PdcController extends Controller
                     'poids_vide' => $postImtData['pv'] ?? null,
                     'puissance_administrative' => $postImtData['puissance'] ?? null,
 
-                    'places_assises' => intval(preg_replace('/\D/', '', $postImtData['placesAssises'] ?? '0')),
-                    'nombre_essieux' => intval(preg_replace('/\D/', '', $postImtData['nombreEssieux'] ?? '0')),
+                    'places_assises' => intval(preg_replace('/\D/', '', (string) ($postImtData['placesAssises'] ?? '0'))),
+                    'nombre_essieux' => intval(preg_replace('/\D/', '', (string) ($postImtData['nombreEssieux'] ?? '0'))),
 
-                    'date_mise_circulation' => $postImtData['DateCirculation'] ?? null,
+                    'date_mise_circulation' => $postImtData['DateCirculation'] ?? $postImtData['dateCirculation'] ?? null,
 
                     'carrosserie' => $postImtData['carrosserie'] ?? null,
                     'type_technique' => $postImtData['typeTechnique'] ?? null,
@@ -3242,8 +3369,9 @@ class PdcController extends Controller
 
                     'physique_morale' => $typePersonne,
 
-                    'model_id' => $postImtData['modelVehicule']['id'] ?? null,
-                    'marque_id' => $postImtData['marqueVehicule']['id'] ?? null,
+                    'model_id' => $modeleId,
+                    'marque_id' => $marqueId,
+                    'id_client' => $client?->id,
 
                     'entreprise_id' => $typePersonne != 'Physique' && $entreprise
                         ? $entreprise->id
@@ -3285,13 +3413,13 @@ class PdcController extends Controller
                 // Remplacez cette ligne :
                 // $detail = array_merge($postImtSelected);
                 // Par :
-                $detail = $postImtSelected[0]; // ou $postImtSelected si c'est déjà un tableau plat
+                $detail = $postImtSelected[0] ?? []; // ou $postImtSelected si c'est déjà un tableau plat
 
                 // Puis encodez en JSON
                 $dossierPost = Dossier::create([
                     'id_vehicule' => $vehicule->id,
                     'id_user' => getConnectedUserId(),
-                    'id_client' => $client->id,
+                    'id_client' => $client?->id,
                     'id_service' => 3,
                     'detail' => json_encode($detail, JSON_UNESCAPED_UNICODE),
                     'id_site' => getIdSite(),
@@ -3317,7 +3445,7 @@ class PdcController extends Controller
                 'id_vehicule' => $vehicule->id,
                 'id_user' => getConnectedUserId(),
                 'num_chrono' => generateChronoNumber('DUPL'),
-                'id_client' => $client_id ?? $client->id,
+                'id_client' => $client_id ?? $client?->id,
                 'id_site' => getIdSite(),
                 'detail' => json_encode($detailDuplicata, JSON_UNESCAPED_UNICODE),
                 'id_service' => 4,
@@ -3360,20 +3488,33 @@ class PdcController extends Controller
             $client = $vehicule->r_vehicule_client;
             $entreprise = $vehicule->r_vehicule_entreprise;
 
-            $client->update([
+            $donneesClient = [
                 'nom' => $request->input('firstname'),
                 'prenom' => $request->input('lastname'),
                 'date_naissance' => $request->input('DateNaissance'),
                 'ville_naissance' => $request->input('villeNaissance'),
                 'adresse' => $request->input('adresse'),
+                'district_client' => $request->input('district'),
+                'prefecture_client' => $request->input('prefecture'),
+                'sous_prefecture_client' => $request->input('sousPrefecture'),
                 'telephone' => $request->input('phone'),
                 'email' => $request->input('email'),
                 'civilite' => $request->input('sex'),
-            ]);
+            ];
+
+            if ($client) {
+                $client->update($donneesClient);
+            } elseif (!empty($donneesClient['nom']) && !empty($donneesClient['prenom'])) {
+                $client = Client::create(array_merge($donneesClient, [
+                    'password' => generateStrongPassword(8),
+                    'statut' => 1,
+                    'validite' => now()->addMonths(3),
+                ]));
+            }
 
             $modificationsEntreprise = [];
 
-            if ($request->typePersonne === 'Morale') {
+            if ($typePersonne && $typePersonne != 'Physique') {
                 $donneesEntreprise = [
                     'nom_entreprise' => $request->input('nomEntreprise'),
                     'nom_representant_legal' => $request->input('representantLegal'),
@@ -3383,8 +3524,8 @@ class PdcController extends Controller
                     'prefecture' => $request->input('prefecture'),
                     'sous_prefecture' => $request->input('sousPrefecture'),
                     'region' => $request->input('region'),
-                    'date_de_naissance_representant_legal' => $request->input('dateNaissanceRepresantant'),
-                    'profession_representant_legal' => $request->input('professionRepresantant'),
+                    'date_de_naissance_representant_legal' => $request->input('dateNaissanceRepresantant', $request->input('DateNaissanceRepresantant')),
+                    'profession_representant_legal' => $request->input('professionRepresantant', $request->input('ProfessionRepresantant')),
                 ];
 
                 if (!$entreprise) {
@@ -3396,11 +3537,33 @@ class PdcController extends Controller
                 }
             }
 
+            // Résolution de la marque et du modèle (véhicules importés sans IDs)
+            $marqueRequest = $request->input('marqueVehicule');
+            $modelRequest = $request->input('modelVehicule');
+
+            $marqueNom = is_array($marqueRequest) ? ($marqueRequest['nom'] ?? null) : null;
+            $marqueNom = $marqueNom ?: $vehicule->marque;
+            $marqueId = is_array($marqueRequest) ? ($marqueRequest['id'] ?? null) : null;
+            if (empty($marqueId) && $marqueNom) {
+                $marqueId = DB::table('marque')->where('nom', $marqueNom)->value('id');
+            }
+
+            $modeleNom = is_array($modelRequest) ? ($modelRequest['nom'] ?? null) : null;
+            $modeleNom = $modeleNom ?: $vehicule->modele;
+            $modeleId = is_array($modelRequest) ? ($modelRequest['id'] ?? null) : null;
+            if (empty($modeleId) && $modeleNom) {
+                $modeleQuery = DB::table('model')->where('nom', $modeleNom);
+                if ($marqueId) {
+                    $modeleQuery->where('marque_id', $marqueId);
+                }
+                $modeleId = $modeleQuery->value('id');
+            }
+
             $vehicule->update([
-                'annee_production' => $request->input('anneeProduction'),
+                'annee_production' => $request->input('anneeProduction', $request->input('AnneeProduction')),
                 'vin' => $request->input('vin'),
-                'marque' => $request->marqueVehicule['nom'],
-                'modele' => $request->modelVehicule['nom'],
+                'marque' => $marqueNom,
+                'modele' => $modeleNom,
                 'couleur' => $request->input('couleurVehicule'),
                 'source_energie' => $request->input('sourcesEnergie'),
                 'genre_vehicule' => $request->input('genre'),
@@ -3408,16 +3571,17 @@ class PdcController extends Controller
                 'poids_utile' => $request->input('pu'),
                 'poids_vide' => $request->input('pv'),
                 'puissance_administrative' => $request->input('puissance'),
-                'places_assises' => intval(preg_replace('/\D/', '', $request->input('placesAssises'))),
-                'nombre_essieux' => intval(preg_replace('/\D/', '', $request->input('nombreEssieux'))),
-                'date_mise_circulation' => $request->input('dateCirculation'),
+                'places_assises' => intval(preg_replace('/\D/', '', (string) $request->input('placesAssises'))),
+                'nombre_essieux' => intval(preg_replace('/\D/', '', (string) $request->input('nombreEssieux'))),
+                'date_mise_circulation' => $request->input('dateCirculation', $request->input('DateCirculation')),
                 'carrosserie' => $request->input('carrosserie'),
                 'type_technique' => $request->input('typeTechnique'),
                 'code_de_region' => $request->input('codeRegion'),
                 'usage_vehicule' => $request->input('usage'),
-                'physique_morale' => $request->input('typePersonne') === 'Morale' ? 2 : 1,
-                'model_id' => $request->modelVehicule['id'],
-                'marque_id' => $request->marqueVehicule['id'],
+                'physique_morale' => $typePersonne != 'Physique' ? 2 : 1,
+                'model_id' => $modeleId,
+                'marque_id' => $marqueId,
+                'id_client' => $client?->id,
                 'entreprise_id' => $entreprise ? $entreprise->id : null
             ]);
 
@@ -3666,10 +3830,14 @@ class PdcController extends Controller
         $vehicule = Vehicule::with([
             'r_vehicule_client',
             'r_vehicule_entreprise',
-        ])->where('vin', $vin)->get();
+        ])->where('vin', $vin)->first();
+
+        if (!$vehicule) {
+            abort(404, 'Véhicule non trouvé');
+        }
 
         // dd('Rti/Immatriculation/new/' . $id);
-        return inertia('Pdc/Duplicata/components/createForm', ['vehicule' => $vehicule[0], 'selected' => $selected, 'postImtData' => $postImtData]);
+        return inertia('Pdc/Duplicata/components/createForm', ['vehicule' => $vehicule, 'selected' => $selected, 'postImtData' => $postImtData]);
     }
     public function showViewPdcDuplicataData($vin)
     {
@@ -3723,21 +3891,24 @@ class PdcController extends Controller
         $vinWithGenre = $donne['vinWithGenre'];
 
         // Séparer vin et nb_plaque via _
-        [$vin, $nb_plaque] = explode('_', $vinWithGenre);
-        // dd($vin, $nb_plaque);
+        $vinParts = explode('_', $vinWithGenre);
+        $vin = $vinParts[0] ?? null;
+        if (!$vin) {
+            abort(400, 'VIN invalide');
+        }
 
-        $vehicule = Vehicule::where('vin', $vin)->get();
-        // dd($vehicule[0]->genre_vehicule);
+        $vehicule = Vehicule::where('vin', $vin)->first();
+        if (!$vehicule) {
+            abort(404, 'Véhicule non trouvé');
+        }
 
-        // $nb_plaque = $dossier->r_dossier_vehicule->nb_plaque;
-        $genre = $vehicule[0]->genre_vehicule;
-        // dd($genre);
+        $genre = $vehicule->genre_vehicule;
         $genreData = DB::table('genre')
             ->where('nom', $genre)
-            ->get();
+            ->first();
 
-        $nb_plaque = $genreData[0]->nb_plaque;
-        // dd($genre, $genreData[0]->nb_plaque);
+        $nb_plaque = $genreData->nb_plaque ?? $vehicule->nb_plaque ?? 1;
+        // dd($genre, $nb_plaque);
 
         // Récupérer les élemnts de facture avec leurs détails
         $typeServices = DB::table('detail_type_services')

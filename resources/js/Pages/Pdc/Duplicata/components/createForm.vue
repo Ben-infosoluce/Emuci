@@ -180,10 +180,18 @@ onMounted(() => {
 
 
 function SendData() {
+    const selectedService = Array.isArray(props.selected) ? props.selected[0] : null;
+
+    if (!selectedService) {
+        toast.error('Veuillez sélectionner au moins un type de service.');
+        return;
+    }
+
     const payload = {
         vehicule_id: data.value.id,
-        detail: [props.selected[0].id],
-        client_id: data.value.id_client
+        detail: [selectedService.id],
+        // Un véhicule importé peut ne pas encore avoir de client
+        client_id: data.value.id_client ?? null
     }
 
     // 🔥 On regroupe tout dans un seul objet

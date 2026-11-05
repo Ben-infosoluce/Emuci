@@ -1308,9 +1308,9 @@ const form = ref({
     pu: data.pu || '',
     pv: data.pv || '',
     puissance: data.puissance || '',
-    placesAssises: data.placesAssises.toString() || '',
+    placesAssises: data.placesAssises?.toString() || '',
     sourcesEnergie: data.sourcesEnergie || '',
-    nombreEssieux: data.nombreEssieux.toString() || '',
+    nombreEssieux: data.nombreEssieux?.toString() || '',
     type: data.typePersonne || '',
     usage: data.usage || '',
     codeRegion: data.codeRegion || '',
@@ -1341,8 +1341,42 @@ const ProfessionRepresantantError = ref('');
 const compteContribuableError = ref('');
 const DateNaissanceRepresantantError = ref('');
 
+// Recherche une marque par son id ou, à défaut, par son nom
+const resolveMarque = (marque) => {
+    if (!marque) return null;
+
+    if (marque.id) {
+        const byId = marques.value.find((item) => Number(item.id) === Number(marque.id));
+        if (byId) return byId;
+    }
+
+    if (marque.nom) {
+        const nom = marque.nom.toString().trim().toLowerCase();
+        return marques.value.find((item) => (item.nom || '').toString().trim().toLowerCase() === nom) || null;
+    }
+
+    return null;
+};
+
+// Recherche un modèle par son id ou, à défaut, par son nom
+const resolveModele = (modele) => {
+    if (!modele) return null;
+
+    if (modele.id) {
+        const byId = modeles.value.find((item) => Number(item.id) === Number(modele.id));
+        if (byId) return byId;
+    }
+
+    if (modele.nom) {
+        const nom = modele.nom.toString().trim().toLowerCase();
+        return modeles.value.find((item) => (item.nom || '').toString().trim().toLowerCase() === nom) || null;
+    }
+
+    return null;
+};
+
 // Fonction pour initialiser le formulaire avec les données existantes
-const initializeForm = () => {
+const initializeForm = async () => {
     if (props.data && props.data.immatriculation) {
         const data = props.data.immatriculation;
 
@@ -1364,12 +1398,12 @@ const initializeForm = () => {
             typeTechnique: data.typeTechnique || '',
             genre: data.genre || '',
             ptac: data.ptac || '',
-            pu: data.pu.toString() || '',
-            pv: data.pv.toString() || '',
+            pu: data.pu?.toString() || '',
+            pv: data.pv?.toString() || '',
             puissance: data.puissance || '',
-            placesAssises: data.placesAssises.toString() || '',
+            placesAssises: data.placesAssises?.toString() || '',
             sourcesEnergie: data.sourcesEnergie || '',
-            nombreEssieux: data.nombreEssieux.toString() || '',
+            nombreEssieux: data.nombreEssieux?.toString() || '',
             type: data.typePersonne || '',
             usage: data.usage || '',
             codeRegion: data.codeRegion || '',
@@ -1390,15 +1424,20 @@ const initializeForm = () => {
             modelVehicule: data.modelVehicule || null
         };
 
-        // Initialiser les sélecteurs de marque et modèle
-        if (data.marqueVehicule && data.marqueVehicule.id) {
-            selectedMarqueId.value = data.marqueVehicule.id;
-            // Charger les modèles pour cette marque
-            fetchModeles().then(() => {
-                if (data.modelVehicule && data.modelVehicule.id) {
-                    selectedModeleId.value = data.modelVehicule.id;
-                }
-            });
+        // Les véhicules importés n'ont parfois pas de marque_id / model_id :
+        // on retrouve alors la marque et le modèle à partir de leurs libellés.
+        const marque = resolveMarque(data.marqueVehicule);
+        if (marque) {
+            selectedMarqueId.value = marque.id;
+            await fetchModeles();
+
+            const modele = resolveModele(data.modelVehicule);
+            if (modele) {
+                selectedModeleId.value = modele.id;
+            }
+
+            form.value.marqueVehicule = marque;
+            form.value.modelVehicule = selectedModele.value || data.modelVehicule || null;
         }
     }
 };
@@ -1644,6 +1683,10 @@ const onSubmit = handleSubmit((values) => {
 function submitFinal() {
     const data = {
         ...formDataSummary.value,
+        // On privilégie les objets complets sélectionnés dans le formulaire,
+        // sinon on retombe sur les données initiales (véhicules importés sans ids).
+        marqueVehicule: selectedMarque.value || form.value.marqueVehicule || null,
+        modelVehicule: selectedModele.value || form.value.modelVehicule || null,
         id: props.data.immatriculation.id,// Ajouter l'ID pour la mise à jour
         selected: selected.value,
         mutation: mutation.value
@@ -1652,7 +1695,7 @@ function submitFinal() {
     // console.log(props.dossier)
     //visité show.new.service.pdc.duplicata
 
-    const vinWithGenre = `${props.data.immatriculation.vin}_${props.genreVehicule.nb_plaque}`;
+    const vinWithGenre = `${props.data.immatriculation.vin}_${props.genreVehicule?.nb_plaque ?? ''}`;
 
     const donne = {
         postImtData: data,
@@ -1699,7 +1742,7 @@ const vin = ref('')
 // Initialisation au montage du composant
 onMounted(async () => {
     await fetchMarques();
-    initializeForm();
+    await initializeForm();
     // 6. Logs pour vérification
     console.log('toto VIN:', props.vin);
     // Extraire uniquement les IDs des services sélectionnés
