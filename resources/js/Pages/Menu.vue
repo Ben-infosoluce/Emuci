@@ -86,7 +86,16 @@
                                 <path
                                     d="m17.418 3.623-.018-.008a6.713 6.713 0 0 0-2.4-.569V2h1a1 1 0 1 0 0-2h-2a1 1 0 0 0-1 1v2H9.89A6.977 6.977 0 0 1 12 8v5h-2V8A5 5 0 1 0 0 8v6a1 1 0 0 0 1 1h8v4a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-4h6a1 1 0 0 0 1-1V8a5 5 0 0 0-2.582-4.377ZM6 12H4a1 1 0 0 1 0-2h2a1 1 0 0 1 0 2Z" />
                             </svg>
-                            <span class="flex-1 ms-3 whitespace-nowrap">Modification</span>
+                            <span class="flex-1 ms-3 whitespace-nowrap">Corrections</span>
+                        </a>
+                    </Link>
+                </li>
+                <li :class="{ 'active-page': $page.component.startsWith('Pdc/DemandeModification') }">
+                    <Link :href="route('show.pdc.demandes.modification')">
+                        <a
+                            class="flex items-center p-2 text-white  hover:text-black  rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <ClipboardList />
+                            <span class="flex-1 ms-3 whitespace-nowrap">Demande modification</span>
                         </a>
                     </Link>
                 </li>
@@ -352,6 +361,17 @@
                     </Link>
                 </li>
                 <li :class="{
+                    'active-page': $page.component.startsWith('Admin/DemandesModification/'),
+                }">
+                    <Link :href="route('show.admin.demandes.modification')">
+                        <a
+                            class="flex items-center p-2 text-white hover:text-black rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <ClipboardList />
+                            <span class="flex-1 ms-3 whitespace-nowrap">Demande modification</span>
+                        </a>
+                    </Link>
+                </li>
+                <li :class="{
                     'active-page': $page.component == 'Admin/Genres/index',
                 }">
                     <Link :href="route('genres.index')">
@@ -503,7 +523,7 @@ import { storeToRefs } from "pinia";
 import { useCaisseStore } from "@/stores/mainStore";
 import {
     User, UsersRound, SquareStack, Layers2, ArrowsUpFromLine, LayoutDashboard,
-    ChartColumnStacked, RectangleEllipsis, ChartSpline, Car, Columns, History
+    ChartColumnStacked, RectangleEllipsis, ChartSpline, Car, Columns, History, ClipboardList
 } from 'lucide-vue-next';
 
 

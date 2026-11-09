@@ -1385,10 +1385,10 @@ const formSchema = toTypedSchema(z.object({
             // Si type Morale → val doit exister et être une string
             if (typeof val !== "string") return false;
 
-            // Longueur entre 3 et 20 caractères
-            return val.length >= 3 && val.length <= 20;
+            // Longueur entre 3 et 255 caractères
+            return val.length >= 3 && val.length <= 255;
         }, {
-            message: "Le nom de l'entreprise doit contenir entre 3 et 20 caractères pour les types Morale.",
+            message: "Le nom de l'entreprise doit contenir entre 3 et 255 caractères pour les types Morale.",
         }),
 
     registreCommerce: z

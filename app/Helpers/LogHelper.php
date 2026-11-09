@@ -21,6 +21,10 @@ class LogHelper
             return; // Rien à enregistrer
         }
 
+        if (empty($userId)) {
+            return; // Aucun utilisateur identifiable : on n'écrit pas de log
+        }
+
         // Si pas d'anciennes valeurs fournies, on prend celles de l'instance
         if (is_null($oldValues)) {
             $oldValues = $modelInstance->getOriginal();

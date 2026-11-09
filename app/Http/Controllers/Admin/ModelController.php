@@ -58,8 +58,6 @@ class ModelController extends Controller
         DB::table('model')->insert([
             'marque_id' => $validated['marque_id'],
             'nom' => $validated['nom'],
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         return redirect()->back()->with('success', 'Modèle créé avec succès');
@@ -99,7 +97,6 @@ class ModelController extends Controller
             ->update([
                 'marque_id' => $validated['marque_id'],
                 'nom' => $validated['nom'],
-                'updated_at' => now(),
             ]);
 
         return redirect()->back()->with('success', 'Modèle modifié avec succès');

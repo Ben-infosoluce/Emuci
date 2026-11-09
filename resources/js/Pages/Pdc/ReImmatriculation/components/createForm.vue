@@ -1414,10 +1414,10 @@ const formSchema = toTypedSchema(z.object({
         .refine(
             (val) =>
                 form.value.type === "Physique" ||
-                (typeof val === "string" && val.length >= 3 && val.length <= 20),
+                (typeof val === "string" && val.length >= 3 && val.length <= 255),
             {
                 message:
-                    "Le registre de commerce doit contenir entre 3 et 20 caractères pour les types Morale.",
+                    "Le nom de l'entreprise doit contenir entre 3 et 255 caractères pour les types Morale.",
             }
         ),
 

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use App\Models\ControlleurCaisse;
+use App\Support\ModificationFields;
 
 class CaisseController extends Controller
 {
@@ -239,7 +240,7 @@ class CaisseController extends Controller
     public function showCaisseModificationGetData($vin)
     {
         $dossiers = Dossier::with([
-            'r_dossier_vehicule',
+            'r_dossier_vehicule.r_vehicule_entreprise',
             'r_dossier_user',
             'r_dossier_client',
             'r_dossier_documents',
@@ -252,9 +253,13 @@ class CaisseController extends Controller
             abort(404, 'Dossier non trouvé');
         }
 
+        $entreprise = $dossiers->r_dossier_vehicule?->r_vehicule_entreprise;
+
         return inertia('Caisse/components/Modification', [
             'chrono' => $vin,
             'dossier' => $dossiers,
+            'entreprise' => $entreprise,
+            'sections' => ModificationFields::sections(),
         ]);
     }
 

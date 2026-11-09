@@ -1309,7 +1309,8 @@ class PdcController extends Controller
             'r_dossier_documents',
             'r_dossier_services',
             'r_dossier_services.r_service_types',
-            'r_dossier_transactions'
+            'r_dossier_transactions',
+            'r_dossier_demande_modification_validee'
         ])->where('id_service', 1);
 
         $filtre_per_page = $request->input('filtre_per_page', 10);
@@ -1974,7 +1975,8 @@ class PdcController extends Controller
             'r_dossier_documents',
             'r_dossier_services',
             'r_dossier_services.r_service_types',
-            'r_dossier_transactions'
+            'r_dossier_transactions',
+            'r_dossier_demande_modification_validee'
         ])->where('id_service', 2);
 
         $filtre_per_page = $request->input('filtre_per_page', 10);
@@ -2640,7 +2642,8 @@ class PdcController extends Controller
             'r_dossier_documents',
             'r_dossier_services',
             'r_dossier_services.r_service_types',
-            'r_dossier_transactions'
+            'r_dossier_transactions',
+            'r_dossier_demande_modification_validee'
         ])->where('id_service', 3);
 
         $filtre_per_page = $request->input('filtre_per_page', 10);
@@ -3122,7 +3125,8 @@ class PdcController extends Controller
             'r_dossier_documents',
             'r_dossier_services',
             'r_dossier_services.r_service_types',
-            'r_dossier_transactions'
+            'r_dossier_transactions',
+            'r_dossier_demande_modification_validee'
         ])->where('id_service', 4);
 
         $filtre_per_page = $request->input('filtre_per_page', 10);

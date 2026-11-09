@@ -69,8 +69,6 @@ class MarqueController extends Controller
 
         DB::table('marque')->insert([
             'nom' => $validated['nom'],
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         return redirect()->back()->with('success', 'Marque créée avec succès');
@@ -105,7 +103,6 @@ class MarqueController extends Controller
             ->where('id', $id)
             ->update([
                 'nom' => $validated['nom'],
-                'updated_at' => now(),
             ]);
 
         return redirect()->back()->with('success', 'Marque modifiée avec succès');

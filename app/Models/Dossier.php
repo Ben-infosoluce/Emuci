@@ -41,4 +41,20 @@ class Dossier extends Model
     {
         return $this->hasMany(Transaction::class, 'id_dossier');
     }
+
+    public function r_dossier_demandes_modification()
+    {
+        return $this->hasMany(DemandeModification::class, 'dossier_id');
+    }
+
+    /**
+     * Dernière demande de modification validée par l'administration et non
+     * encore appliquée par le PDC.
+     */
+    public function r_dossier_demande_modification_validee()
+    {
+        return $this->hasOne(DemandeModification::class, 'dossier_id')
+            ->where('statut', 2)
+            ->latestOfMany();
+    }
 }

@@ -4,7 +4,7 @@
         <div
             class="sticky top-[-20px] z-10 bg-[#f1f5f9] dark:bg-gray-900 flex flex-col space-y-4 px-8 py-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <h4 class="text-2xl font-bold tracking-tight">
-                Demander de correction
+                Demande de modification
             </h4>
             <div class="flex items-center space-x-2">
                 <Button @click="returnBack()">
@@ -19,220 +19,66 @@
                 <Card class="h-full flex flex-col">
                     <ScrollArea class="h-full w-full rounded-md border">
                         <div class="m-8">
-                            <h3>
-                                informations du véhicule - VIN:
-                                <strong>{{
-                                    dossier.r_dossier_vehicule.vin
-                                }}</strong>
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-7 mt-6 mb-6">
-                                <Label for="vin">
-                                    <Checkbox :checked="selectedFields.includes('vin')"
-                                        @update:checked="() => toggleField('vin')" class="mr-2" id="vin" />
-                                    Châssis (VIN) :
-                                    {{ dossier.r_dossier_vehicule.vin }}
-                                </Label>
-
-                                <Label for="marque">
-                                    <Checkbox :checked="selectedFields.includes('marque')" @update:checked="
-                                        () => toggleField('marque')
-                                    " class="mr-2" id="marque" />
-                                    Marque du véhicule :
-                                    {{ dossier.r_dossier_vehicule.marque }}
-                                </Label>
-
-                                <Label for="modele">
-                                    <Checkbox :checked="selectedFields.includes('modele')" @update:checked="
-                                        () => toggleField('modele')
-                                    " class="mr-2" id="modele" />
-                                    Modèle du véhicule :
-                                    {{ dossier.r_dossier_vehicule.modele }}
-                                </Label>
-                                <Label for="genre_vehicule">
-                                    <Checkbox :checked="selectedFields.includes(
-                                        'genre_vehicule'
-                                    )
-                                        " @update:checked="
-                                            () => toggleField('genre_vehicule')
-                                        " class="mr-2" id="genre_vehicule" />
-                                    Genre :
-                                    {{ dossier.r_dossier_vehicule.genre_vehicule }}
-                                </Label>
-                                <Label for="poids_total">
-                                    <Checkbox :checked="selectedFields.includes('poids_total')
-                                        " @update:checked="
-                                            () => toggleField('poids_total')
-                                        " class="mr-2" id="poids_total" />
-                                    Poids Total en charge :
-                                    {{ dossier.r_dossier_vehicule.poids_total }}
-                                </Label>
-                                <Label for="poids_utile">
-                                    <Checkbox :checked="selectedFields.includes('poids_utile')
-                                        " @update:checked="
-                                            () => toggleField('poids_utile')
-                                        " class="mr-2" id="poids_utile" />
-                                    Poids Utile :
-                                    {{ dossier.r_dossier_vehicule.poids_utile }}
-                                </Label>
-                                <Label for="source_energie">
-                                    <Checkbox :checked="selectedFields.includes(
-                                        'source_energie'
-                                    )
-                                        " @update:checked="
-                                            () => toggleField('source_energie')
-                                        " class="mr-2" id="source_energie" />
-                                    Sources d’énergie :
-                                    {{ dossier.r_dossier_vehicule.source_energie }}
-                                </Label>
-                                <Label for="couleur">
-                                    <Checkbox :checked="selectedFields.includes('couleur')
-                                        " @update:checked="
-                                            () => toggleField('couleur')
-                                        " class="mr-2" id="couleur" />
-                                    Couleur :
-                                    {{ dossier.r_dossier_vehicule.couleur }}
-                                </Label>
-                                <Label for="carrosserie">
-                                    <Checkbox :checked="selectedFields.includes('carrosserie')
-                                        " @update:checked="
-                                            () => toggleField('carrosserie')
-                                        " class="mr-2" id="carrosserie" />
-                                    Carrosserie :
-                                    {{ dossier.r_dossier_vehicule.carrosserie }}
-                                </Label>
-                                <Label for="type_technique">
-                                    <Checkbox :checked="selectedFields.includes(
-                                        'type_technique'
-                                    )
-                                        " @update:checked="
-                                            () => toggleField('type_technique')
-                                        " class="mr-2" id="type_technique" />
-                                    Type technique :
-                                    {{ dossier.r_dossier_vehicule.type_technique }}
-                                </Label>
-                                <Label for="poids_vide">
-                                    <Checkbox :checked="selectedFields.includes('poids_vide')
-                                        " @update:checked="
-                                            () => toggleField('poids_vide')
-                                        " class="mr-2" id="poids_vide" />
-                                    Poids à Vide :
-                                    {{ dossier.r_dossier_vehicule.poids_vide }}
-                                </Label>
-                                <Label for="puissance_administrative">
-                                    <Checkbox :checked="selectedFields.includes(
-                                        'puissance_administrative'
-                                    )
-                                        " @update:checked="
-                                            () =>
-                                                toggleField(
-                                                    'puissance_administrative'
-                                                )
-                                        " class="mr-2" id="puissance_administrative" />
-                                    Puissance administrative :
-                                    {{
-                                        dossier.r_dossier_vehicule
-                                            .puissance_administrative
-                                    }}
-                                </Label>
-                                <Label for="places_assises">
-                                    <Checkbox :checked="selectedFields.includes(
-                                        'places_assises'
-                                    )
-                                        " @update:checked="
-                                            () => toggleField('places_assises')
-                                        " class="mr-2" id="places_assises" />
-                                    Places Assises :
-                                    {{ dossier.r_dossier_vehicule.places_assises }}
-                                </Label>
-                                <Label for="nombre_essieux">
-                                    <Checkbox :checked="selectedFields.includes(
-                                        'nombre_essieux'
-                                    )
-                                        " @update:checked="
-                                            () => toggleField('nombre_essieux')
-                                        " class="mr-2" id="nombre_essieux" />
-                                    Nbre d’Essieux :
-                                    {{ dossier.r_dossier_vehicule.nombre_essieux }}
-                                </Label>
+                            <div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                                Cochez les informations erronées à faire corriger. La demande sera transmise à
+                                l'administration pour validation avant que le PDC ne puisse modifier le dossier.
                             </div>
 
-                            <hr />
-                            <h3 class="mt-6">
-                                informations du propriétaire :
-                                <strong>{{ dossier.r_dossier_client.civilite }} ,
-                                    {{ dossier.r_dossier_client.nom }}
-                                    {{ dossier.r_dossier_client.prenom }}
-                                </strong>
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-7 mt-6 mb-6">
-                                <Label for="adresse">
-                                    <Checkbox :checked="selectedFields.includes('adresse')
-                                        " @update:checked="
-                                            () => toggleField('adresse')
-                                        " class="mr-2" id="adresse" />
-                                    adresse :
-                                    {{ dossier.r_dossier_client.adresse }}
-                                </Label>
-                                <Label for="email">
-                                    <Checkbox :checked="selectedFields.includes('email')"
-                                        @update:checked="() => toggleField('email')" class="mr-2" id="email" />
-                                    email :
-                                    {{ dossier.r_dossier_client.email }}
-                                </Label>
-                                <Label for="telephone">
-                                    <Checkbox :checked="selectedFields.includes('telephone')
-                                        " @update:checked="
-                                            () => toggleField('telephone')
-                                        " class="mr-2" id="telephone" />
-                                    telephone :
-                                    {{ dossier.r_dossier_client.telephone }}
-                                </Label>
-                                <Label for="date_naissance">
-                                    <Checkbox :checked="selectedFields.includes(
-                                        'date_naissance'
-                                    )
-                                        " @update:checked="
-                                            () => toggleField('date_naissance')
-                                        " id="date_naissance" class="mr-2" />
-                                    date de naissance :
-                                    {{ dossier.r_dossier_client.date_naissance }}
-                                </Label>
-                                <Label for="ville_naissance">
-                                    <Checkbox id="ville_naissance" :checked="selectedFields.includes(
-                                        'ville_naissance'
-                                    )
-                                        " @update:checked="
-                                            () => toggleField('ville_naissance')
-                                        " class="mr-2" />
-                                    ville de naissance :
-                                    {{ dossier.r_dossier_client.ville_naissance }}
-                                </Label>
+                            <div class="mb-6">
+                                <p class="text-sm text-gray-600">
+                                    <strong>VIN :</strong> {{ dossier?.r_dossier_vehicule?.vin || '—' }}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    <strong>Numéro chrono :</strong> {{ dossier?.num_chrono || '—' }}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    <strong>Propriétaire :</strong>
+                                    {{ dossier?.r_dossier_client?.civilite }}
+                                    {{ dossier?.r_dossier_client?.nom }}
+                                    {{ dossier?.r_dossier_client?.prenom }}
+                                </p>
                             </div>
 
-                            <div class="flex justify-end">
-                                <AlertDialog>
-                                    <AlertDialogTrigger as-child>
-                                        <Button>
-                                            Continuer
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Veuillez saisir un message </AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                <div class="bg-white  rounded-lg w-full max-w-md">
-                                                    <Textarea type="texte" v-model="confirmMessage" class=" w-full my-6"
-                                                        placeholder="Votre message ici..." required />
-                                                </div>
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                            <AlertDialogAction @click="() => handleModifier(dossier)">Valider
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                            <div v-for="section in visibleSections" :key="section.key" class="mb-8">
+                                <div class="mb-4 flex items-center justify-between border-b pb-2">
+                                    <h3 class="text-lg font-semibold">{{ section.label }}</h3>
+                                    <Label class="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                                        <Checkbox :checked="isSectionChecked(section)"
+                                            @update:checked="() => toggleSection(section)" />
+                                        Tout sélectionner
+                                    </Label>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    <Label v-for="field in section.fields" :key="field.key"
+                                        class="flex cursor-pointer items-center gap-2 rounded-md border p-3 hover:bg-muted/40"
+                                        :class="{ 'border-orange-400 bg-orange-50': isSelected(section.key, field.key) }">
+                                        <Checkbox :checked="isSelected(section.key, field.key)"
+                                            @update:checked="() => toggleField(section.key, field.key)" />
+                                        <span class="flex flex-col">
+                                            <span class="text-sm font-medium">{{ field.label }}</span>
+                                            <span class="text-xs text-muted-foreground">
+                                                {{ displayValue(section.key, field.key) || '—' }}
+                                            </span>
+                                        </span>
+                                    </Label>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 space-y-2">
+                                <Label for="message">Message / précision (facultatif)</Label>
+                                <Textarea id="message" v-model="message"
+                                    placeholder="Expliquez brièvement la correction souhaitée..." />
+                            </div>
+
+                            <div class="mt-8 flex flex-col items-end gap-2">
+                                <p class="text-sm text-muted-foreground">
+                                    {{ totalSelected }} champ(s) sélectionné(s)
+                                </p>
+                                <Button :disabled="submitting" @click="submitDemande">
+                                    <Send class="w-4 h-4 mr-2" />
+                                    {{ submitting ? 'Envoi en cours...' : 'Envoyer la demande' }}
+                                </Button>
                             </div>
                         </div>
                     </ScrollArea>
@@ -244,33 +90,24 @@
         <Control />
     </div>
     <Toaster richColors position="top-right" />
-
 </template>
 
 <script setup>
+import { computed, ref } from "vue";
+import axios from "axios";
+import { router } from "@inertiajs/vue3";
+import { storeToRefs } from "pinia";
+import { MoveLeft, Send } from "lucide-vue-next";
+import { Toaster, toast } from "vue-sonner";
+
 import { Button } from "@/components/ui/button";
-import { ref } from "vue";
-import { returnBack } from "/resources/js/composable/fonction.js";
-import Control from "./Control.vue";
-import { Toaster, toast } from 'vue-sonner'
-import { MoveLeft } from "lucide-vue-next";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { router } from '@inertiajs/vue3'
-import { storeToRefs } from "pinia";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { returnBack } from "/resources/js/composable/fonction.js";
+import Control from "./Control.vue";
 import { useCaisseStore } from "@/stores/mainStore";
 
 const store = useCaisseStore();
@@ -279,84 +116,116 @@ const { isOpen } = storeToRefs(store);
 const props = defineProps({
     vin: String,
     dossier: Object,
-    client: Object,
+    entreprise: Object,
+    sections: {
+        type: Array,
+        default: () => [],
+    },
 });
-console.log(props.dossier);
 
-// liste des clés cochées à modifier
-const selectedFields = ref([]);
-const confirmMessage = ref('');
+const selected = ref({
+    vehicule: [],
+    client: [],
+    entreprise: [],
+});
+const message = ref('');
+const submitting = ref(false);
 
-function toggleField(fieldKey) {
-    const index = selectedFields.value.indexOf(fieldKey);
-    if (index === -1) {
-        selectedFields.value.push(fieldKey);
-    } else {
-        selectedFields.value.splice(index, 1);
-    }
+const vehicule = computed(() => props.dossier?.r_dossier_vehicule ?? {});
+const client = computed(() => props.dossier?.r_dossier_client ?? {});
+
+const visibleSections = computed(() => {
+    const physiqueMorale = vehicule.value?.physique_morale;
+    const aUneEntreprise = !!props.entreprise
+        || (physiqueMorale !== undefined
+            && physiqueMorale !== null
+            && ![1, '1', 'Physique'].includes(physiqueMorale));
+
+    return (props.sections ?? []).filter((section) => {
+        if (section.key === 'entreprise') {
+            return aUneEntreprise;
+        }
+        return true;
+    });
+});
+
+function modelFor(sectionKey) {
+    if (sectionKey === 'vehicule') return vehicule.value;
+    if (sectionKey === 'client') return client.value;
+    if (sectionKey === 'entreprise') return props.entreprise ?? {};
+    return {};
 }
 
-// import axios from 'axios'
+function displayValue(sectionKey, fieldKey) {
+    const value = modelFor(sectionKey)?.[fieldKey];
+    return value === null || value === undefined ? '' : value;
+}
 
-async function handleModifier(dossier) {
-    const vehicule = dossier.r_dossier_vehicule;
-    const client = dossier.r_dossier_client;
+function isSelected(sectionKey, fieldKey) {
+    return (selected.value[sectionKey] ?? []).includes(fieldKey);
+}
 
-    const modifications = {};
+function toggleField(sectionKey, fieldKey) {
+    const list = selected.value[sectionKey] ?? [];
+    const index = list.indexOf(fieldKey);
+    if (index === -1) {
+        list.push(fieldKey);
+    } else {
+        list.splice(index, 1);
+    }
+    selected.value[sectionKey] = list;
+}
 
-    selectedFields.value.forEach((key) => {
-        if (key in vehicule) {
-            modifications[key] = vehicule[key];
-        } else if (key in client) {
-            modifications[key] = client[key];
-        }
-    });
+function isSectionChecked(section) {
+    const list = selected.value[section.key] ?? [];
+    return section.fields.length > 0 && list.length === section.fields.length;
+}
 
-    if (Object.keys(modifications).length === 0) {
-        toast.error("Aucune donnée sélectionnée pour modification.");
-        console.warn("Aucune donnée sélectionnée pour modification.");
+function toggleSection(section) {
+    const allSelected = isSectionChecked(section);
+    selected.value[section.key] = allSelected ? [] : section.fields.map((field) => field.key);
+}
+
+const totalSelected = computed(() => Object.values(selected.value).reduce((total, list) => total + list.length, 0));
+
+async function submitDemande() {
+    if (totalSelected.value === 0) {
+        toast.error("Veuillez sélectionner au moins un champ à modifier.");
         return;
     }
 
-    const payload = {
-        dossier_id: dossier.id,
-        corrections: modifications,
-        origine: "caisse",
-    };
-
-    console.log("Payload :", payload);
-
+    submitting.value = true;
     try {
-        const response = await axios.post("/correction/new", {
-            dossier_id: dossier.id,
-            corrections: modifications,
-            origine: "caisse",
+        await axios.post(route('caisse.demande.modification.store'), {
+            dossier_id: props.dossier.id,
+            champs_vehicule: selected.value.vehicule,
+            champs_client: selected.value.client,
+            champs_entreprise: selected.value.entreprise,
+            message: message.value,
         });
 
-        console.log("Correction envoyée avec succès :", response.data);
-        selectedFields.value = [];
-        toast.success('Correction envoyée avec succès !');
+        toast.success('Demande de modification envoyée avec succès.');
+        selected.value = { vehicule: [], client: [], entreprise: [] };
+        message.value = '';
+
         setTimeout(() => {
-            // Redirection avec l'ID du dossier
             router.visit(`/caisse/get/data/${props.dossier.num_chrono}`);
-            // window.location.href = `/caisse/get/data/${props.dossier.num_chrono}`;
-        }, 1500);
+        }, 1200);
     } catch (error) {
-        toast.error("Une erreur est survenue lors de l'enregistrement.");
+        const messageErreur = error?.response?.data?.message
+            || "Une erreur est survenue lors de l'enregistrement de la demande.";
+        toast.error(messageErreur);
         console.error(error);
+    } finally {
+        submitting.value = false;
     }
 }
 </script>
 
 <script>
 import Main from "/resources/js/Pages/Main.vue";
-import axios from "axios";
 
 export default {
     layout: Main,
 };
 </script>
-
-<style scoped>
-/* Optionnel pour responsive / animation */
-</style>
