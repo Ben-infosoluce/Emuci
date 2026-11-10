@@ -17,6 +17,7 @@ use App\Http\Controllers\PdcController;
 use App\Http\Controllers\VehiculeController;
 use App\Http\Controllers\CorrectionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemandeModificationController;
 use App\Http\Controllers\EntrepriseController;
 use App\Http\Controllers\GestionnaireController;
 use App\Http\Controllers\Mt1Controller;
@@ -110,6 +111,10 @@ Route::middleware('auth')->group(function () {
 
     //*******************************Correction***************************** */
     Route::post('/correction/new', [CorrectionController::class, 'store'])->name('correction.new.store');
+
+    //***********************Demande de modification (caisse)*********************** */
+    Route::post('/caisse/demande-modification', [DemandeModificationController::class, 'store'])
+        ->name('caisse.demande.modification.store');
 
 
     //**********************************Minister*****************************************/
@@ -285,6 +290,16 @@ Route::group([
     Route::put('/pdc/modification/{id}/update', [PdcController::class, 'updatePdcModificationData'])->name('update.pdc.modification.data');
     Route::get('/pdc/modification/receipt/{id}', [PdcController::class, "showReceiptPdcModification"])->name('show.receipt.pdc.modification');
     Route::get('/pdc/modification/receipt/{id}', [PdcController::class, "showReceiptPdcModification"])->name('show.receipt.pdc.modification');
+
+    //***********************Demande de modification (PDC)*********************** */
+    Route::get('/pdc/demandes-modification', [DemandeModificationController::class, 'indexPdc'])
+        ->name('show.pdc.demandes.modification');
+    Route::get('/pdc/demandes-modification/data', [DemandeModificationController::class, 'dataPdc'])
+        ->name('get.pdc.demandes.modification.data');
+    Route::get('/pdc/demande-modification/{dossier}/edit', [DemandeModificationController::class, 'showEditPdc'])
+        ->name('show.pdc.demande.modification.edit');
+    Route::put('/pdc/demande-modification/{dossier}', [DemandeModificationController::class, 'updatePdc'])
+        ->name('update.pdc.demande.modification');
 });
 
 
@@ -344,6 +359,18 @@ Route::group([
     Route::get('/get/admin/stats', [SiteController::class, "getAdminDashboardStats"])->name('get.admin.dashboard.stats');
     Route::get('/admin/dashboard/stats', [DashboardController::class, "getStats"])->name('show.admin.dashboard.stats');
     Route::get('/admin/dashboard/stats/by/date', [DashboardController::class, "getStatsByDate"])->name('get.admin.dashboard.stats.by.date');
+
+    // Demandes de modification après pré-enrôlement
+    Route::get('/admin/demandes-modification', [DemandeModificationController::class, 'indexAdmin'])
+        ->name('show.admin.demandes.modification');
+    Route::get('/admin/demandes-modification/data', [DemandeModificationController::class, 'dataAdmin'])
+        ->name('get.admin.demandes.modification.data');
+    Route::get('/admin/demandes-modification/{id}', [DemandeModificationController::class, 'showAdmin'])
+        ->name('show.admin.demande.modification');
+    Route::post('/admin/demandes-modification/{id}/valider', [DemandeModificationController::class, 'validerAdmin'])
+        ->name('valider.admin.demande.modification');
+    Route::post('/admin/demandes-modification/{id}/rejeter', [DemandeModificationController::class, 'rejeterAdmin'])
+        ->name('rejeter.admin.demande.modification');
 
 
     Route::get('/site/data', [SiteController::class, "showSiteData"])->name('show.admin.data');
