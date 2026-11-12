@@ -21,6 +21,7 @@ use App\Http\Requests\SavePdcReImmatriculationRequest;
 use App\Models\Correction;
 use App\Models\Paiement;
 use App\Models\Recu;
+use Illuminate\Validation\ValidationException;
 
 class PdcController extends Controller
 {
@@ -320,6 +321,11 @@ class PdcController extends Controller
 
     public function SaveRelicaPrimo(Request $request)
     {
+        // Support des envois par lots : {"dossiers": [ {...}, {...} ]}
+        if (is_array($request->input('dossiers'))) {
+            return $this->saveRelicaPrimoBulk($request);
+        }
+
         $rules = [
             'NUMCHRONOCIL' => 'required|string',
             'NUMEROCHASISIS' => 'required|string',
@@ -359,6 +365,27 @@ class PdcController extends Controller
         ];
 
         $validated = $request->validate($rules, $messages);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Contrôle des doublons
+        |--------------------------------------------------------------------------
+        | Un même NUMCHRONOCIL ne doit être importé qu'une seule fois en
+        | RELICA-PRIMO. On ignore l'appel si le dossier existe déjà afin de
+        | ne pas recréer un client, un véhicule et un dossier en double.
+        */
+        $dossierExistant = Dossier::where('num_chrono', $request->NUMCHRONOCIL)
+            ->where('type', 'RELICA-PRIMO')
+            ->first();
+
+        if ($dossierExistant) {
+            return response()->json([
+                'success' => true,
+                'duplicate' => true,
+                'message' => 'Dossier RELICA-PRIMO déjà existant, import ignoré.',
+                'data' => $dossierExistant,
+            ], 200);
+        }
 
         try {
             DB::beginTransaction();
@@ -505,6 +532,28 @@ class PdcController extends Controller
                 'message' => 'RELICA-PRIMO créé avec succès',
                 'data' => $dossier
             ], 201);
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+
+            // Violation de l'index unique dedup_key (appels concurrents)
+            if ($e->getCode() === '23000' || ($e->errorInfo[1] ?? null) === 1062) {
+                $dossierExistant = Dossier::where('num_chrono', $request->NUMCHRONOCIL)
+                    ->where('type', 'RELICA-PRIMO')
+                    ->first();
+
+                return response()->json([
+                    'success' => true,
+                    'duplicate' => true,
+                    'message' => 'Dossier RELICA-PRIMO déjà existant, import ignoré.',
+                    'data' => $dossierExistant,
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création',
+                'error' => $e->getMessage()
+            ], 500);
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -514,6 +563,72 @@ class PdcController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Traite un lot de dossiers RELICA-PRIMO en un seul appel HTTP.
+     * Chaque dossier garde sa propre transaction et son contrôle de doublon.
+     */
+    private function saveRelicaPrimoBulk(Request $request)
+    {
+        // Un lot de 500 peut dépasser le temps d'exécution PHP par défaut.
+        set_time_limit(0);
+        ignore_user_abort(true);
+
+        $items = $request->input('dossiers', []);
+
+        $created = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($items as $index => $item) {
+            $numChrono = is_array($item) && isset($item['NUMCHRONOCIL'])
+                ? $item['NUMCHRONOCIL']
+                : 'INDEX_' . $index;
+
+            if (!is_array($item)) {
+                $errors[] = [
+                    'num_chrono' => $numChrono,
+                    'message' => 'Élément invalide (objet attendu).',
+                ];
+                continue;
+            }
+
+            try {
+                $subRequest = Request::create('/api/relica/primo', 'POST', $item);
+                $response = $this->SaveRelicaPrimo($subRequest);
+                $body = $response->getData(true);
+
+                if (!empty($body['duplicate'])) {
+                    $skipped++;
+                } elseif ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                    $created++;
+                } else {
+                    $errors[] = [
+                        'num_chrono' => $numChrono,
+                        'message' => $body['message'] ?? ($body['error'] ?? 'Erreur inconnue'),
+                    ];
+                }
+            } catch (ValidationException $e) {
+                $errors[] = [
+                    'num_chrono' => $numChrono,
+                    'message' => implode(' ', $e->validator->errors()->all()),
+                ];
+            } catch (\Throwable $e) {
+                $errors[] = [
+                    'num_chrono' => $numChrono,
+                    'message' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => count($errors) === 0,
+            'created' => $created,
+            'skipped' => $skipped,
+            'error_count' => count($errors),
+            'errors' => array_slice($errors, 0, 100),
+        ], 200);
     }
 
     /**

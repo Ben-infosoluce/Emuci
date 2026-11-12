@@ -68,14 +68,25 @@ class RelicaPrimoController extends Controller
             'chronos.*' => 'string|max:255',
         ]);
 
+        // On ignore les chronos déjà présents en RELICA-PRIMO pour ne pas
+        // violer l'index unique sur dedup_key.
+        $dejaRelica = DB::table('dossiers')
+            ->where('type', 'RELICA-PRIMO')
+            ->whereIn('num_chrono', $validated['chronos'])
+            ->pluck('num_chrono')
+            ->all();
+
+        $chronosAMigrer = array_values(array_diff($validated['chronos'], $dejaRelica));
+
         $updated = DB::table('dossiers')
             ->where('type', 'PRIMO-ESPECE')
             ->whereJsonContains('detail', '47')          // ✅ insensitive au formatage du JSON
             ->where('id_type_service', 19)
             ->where('id_service', 6)
-            ->whereIn('num_chrono', $validated['chronos'])   // 👈 vrai nom de ta colonne
+            ->whereIn('num_chrono', $chronosAMigrer)   // 👈 vrai nom de ta colonne
             ->update([
                 'type' => 'RELICA-PRIMO',
+                'dedup_key' => DB::raw("CONCAT('RELICA-PRIMO:', num_chrono)"),
                 // ✅ on réécrit dans le MÊME style formaté que tes données actuelles :
                 'detail' => json_encode(['46'], JSON_PRETTY_PRINT),
                 'id_type_service' => 18,
@@ -86,6 +97,7 @@ class RelicaPrimoController extends Controller
         return response()->json([
             'message' => 'Migration terminée.',
             'updated' => $updated,
+            'skipped' => count($dejaRelica),
         ], 200);
     }
 }

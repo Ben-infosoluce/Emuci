@@ -8,6 +8,22 @@ use Illuminate\Database\Eloquent\Model;
 class Dossier extends Model
 {
     protected $guarded = [];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Dossier $dossier) {
+            // Clé technique protégée par un index unique : empêche la création
+            // de deux dossiers RELICA-PRIMO avec le même numéro chrono.
+            if ($dossier->type === 'RELICA-PRIMO' && filled($dossier->num_chrono)) {
+                $key = 'RELICA-PRIMO:' . $dossier->num_chrono;
+
+                $dossier->dedup_key = mb_strlen($key) <= 255
+                    ? $key
+                    : 'RELICA-PRIMO:' . hash('sha256', $dossier->num_chrono);
+            }
+        });
+    }
+
     public function r_dossier_vehicule()
     {
         return $this->belongsTo(Vehicule::class, 'id_vehicule');
