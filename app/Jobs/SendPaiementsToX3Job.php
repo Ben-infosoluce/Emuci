@@ -80,6 +80,15 @@ class SendPaiementsToX3Job implements ShouldQueue
             return;
         }
 
+        // Renseigne le NUMREC des paiements historiques qui n'en ont pas encore.
+        // Toutes les transactions d'une même caisse sur la journée partagent ce numéro.
+        foreach ($paiements as $paiement) {
+            if (empty($paiement->numrec) && $paiement->caisse_id) {
+                $paiement->numrec = generateNumrecCaisse((int) $paiement->caisse_id, $this->dateOperation);
+                $paiement->saveQuietly();
+            }
+        }
+
         // Grouper les paiements par dossier (num_chrono) pour créer une facture par dossier
         $groupedPaiements = $paiements->groupBy('dossier.num_chrono');
         $facturesAtraiter = [];
@@ -318,11 +327,20 @@ class SendPaiementsToX3Job implements ShouldQueue
                 $headerTTC = $totalTTC + $totalTimbre;
                 $tva = $totalTTC - $totalHT;
 
+                // Numéro de recette de la caisse pour la journée (identique pour
+                // toutes les factures générées à partir de cette caisse).
+                $numrec = $paiementsDuDossier->pluck('numrec')->filter()->first()
+                    ?: generateNumrecCaisse(
+                        (int) ($paiementsDuDossier->first()->caisse_id ?? $this->caisseId),
+                        $this->dateOperation
+                    );
+
                 $enteteData = [
                     'NUM' => $numFacture,
                     'DATINV' => $this->dateOperation, // Format YYYY-MM-DD
                     'BPCINV' => 'C000016', // Code client
                     'BPRNAM' => ($client ? $client->nom . ' ' . $client->prenom : 'Client'), // Nom client
+                    'NUMREC' => $numrec, // Numéro de recette lié à la caisse
                     'TIMBRE' => $totalTimbre,
                     'TVA' => $tva,
                     'TOTALHT' => $totalHT, // Format entier

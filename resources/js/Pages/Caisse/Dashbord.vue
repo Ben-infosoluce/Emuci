@@ -252,11 +252,16 @@ async function actualiserData() {
         const day = String(d.getDate()).padStart(2, '0');
         const currentDate = `${year}${month}${day}`;
 
-        // Exemple avec des dates fixes pour test : 20260501 et 20260504 (ou utilisez currentDate)
-        const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260706/${currentDate}`;
-        // const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/20260501/20260504`;
+        // Récupération de la date de la dernière actualisation enregistrée en base.
+        // Si aucune actualisation n'existe encore, le backend renvoie sa date par défaut.
+        const lastSyncRes = await window.axios.get('/api/primo/espece/last-sync');
+        const lastDate = lastSyncRes.data.last_sync_date;
 
-        // Appel du backend pour contourner le CORS
+        // On repart de la dernière actualisation jusqu'à aujourd'hui
+        const url = `https://cidata.cilogistique.ci/EmuciServices_prod/getdata/ControlPayement/${lastDate}/${currentDate}`;
+
+        // Appel du backend pour contourner le CORS.
+        // Le backend enregistre la date/heure de l'actualisation en cas de succès.
         await window.axios.post('/api/primo/espece/sync', { url: url });
 
         // Rafraîchir les dossiers après l'actualisation

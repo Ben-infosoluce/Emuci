@@ -20,6 +20,7 @@ use Dflydev\DotAccessData\Data;
 use App\Http\Requests\SavePdcReImmatriculationRequest;
 use App\Models\Correction;
 use App\Models\Paiement;
+use App\Models\PrimoSync;
 use App\Models\Recu;
 use Illuminate\Validation\ValidationException;
 
@@ -1049,6 +1050,33 @@ class PdcController extends Controller
     }
 
     /**
+     * Date de début utilisée lorsqu'aucune actualisation n'a encore été enregistrée.
+     */
+    private const DEFAULT_PRIMO_SYNC_START_DATE = '20261112';
+
+    /**
+     * Retourne la date (et l'heure) de la dernière actualisation PRIMO-ESPECE.
+     *
+     * La date est renvoyée au format attendu par l'API externe (YYYYMMDD).
+     * Si aucune actualisation n'a encore été enregistrée, la date de début
+     * par défaut est retournée pour ne pas casser le premier appel.
+     */
+    public function getLastPrimoSync()
+    {
+        $lastSync = PrimoSync::query()->latest('last_sync_at')->first();
+        $lastSyncAt = $lastSync?->last_sync_at;
+
+        return response()->json([
+            'success' => true,
+            'last_sync_at' => $lastSyncAt?->toIso8601String(),
+            'last_sync_date' => $lastSyncAt
+                ? $lastSyncAt->format('Ymd')
+                : self::DEFAULT_PRIMO_SYNC_START_DATE,
+            'current_date' => now()->format('Ymd'),
+        ]);
+    }
+
+    /**
      * Synchronisation des données depuis l'API externe pour éviter l'erreur CORS côté frontend
      */
     public function syncPrimoEspeceExternal(Request $request)
@@ -1122,9 +1150,17 @@ class PdcController extends Controller
                 }
             }
 
+            // Enregistre la date/heure de cette actualisation réussie.
+            // C'est cette date qui servira de point de départ à la prochaine.
+            $lastSync = PrimoSync::create([
+                'last_sync_at' => now(),
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Synchronisation terminée',
+                'last_sync_at' => $lastSync->last_sync_at->toIso8601String(),
+                'last_sync_date' => $lastSync->last_sync_at->format('Ymd'),
                 'details' => $results
             ], 200);
         } catch (\Exception $e) {

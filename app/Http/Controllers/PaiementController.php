@@ -70,6 +70,10 @@ class PaiementController extends Controller
             ], 403);
         }
 
+        // Numéro de recette partagé par toutes les transactions de cette caisse ce jour-là
+        $caisseId = getIdCaisse();
+        $numrec = generateNumrecCaisse($caisseId);
+
         try {
             DB::beginTransaction();
 
@@ -138,8 +142,9 @@ class PaiementController extends Controller
                     'description' => json_encode($validated['detailTypeServices_lier']),
                     'reference' => 'PAI' . strtoupper(uniqid()),
                     'caisse_ouverture_id' => $caisseOuvertureId,
+                    'numrec' => $numrec,
                     'id_site' => getIdSite(),
-                    'caisse_id' => getIdCaisse(),
+                    'caisse_id' => $caisseId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -169,8 +174,9 @@ class PaiementController extends Controller
                 'description' => json_encode($validated['detailTypeServices']),
                 'reference' => 'PAI' . strtoupper(uniqid()),
                 'caisse_ouverture_id' => $caisseOuvertureId,
+                'numrec' => $numrec,
                 'id_site' => getIdSite(),
-                'caisse_id' => getIdCaisse(),
+                'caisse_id' => $caisseId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -252,6 +258,10 @@ class PaiementController extends Controller
                 'message' => 'Aucune caisse ouverte. Veuillez ouvrir votre caisse avant d\'enregistrer un paiement.',
             ], 403);
         }
+
+        // Numéro de recette partagé par toutes les transactions de cette caisse ce jour-là
+        $caisseId = getIdCaisse();
+        $numrec = generateNumrecCaisse($caisseId);
 
         try {
             DB::beginTransaction();
@@ -388,8 +398,9 @@ class PaiementController extends Controller
                     'description' => json_encode($validated['detailTypeServices_lier'] ?? []),
                     'reference' => 'PAI' . strtoupper(uniqid()),
                     'caisse_ouverture_id' => $caisseOuvertureId,
+                    'numrec' => $numrec,
                     'id_site' => getIdSite(),
-                    'caisse_id' => getIdCaisse(),
+                    'caisse_id' => $caisseId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -425,8 +436,9 @@ class PaiementController extends Controller
                 'description' => json_encode($detailServicesPrincipal), // Contient maintenant le changement de plaque
                 'reference' => 'PAI' . strtoupper(uniqid()),
                 'caisse_ouverture_id' => $caisseOuvertureId,
+                'numrec' => $numrec,
                 'id_site' => getIdSite(),
-                'caisse_id' => getIdCaisse(),
+                'caisse_id' => $caisseId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -31,6 +31,33 @@ function getIdSite()
     return $user ? $user->id_site : null;
 }
 
+/**
+ * Génère le numéro de recette (NUMREC) d'une caisse pour une journée.
+ *
+ * Toutes les transactions d'une même caisse sur une même journée partagent
+ * ce numéro. Il est stocké sur le paiement puis transmis à Sage X3.
+ */
+function generateNumrecCaisse(?int $caisseId, ?string $date = null): ?string
+{
+    if (!$caisseId) {
+        return null;
+    }
+
+    // Évite une requête par paiement lors des traitements en masse
+    static $codesCaisses = [];
+
+    if (!array_key_exists($caisseId, $codesCaisses)) {
+        $code = Caisse::whereKey($caisseId)->value('code');
+        $codesCaisses[$caisseId] = $code
+            ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code))
+            : (string) $caisseId;
+    }
+
+    $dateReference = $date ? \Illuminate\Support\Carbon::parse($date) : now();
+
+    return sprintf('REC-%s-%s', $codesCaisses[$caisseId], $dateReference->format('Ymd'));
+}
+
 function getIdCaisse()
 {
     $user = Auth::user();
