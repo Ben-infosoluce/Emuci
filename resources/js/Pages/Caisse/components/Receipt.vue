@@ -179,13 +179,14 @@ const TRIGGER_SERVICE_IDS = [4, 10, 9];
 
 const tableauFusionne = [...props.detailTypeServices, ...(props.detailTypeServices_lier || [])];
 
-const serviceTypes = [
-    ...(props.dossier?.r_dossier_services?.r_service_types || []),
-    ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
-];
-const hasTriggerService = serviceTypes.some(item =>
-    TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
-);
+// Vérification des services déclencheurs : on se base sur les lignes réellement
+// sélectionnées (id_type_services) et non sur tous les types du service, sinon
+// chaque dossier post-immatriculation — y compris une mutation seule (id 31) —
+// afficherait un changement de plaque.
+const hasTriggerService = [...(props.detailTypeServices || []), ...(props.detailTypeServices_lier || [])]
+    .some(item =>
+        TRIGGER_SERVICE_IDS.includes(Number(item?.id_type_services)) && props.dossier.id_service != 4
+    );
 
 // ── RELICA-PRIMO : table de prix ─────────────────────────────────────────────
 // Prix totaux par catégorie

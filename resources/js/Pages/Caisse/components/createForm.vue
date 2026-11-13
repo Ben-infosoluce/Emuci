@@ -839,15 +839,19 @@ const tableauFusionne = [
     };
 });
 
-// Vérification des services déclencheurs
-const serviceTypes = [
-    ...(props.dossier?.r_dossier_services?.r_service_types || []),
-    ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
-]
+// Vérification des services déclencheurs.
+// On se base sur les lignes réellement sélectionnées sur le dossier (et le
+// dossier lié), via leur id_type_services. Utiliser la liste complète des types
+// de service du dossier ferait déclencher un changement de plaque pour TOUS les
+// dossiers post-immatriculation, y compris une mutation seule (détail id 31,
+// type 11) qui ne nécessite justement aucun changement de plaque.
+const selectedDetailServices = [
+    ...(props.detailTypeServices || []),
+    ...(props.detailTypeServices_lier || [])
+];
 
-// Vérification basée sur les IDs
-const hasTriggerService = serviceTypes.some(item =>
-    TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
+const hasTriggerService = selectedDetailServices.some(item =>
+    TRIGGER_SERVICE_IDS.includes(Number(item?.id_type_services)) && props.dossier.id_service != 4
 );
 
 // Fonction : récupérer le nom du type de service par ID
@@ -1042,14 +1046,6 @@ async function validerPaiement() {
         id_type_services: null,
     }] : null;
 
-    const serviceTypes = [
-        ...(props.dossier?.r_dossier_services?.r_service_types || []),
-        ...(props.dossier_lier?.r_dossier_services?.r_service_types || [])
-    ];
-    const hasTriggerService = !isRelica && serviceTypes.some(item =>
-        TRIGGER_SERVICE_IDS.includes(item.id) && props.dossier.id_service != 4
-    );
-
     try {
         const promise = axios.post(
             `/statut/paiement`,
@@ -1062,7 +1058,7 @@ async function validerPaiement() {
                 montant_total: isRelica ? relicaMontantTTC.value : (isModification ? modificationMontantTTC.value : getMontantTotal()),
                 caisse_ouverture_id: store.caisseOpened.caisse_id,
                 id_site: props.dossier.id_site,
-                has_changement_plaque: hasTriggerService,
+                has_changement_plaque: hasTriggerService && !isRelica,
                 // Demandeur info
                 demandeur_nom: demandeur.value.nom,
                 demandeur_prenom: demandeur.value.prenom,
