@@ -12,7 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { FileDown }  from "lucide-vue-next";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { FileDown, ListTree } from "lucide-vue-next";
 
 const props = defineProps({
     paiements: {
@@ -31,6 +38,23 @@ const props = defineProps({
 });
 
 const searchChrono = ref("");
+const detailOpen = ref(false);
+const selectedPaiement = ref(null);
+
+const detailLignes = computed(() => selectedPaiement.value?.ventilation_lignes || []);
+const detailTotalTtc = computed(() =>
+    detailLignes.value.reduce((sum, ligne) => sum + Number(ligne.montant_ttc || 0), 0)
+);
+const detailTotalHt = computed(() =>
+    detailLignes.value.reduce((sum, ligne) => sum + Number(ligne.montant_ht || 0), 0)
+);
+const detailTimbre = computed(() => Number(selectedPaiement.value?.timbre || 0));
+const detailTotal = computed(() => detailTotalTtc.value + detailTimbre.value);
+
+const openDetail = (paiement) => {
+    selectedPaiement.value = paiement;
+    detailOpen.value = true;
+};
 
 const filteredPaiements = computed(() => {
     if (!searchChrono.value) return props.paiements;
@@ -146,6 +170,7 @@ const exportToExcel = async () => {
                         <TableHead class="text-right">Dossier</TableHead>
                         <TableHead class="text-right">Timbre</TableHead>
                         <TableHead class="text-right pr-6">Heure</TableHead>
+                        <TableHead class="text-center pr-6">Détail</TableHead>
                     </TableRow>
                 </TableHeader>
 
@@ -179,11 +204,18 @@ const exportToExcel = async () => {
                         <TableCell class="text-right text-muted-foreground  pr-6">
                             {{ new Date(p.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
                         </TableCell>
+                        <TableCell class="text-center pr-6">
+                            <Button variant="outline" size="sm" class="h-8 gap-1"
+                                :disabled="!(p.ventilation_lignes || []).length" @click="openDetail(p)">
+                                <ListTree class="w-3.5 h-3.5" />
+                                Détail
+                            </Button>
+                        </TableCell>
                     </TableRow>
 
                     <!-- Empty State -->
                     <TableRow v-if="filteredPaiements.length === 0">
-                        <TableCell colspan="8" class="h-48 text-center">
+                        <TableCell colspan="9" class="h-48 text-center">
                             <div class="flex flex-col items-center justify-center text-muted-foreground">
                                 <i class="pi pi-inbox text-3xl mb-2"></i>
                                 <p>Aucun résultat pour cette recherche</p>
@@ -227,6 +259,86 @@ const exportToExcel = async () => {
                 <p class="text-3xl font-black">{{ soldeCaisse.toLocaleString() }} F</p>
             </div>
         </div>
+
+        <!-- Modal : détail ventilé du dossier -->
+        <Dialog v-model:open="detailOpen">
+            <DialogContent class="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <ListTree class="w-4 h-4" />
+                        Détail ventilé
+                        <Badge variant="warning" class="uppercase tracking-tighter">
+                            {{ selectedPaiement?.dossier?.num_chrono || '--------' }}
+                        </Badge>
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{ selectedPaiement?.dossier?.r_dossier_client?.nom }}
+                        {{ selectedPaiement?.dossier?.r_dossier_client?.prenom }}
+                        <span v-if="selectedPaiement?.dossier?.r_dossier_vehicule?.num_immatriculation"
+                            class="ml-2 text-muted-foreground">
+                            — {{ selectedPaiement.dossier.r_dossier_vehicule.num_immatriculation }}
+                        </span>
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="rounded-lg border overflow-hidden">
+                    <Table>
+                        <TableHeader class="bg-muted/50">
+                            <TableRow>
+                                <TableHead>Article</TableHead>
+                                <TableHead>Libellé</TableHead>
+                                <TableHead>Fait générateur</TableHead>
+                                <TableHead class="text-right">HT</TableHead>
+                                <TableHead class="text-right pr-4">TTC</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow v-for="(ligne, index) in detailLignes" :key="index">
+                                <TableCell>
+                                    <Badge variant="secondary" class="font-mono tracking-tighter">
+                                        {{ ligne.article_code }}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell class="text-sm">{{ ligne.libelle || '—' }}</TableCell>
+                                <TableCell class="text-xs text-muted-foreground">
+                                    {{ ligne.fait_generateur || '—' }}
+                                </TableCell>
+                                <TableCell class="text-right font-mono text-sm">
+                                    {{ Number(ligne.montant_ht || 0).toLocaleString() }} F
+                                </TableCell>
+                                <TableCell class="text-right font-mono text-sm pr-4">
+                                    {{ Number(ligne.montant_ttc || 0).toLocaleString() }} F
+                                </TableCell>
+                            </TableRow>
+                            <TableRow v-if="!detailLignes.length">
+                                <TableCell colspan="5" class="h-24 text-center text-muted-foreground">
+                                    Aucune ligne de ventilation pour ce paiement.
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+
+                <div class="flex flex-col gap-1 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Total HT</span>
+                        <span class="font-mono">{{ detailTotalHt.toLocaleString() }} F</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Total TTC services</span>
+                        <span class="font-mono">{{ detailTotalTtc.toLocaleString() }} F</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Timbre</span>
+                        <span class="font-mono text-orange-500">{{ detailTimbre.toLocaleString() }} F</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-2 font-semibold">
+                        <span>Total encaissé</span>
+                        <span class="font-mono">{{ detailTotal.toLocaleString() }} F</span>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>
 

@@ -684,8 +684,20 @@ class RafCaisseController extends Controller
         $paiements = $query->with([
             'dossier.r_dossier_vehicule',
             'dossier.r_dossier_user',
-            'dossier.r_dossier_client'
+            'dossier.r_dossier_client',
+            'lignes',
         ])->get();
+
+        // Détail ventilé du dossier, aligné sur l'affichage du reçu : lignes
+        // enregistrées si elles existent, sinon recalcul historique au prorata.
+        $ventilation = app(\App\Services\VentilationService::class);
+
+        $paiements->each(function ($paiement) use ($ventilation) {
+            $paiement->setAttribute(
+                'ventilation_lignes',
+                $ventilation->linesForPaiement($paiement)
+            );
+        });
 
         return response()->json($paiements);
     }

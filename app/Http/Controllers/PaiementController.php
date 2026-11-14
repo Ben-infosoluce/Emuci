@@ -856,8 +856,19 @@ class PaiementController extends Controller
         $paiements = $query->with([
             'dossier.r_dossier_vehicule',
             'dossier.r_dossier_user',
-            'dossier.r_dossier_client'
+            'dossier.r_dossier_client',
+            'lignes',
         ])->get();
+
+        // Détail ventilé, utilisé par le modal « Détail » du point de caisse.
+        $ventilation = app(VentilationService::class);
+
+        $paiements->each(function ($paiement) use ($ventilation) {
+            $paiement->setAttribute(
+                'ventilation_lignes',
+                $ventilation->linesForPaiement($paiement)
+            );
+        });
 
         return response()->json($paiements);
     }

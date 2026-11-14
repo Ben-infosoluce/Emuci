@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\BillingArticle;
+use App\Models\Paiement;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -277,6 +278,51 @@ class VentilationService
         }
 
         return array_values(array_filter($lines, fn ($line) => $line['montant_ttc'] > 0));
+    }
+
+    /**
+     * Lignes de ventilation à afficher pour un paiement.
+     *
+     * On privilégie les lignes réellement enregistrées (`paiement_lignes`).
+     * Pour un paiement historique qui n'a pas encore été re-ventilé, on les
+     * recalcule et on les répartit sur le montant encaissé, comme sur le reçu.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function linesForPaiement(Paiement $paiement): array
+    {
+        $lignes = $paiement->relationLoaded('lignes')
+            ? $paiement->lignes
+            : $paiement->lignes()->get();
+
+        if ($lignes->isNotEmpty()) {
+            return $lignes->map(fn ($ligne) => [
+                'article_code' => $ligne->article_code,
+                'libelle' => $ligne->libelle,
+                'fait_generateur' => $ligne->fait_generateur,
+                'montant_ht' => (float) $ligne->montant_ht,
+                'montant_ttc' => (float) $ligne->montant_ttc,
+                'parent_detail_type_service_id' => $ligne->parent_detail_type_service_id,
+            ])->values()->all();
+        }
+
+        $dossier = $paiement->dossier;
+
+        if (!$dossier) {
+            return [];
+        }
+
+        $description = json_decode($paiement->description ?? '[]', true);
+
+        return $this->rescaleToCollected(
+            $this->historicalLines(
+                is_array($description) ? $description : [],
+                $dossier,
+                $dossier->r_dossier_vehicule->genre_vehicule ?? null
+            ),
+            (float) $paiement->montant,
+            (float) $paiement->timbre
+        );
     }
 
     /**
