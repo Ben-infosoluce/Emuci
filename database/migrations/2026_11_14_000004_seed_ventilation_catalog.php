@@ -183,8 +183,18 @@ return new class extends Migration
             if (!$service) {
                 // On force un ID élevé pour ne jamais réutiliser les valeurs
                 // sentinelles 46 (RELICA-PRIMO) et 47 (PRIMO-ESPECE) présentes
-                // dans d'anciens dossiers.
+                // dans d'anciens dossiers. Si l'ID prévu est déjà occupé dans
+                // cet environnement, on prend le prochain ID libre : le code
+                // reste la référence stable, jamais l'ID.
                 $id = $group['new_id'] ?? null;
+
+                if ($id && DB::table('detail_type_services')->where('id', $id)->exists()) {
+                    $id = null;
+                }
+
+                if (!$id) {
+                    $id = max(1001, (int) DB::table('detail_type_services')->max('id') + 1);
+                }
 
                 DB::table('detail_type_services')->insert([
                     'id' => $id,
