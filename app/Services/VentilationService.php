@@ -254,6 +254,9 @@ class VentilationService
 
         $factor = $collected / $weight;
         $isCatalogExact = abs($factor - 1) < 0.000001;
+        // Les montants FCFA sont entiers : on arrondit chaque ligne à l'unité
+        // pour que la somme affichée sur le reçu corresponde exactement au total.
+        $wholeUnits = abs($collected - round($collected)) < 0.005;
         $sum = 0.0;
         $last = count($lines) - 1;
 
@@ -261,7 +264,8 @@ class VentilationService
             if ($index === $last) {
                 $line['montant_ttc'] = round($collected - $sum, 2);
             } else {
-                $line['montant_ttc'] = round((float) $line['montant_ttc'] * $factor, 2);
+                $montant = (float) $line['montant_ttc'] * $factor;
+                $line['montant_ttc'] = $wholeUnits ? round($montant) : round($montant, 2);
                 $sum += $line['montant_ttc'];
             }
 
