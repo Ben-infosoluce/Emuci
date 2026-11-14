@@ -25,4 +25,12 @@ class Paiement extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    /**
+     * Ventilation du paiement (source de vérité pour Sage X3).
+     */
+    public function lignes()
+    {
+        return $this->hasMany(PaiementLigne::class, 'paiement_id');
+    }
 }

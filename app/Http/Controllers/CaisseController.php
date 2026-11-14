@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use App\Models\ControlleurCaisse;
+use App\Services\VentilationService;
 use App\Support\ModificationFields;
 
 class CaisseController extends Controller
@@ -162,6 +163,11 @@ class CaisseController extends Controller
         }
         // dd($detailTypeServices);
 
+        // Ajout du catalogue de ventilation (REI01_1, REI01_2, ...) pour l'affichage
+        // du détail en caisse. Les services non ventilés restent inchangés.
+        $detailTypeServices = app(VentilationService::class)
+            ->attachCatalog($detailTypeServices->all());
+
         // dd($detailTypeServices);
         // } else {
         //     // dd('ici');
@@ -189,6 +195,9 @@ class CaisseController extends Controller
                 ->whereIn('id', $details_lier)
                 ->where('id_site', getIdSite())
                 ->get();
+
+            $detailTypeServices_lier = app(VentilationService::class)
+                ->attachCatalog($detailTypeServices_lier->all());
         }
 
         // récupération du genre et du nombre de plaques (pour choisir la facturation correcte)

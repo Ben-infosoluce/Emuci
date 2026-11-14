@@ -11,6 +11,7 @@ use App\Models\Paiement;
 use App\Models\Service;
 use App\Models\Vehicule;
 use App\Models\ReplicaPrimo;
+use App\Services\VentilationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -84,11 +85,17 @@ class PaiementController extends Controller
              */
 
             // Pour dossier principal
+            $ventilation = app(VentilationService::class);
+            $genreVehicule = $dossier->r_dossier_vehicule->genre_vehicule ?? null;
+
+            $detailServicesPrincipal = $this->mapLegacyPrimoItems(
+                $dossier,
+                $validated['detailTypeServices'] ?? []
+            );
+
             $montant_dossier_ht = 0;
-            if (!empty($validated['detailTypeServices'])) {
-                foreach ($validated['detailTypeServices'] as $item) {
-                    $montant_dossier_ht += $item['montant'];
-                }
+            foreach ($detailServicesPrincipal as $item) {
+                $montant_dossier_ht += $ventilation->totalTtc($item, $genreVehicule);
             }
             // Suppression de la TVA
             $montant_dossier_taxe = 0;
@@ -98,7 +105,7 @@ class PaiementController extends Controller
             $montant_dossier_lier_ht = 0;
             if (!empty($validated['detailTypeServices_lier'])) {
                 foreach ($validated['detailTypeServices_lier'] as $item) {
-                    $montant_dossier_lier_ht += $item['montant'];
+                    $montant_dossier_lier_ht += $ventilation->totalTtc($item, $genreVehicule);
                 }
             }
             //gère ici has_changement_plaque, suppression TVA
@@ -131,7 +138,7 @@ class PaiementController extends Controller
                 ]);
 
                 // Paiement dossier lié : montant TTC
-                DB::table('paiements')->insert([
+                $paiementLierId = DB::table('paiements')->insertGetId([
                     'id_dossier' => $dossier_lier->id,
                     'montant' => $montant_dossier_lier_ttc,
                     'mode_paiement' => 'Cash',
@@ -148,6 +155,12 @@ class PaiementController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+
+                $ventilation->createForPaiement(
+                    $paiementLierId,
+                    $validated['detailTypeServices_lier'] ?? [],
+                    $genreVehicule
+                );
             }
 
 
@@ -164,14 +177,14 @@ class PaiementController extends Controller
             ]);
 
             // Paiement dossier principal : montant TTC
-            DB::table('paiements')->insert([
+            $paiementPrincipalId = DB::table('paiements')->insertGetId([
                 'id_dossier' => $dossier->id,
                 'montant' => $montant_dossier_ttc,
                 'mode_paiement' => 'Cash',
                 'id_service' => $dossier->id_service,
                 'id_vehicule' => $dossier->id_vehicule,
                 'user_id' => Auth::id(),
-                'description' => json_encode($validated['detailTypeServices']),
+                'description' => json_encode($detailServicesPrincipal),
                 'reference' => 'PAI' . strtoupper(uniqid()),
                 'caisse_ouverture_id' => $caisseOuvertureId,
                 'numrec' => $numrec,
@@ -180,6 +193,12 @@ class PaiementController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            $ventilation->createForPaiement(
+                $paiementPrincipalId,
+                $detailServicesPrincipal,
+                $genreVehicule
+            );
 
             DB::commit();
 
@@ -317,12 +336,18 @@ class PaiementController extends Controller
             // dd($validated['detailTypeServices'], $changementPlaqueData);
 
             // Pour dossier principal
+            $ventilation = app(VentilationService::class);
+            $genreVehicule = $dossier->r_dossier_vehicule->genre_vehicule ?? null;
+
             $montant_dossier_ht = 0;
-            $detailServicesPrincipal = $validated['detailTypeServices'] ?? [];
+            $detailServicesPrincipal = $this->mapLegacyPrimoItems(
+                $dossier,
+                $validated['detailTypeServices'] ?? []
+            );
 
             if (!empty($detailServicesPrincipal)) {
                 foreach ($detailServicesPrincipal as $item) {
-                    $montant_dossier_ht += $item['montant'];
+                    $montant_dossier_ht += $ventilation->totalTtc($item, $genreVehicule);
                 }
             }
 
@@ -355,7 +380,7 @@ class PaiementController extends Controller
             $montant_dossier_lier_ht = 0;
             if (!empty($validated['detailTypeServices_lier'])) {
                 foreach ($validated['detailTypeServices_lier'] as $item) {
-                    $montant_dossier_lier_ht += $item['montant'];
+                    $montant_dossier_lier_ht += $ventilation->totalTtc($item, $genreVehicule);
                 }
             }
 
@@ -388,7 +413,7 @@ class PaiementController extends Controller
                 ]);
 
                 // Paiement dossier lié (sans changement de plaque dans la description)
-                DB::table('paiements')->insert([
+                $paiementLierId = DB::table('paiements')->insertGetId([
                     'id_dossier' => $dossier_lier->id,
                     'montant' => $montant_dossier_lier_ttc,
                     'mode_paiement' => 'Cash',
@@ -404,6 +429,12 @@ class PaiementController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+
+                $ventilation->createForPaiement(
+                    $paiementLierId,
+                    $validated['detailTypeServices_lier'] ?? [],
+                    $genreVehicule
+                );
             }
 
 
@@ -426,7 +457,7 @@ class PaiementController extends Controller
             ]);
 
             // Paiement dossier principal : montant TTC (avec changement de plaque inclus dans montant ET description)
-            DB::table('paiements')->insert([
+            $paiementPrincipalId = DB::table('paiements')->insertGetId([
                 'id_dossier' => $dossier->id,
                 'montant' => $montant_dossier_ttc,
                 'mode_paiement' => 'Cash',
@@ -442,6 +473,12 @@ class PaiementController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            $ventilation->createForPaiement(
+                $paiementPrincipalId,
+                $detailServicesPrincipal,
+                $genreVehicule
+            );
 
             DB::commit();
         } catch (\Exception $e) {
@@ -523,7 +560,10 @@ class PaiementController extends Controller
             ->whereIn('id', $details)
             ->pluck('id');
 
-        if ($dossier->type == 'FDS') {
+        if ($dossier->type == 'FDS'
+            || $dossier->type == 'PRIMO-ESPECE'
+            || $dossier->type == 'RELICA-PRIMO'
+            || $dossier->type == 'MODIFICATION') {
             $detailTypeServices = DB::table('detail_type_services')
                 ->whereIn('id', $details)
                 // ->where('id_site', getIdSite())
@@ -534,6 +574,10 @@ class PaiementController extends Controller
                 ->where('id_site', getIdSite())
                 ->get();
         }
+
+        // Détail de ventilation (REI01_1, REI01_2, REI01_3, ...) pour le reçu.
+        $detailTypeServices = app(VentilationService::class)
+            ->attachCatalog($detailTypeServices->all());
 
 
         /*
@@ -572,13 +616,87 @@ class PaiementController extends Controller
                     ->whereIn('id', $details_lier)
                     ->where('id_site', getIdSite())
                     ->get();
+
+                $detailTypeServices_lier = app(VentilationService::class)
+                    ->attachCatalog($detailTypeServices_lier->all());
             }
         }
 
 
         /*
          |--------------------------------------------------------------------------
-         | 4️⃣ Caissier du dossier principal
+         | 4️⃣ Lignes réellement encaissées (ventilation)
+         |--------------------------------------------------------------------------
+         | On affiche les montants tels qu'ils ont été encaissés, et non les
+         | tarifs actuels du catalogue : un reçu historique doit conserver son
+         | montant même après un changement de prix. Les reçus plus anciens qui
+         | n'ont pas encore de lignes gardent l'affichage calculé.
+         */
+        $paiement = Paiement::with('lignes')
+            ->where('id_dossier', $dossier->id)
+            ->latest('id')
+            ->first();
+
+        $mapLignes = function ($paiement) {
+            if (!$paiement) {
+                return [];
+            }
+
+            return $paiement->lignes->map(fn ($ligne) => [
+                'article_code' => $ligne->article_code,
+                'libelle' => $ligne->libelle,
+                'fait_generateur' => $ligne->fait_generateur,
+                'montant_ht' => (float) $ligne->montant_ht,
+                'montant_ttc' => (float) $ligne->montant_ttc,
+                'parent_detail_type_service_id' => $ligne->parent_detail_type_service_id,
+            ])->values()->all();
+        };
+
+        $paiementLignes = $mapLignes($paiement);
+
+        // Paiement du dossier lié : même numéro de recette que le principal.
+        $paiementLier = null;
+        $paiementLignesLier = [];
+
+        if ($dossier_lier) {
+            $paiementLier = Paiement::with('lignes')
+                ->where('id_dossier', $dossier_lier->id)
+                ->when($paiement && $paiement->numrec, fn ($query) => $query->where('numrec', $paiement->numrec))
+                ->latest('id')
+                ->first();
+
+            if (!$paiementLier) {
+                $paiementLier = Paiement::with('lignes')
+                    ->where('id_dossier', $dossier_lier->id)
+                    ->latest('id')
+                    ->first();
+            }
+
+            $paiementLignesLier = $mapLignes($paiementLier);
+        }
+
+        $paiementInfo = function ($paiement) {
+            if (!$paiement) {
+                return null;
+            }
+
+            $description = json_decode($paiement->description ?? '[]', true);
+
+            return [
+                'id' => $paiement->id,
+                'reference' => $paiement->reference,
+                'numrec' => $paiement->numrec,
+                'montant' => (float) $paiement->montant,
+                'timbre' => (float) $paiement->timbre,
+                // Détail historique (avant ventilation) : sert de repli pour les
+                // reçus qui n'ont pas encore de paiement_lignes.
+                'description' => is_array($description) ? $description : [],
+            ];
+        };
+
+        /*
+         |--------------------------------------------------------------------------
+         | 5️⃣ Caissier du dossier principal
          |--------------------------------------------------------------------------
          */
         $caissier = DB::table('users')
@@ -620,7 +738,7 @@ class PaiementController extends Controller
 
         /*
          |--------------------------------------------------------------------------
-         | 5️⃣ Retour vers Inertia
+         | 6️⃣ Retour vers Inertia
          |--------------------------------------------------------------------------
          */
 
@@ -630,9 +748,15 @@ class PaiementController extends Controller
             'detailTypeServices' => $detailTypeServices,
             'caissier' => $caissier,
 
+            // --- Montants réellement encaissés ---
+            'paiement' => $paiementInfo($paiement),
+            'paiementLignes' => $paiementLignes,
+
             // --- Dossier lié ---
             'dossier_lier' => $dossier_lier,
             'detailTypeServices_lier' => $detailTypeServices_lier,
+            'paiement_lier' => $paiementInfo($paiementLier),
+            'paiementLignes_lier' => $paiementLignesLier,
 
             'autre_facturation' => $autre_facturation,
             'relicaPrimo' => $relicaPrimo,
@@ -884,6 +1008,52 @@ class PaiementController extends Controller
             ->where('statut', 'ouvert')
             ->latest('date_ouverture')
             ->value('id');
+    }
+
+    /**
+     * Rattache les anciens dossiers PRIMO-ESPECE (détail sentinelle 47 ou
+     * ligne synthétique sans id) au service PRIM1 / PRIM2 / PRIM3 correspondant
+     * au genre du véhicule. Sans cela, ces paiements partiraient en X3 avec un
+     * article générique et ne seraient pas ventilés.
+     *
+     * @param  array<int, mixed>  $items
+     * @return array<int, mixed>
+     */
+    private function mapLegacyPrimoItems(Dossier $dossier, array $items): array
+    {
+        if ($dossier->type !== 'PRIMO-ESPECE' || empty($items)) {
+            return $items;
+        }
+
+        $genre = strtoupper((string) ($dossier->r_dossier_vehicule->genre_vehicule ?? ''));
+        $code = str_contains($genre, 'REMORQUE')
+            ? 'PRIM3'
+            : (str_contains($genre, 'MOTO') ? 'PRIM2' : 'PRIM1');
+
+        $serviceId = DB::table('detail_type_services')->where('code', $code)->value('id');
+
+        if (!$serviceId) {
+            return $items;
+        }
+
+        $serviceId = (int) $serviceId;
+
+        return array_map(function ($item) use ($serviceId) {
+            if (!is_array($item)) {
+                return $item;
+            }
+
+            $detailId = $item['id'] ?? null;
+            $isRealService = is_numeric($detailId)
+                && DB::table('detail_type_services')->where('id', (int) $detailId)->exists();
+
+            if (!$isRealService) {
+                $item['id'] = $serviceId;
+                $item['id_type_services'] = $item['id_type_services'] ?? 19;
+            }
+
+            return $item;
+        }, $items);
     }
 
     private function notifierPaiementExterne($chrono)

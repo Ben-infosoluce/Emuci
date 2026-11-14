@@ -290,7 +290,11 @@ class PdcController extends Controller
             $dossier->id_service = 1;
             $dossier->id_type_service = 1;
             $dossier->num_chrono = $request->num_chrono ?? generateChronoNumber('OPSP');
-            $dossier->detail = '["45"]';
+
+            // Opération Spéciale : OPS01 = Moto, OPS02 = Auto.
+            $opsCode = $this->genreCategory($request->genre) === 'moto' ? 'OPS01' : 'OPS02';
+            $opsId = $this->getBillingServiceId($opsCode);
+            $dossier->detail = json_encode([$opsId ?: 45]);
             $dossier->type = 'FDS';
             $dossier->statut = 1;
             $dossier->date_creation = now();
@@ -787,7 +791,17 @@ class PdcController extends Controller
             $dossier->id_service = 6; // ID du service PRIMO-ESPECE
             $dossier->id_type_service = 19; // ID du type de service PRIMO-ESPECE
             $dossier->num_chrono = $num_chrono;
-            $dossier->detail = json_encode(["47"]); // ID du service pour PRIMO-ESPECE
+
+            // PRIMO-ESPECE : le service facturé dépend du genre.
+            // PRIM1 = Auto, PRIM2 = Moto, PRIM3 = Semi-remorque.
+            $primCode = match ($this->genreCategory($request->GENRE)) {
+                'remorque' => 'PRIM3',
+                'moto' => 'PRIM2',
+                default => 'PRIM1',
+            };
+            $primId = $this->getBillingServiceId($primCode);
+
+            $dossier->detail = json_encode([$primId ?: 47]); // ID du service pour PRIMO-ESPECE
             $dossier->type = 'PRIMO-ESPECE';
             $dossier->statut = 1;
             $dossier->date_creation = $date_ouverture_parsed;
@@ -1019,7 +1033,15 @@ class PdcController extends Controller
                 // PRIMO-ESPECE
                 $dossier->id_service = 6;
                 $dossier->id_type_service = 19;
-                $dossier->detail = json_encode(["47"]);
+
+                $primCode = match ($this->genreCategory($request->GENRE)) {
+                    'remorque' => 'PRIM3',
+                    'moto' => 'PRIM2',
+                    default => 'PRIM1',
+                };
+                $primId = $this->getBillingServiceId($primCode);
+
+                $dossier->detail = json_encode([$primId ?: 47]);
                 $dossier->type = 'PRIMO-ESPECE';
             } else {
                 // RELICA-PRIMO (flag_column === 2)
@@ -2427,8 +2449,20 @@ class PdcController extends Controller
                 $id_type_service = 2; // Ré-immatriculation Ordinaire
             }
 
-            if (strtoupper(trim((string) $request->input('genre'))) === 'MOTOCYCLETTE') {
-                $detail = [46]; // Ré-immatriculation Motocyclette
+            // Ré-immatriculation ordinaire : le service facturé dépend du genre.
+            // REI01 = Auto, REI02 = Moto, REI03 = Semi-remorque.
+            // La ré-immatriculation diplomatique (detail = 1) n'est pas ventilée.
+            if ($request->input('detail') != 1) {
+                $reiCode = match ($this->genreCategory($request->input('genre'))) {
+                    'remorque' => 'REI03',
+                    'moto' => 'REI02',
+                    default => 'REI01',
+                };
+
+                $reiId = $this->getBillingServiceId($reiCode);
+                if ($reiId) {
+                    $detail = [$reiId];
+                }
             }
 
             // Création du dossier
@@ -4475,4 +4509,33 @@ class PdcController extends Controller
     }
 
     //**************** FIN POOL DE CONTROLE *****************//
+
+    /**
+     * ID du service correspondant à un code métier (REI01, PRIM2, OPS01, ...).
+     * Le code est posé par la migration du catalogue de ventilation.
+     */
+    private function getBillingServiceId(string $code): ?int
+    {
+        $id = DB::table('detail_type_services')->where('code', $code)->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
+    /**
+     * Catégorie tarifaire déduite du genre du véhicule.
+     */
+    private function genreCategory(?string $genre): string
+    {
+        $genre = strtoupper((string) $genre);
+
+        if (str_contains($genre, 'REMORQUE')) {
+            return 'remorque';
+        }
+
+        if (str_contains($genre, 'MOTO')) {
+            return 'moto';
+        }
+
+        return 'auto';
+    }
 }

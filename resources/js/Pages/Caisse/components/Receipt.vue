@@ -123,7 +123,7 @@
                     <tr>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Droit de Timbre</td>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem; text-align: right;">{{
-                            formatAmount(100) }}</td>
+                            formatAmount(timbreTotal) }}</td>
                     </tr>
                     <tr>
                         <td style="border: 1px solid #d1d5db; padding: 0.4rem 0.6rem;">Total Payé</td>
@@ -169,6 +169,10 @@ const props = defineProps({
     detailTypeServices_lier: Object,
     autre_facturation: Object,
     relicaPrimo: Object,
+    paiement: Object,
+    paiementLignes: { type: Array, default: () => [] },
+    paiement_lier: Object,
+    paiementLignes_lier: { type: Array, default: () => [] },
 });
 console.log('Props reçus dans Receipt.vue :', props.dossier);
 const zoneImpression = ref(null);
@@ -195,6 +199,53 @@ const RELICA_PRIX = { auto: 22600, moto: 14100, remorque: 15570 };
 const isRelica = props.dossier?.type === 'RELICA-PRIMO';
 const isPrimoEspece = props.dossier?.type === 'PRIMO-ESPECE';
 const isModification = props.dossier?.type === 'MODIFICATION';
+
+// ── Montants réellement encaissés ───────────────────────────────────────────
+// Les lignes de paiement (paiement_lignes) sont la source de vérité : elles
+// permettent à un reçu historique de conserver son montant même après un
+// changement de tarif. On retombe sur l'ancien calcul si elles n'existent pas.
+const paiementLignes = computed(() => props.paiementLignes || []);
+const paiementLignesLier = computed(() => props.paiementLignes_lier || []);
+const hasPaiementLignes = computed(() =>
+    paiementLignes.value.length > 0 || paiementLignesLier.value.length > 0
+);
+
+const paiementMontant = computed(() => {
+    if (!props.paiement) return null;
+    return Number(props.paiement.montant || 0) + Number(props.paiement_lier?.montant || 0);
+});
+
+const timbreTotal = computed(() => {
+    if (!props.paiement) return 100;
+    return Number(props.paiement.timbre || 0) + Number(props.paiement_lier?.timbre || 0);
+});
+
+const paiementNet = computed(() => {
+    if (paiementMontant.value === null) return null;
+    return Math.max(0, paiementMontant.value - timbreTotal.value);
+});
+
+const lignesVersItems = (lignes) => lignes.map(ligne => ({
+    name: `${ligne.libelle || ligne.article_code} (${ligne.article_code})`,
+    amount: Number(ligne.montant_ttc) || 0,
+}));
+
+// Détail historique du paiement (avant ventilation) : repli pour les reçus
+// antérieurs à la création de paiement_lignes. Les montants y sont ceux
+// réellement encaissés.
+const paiementDescription = computed(() =>
+    Array.isArray(props.paiement?.description) ? props.paiement.description : []
+);
+const paiementDescriptionLier = computed(() =>
+    Array.isArray(props.paiement_lier?.description) ? props.paiement_lier.description : []
+);
+
+const descriptionVersItems = (items) => (items || [])
+    .filter(item => item && Number(item.montant) !== 0)
+    .map(item => ({
+        name: item.element_facturation || 'Service',
+        amount: Number(item.montant) || 0,
+    }));
 
 const modificationMontantHT = computed(() => {
     return props.dossier?.status_pose_plaque == 1 ? 15000 : 25000;
@@ -241,21 +292,46 @@ const relicaReliquat = computed(() => {
 const items = computed(() => {
     // ── Cas RELICA-PRIMO : afficher le détail reliquat ──
     if (isRelica) {
+        // Le montant encaissé prime sur le tarif courant.
+        const reliquat = paiementNet.value ?? relicaReliquat.value;
+
         if (relicaGenreCategory.value === 'moto') {
             return [
-                { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`, amount: 7800, isReliquat: true },
+                { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`, amount: reliquat, isReliquat: true },
             ];
         }
         return [
             { name: `Prix total TTC — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: false },
             { name: `Déjà réglé (Dossiers ${relicaPrefix.value})`, amount: -relicaDejaRegle.value, isReliquat: false },
-            { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`, amount: relicaReliquat.value, isReliquat: true },
+            { name: `Reliquat à encaisser (${relicaGenreLabel.value} / ${relicaPrefix.value})`, amount: reliquat, isReliquat: true },
         ];
     }
 
-    // ── Cas PRIMO-ESPECE : afficher uniquement le montant total ──
-    // Même logique que RELICA-PRIMO mais rien n'a été déjà réglé, on facture la totalité
+    // ── Cas PRIMO-ESPECE : ventilation PRIM1 / PRIM2 / PRIM3 ──
+    // Même logique que RELICA-PRIMO mais rien n'a été déjà réglé, on facture la totalité.
     if (isPrimoEspece) {
+        // Montants réellement encaissés (reçus historiques inclus).
+        if (hasPaiementLignes.value) {
+            return [
+                ...lignesVersItems(paiementLignes.value),
+                ...lignesVersItems(paiementLignesLier.value),
+            ];
+        }
+
+        if (paiementDescription.value.length) {
+            return descriptionVersItems(paiementDescription.value);
+        }
+
+        const primoItem = (props.detailTypeServices || [])
+            .find(item => Array.isArray(item?.ventilation) && item.ventilation.length);
+
+        if (primoItem) {
+            return primoItem.ventilation.map(ligne => ({
+                name: `${ligne.libelle} (${ligne.code})`,
+                amount: Number(ligne.montant_ttc) || 0,
+            }));
+        }
+
         return [
             { name: `Prix total TTC — ${relicaGenreLabel.value}`, amount: relicaPrixTotal.value, isReliquat: true }
         ];
@@ -265,11 +341,27 @@ const items = computed(() => {
     if (isModification) {
         const plaqueLabel = props.dossier?.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée';
         return [
-            { name: `Modification (${plaqueLabel})`, amount: modificationMontantHT.value, isReliquat: true }
+            { name: `Modification (${plaqueLabel})`, amount: paiementNet.value ?? modificationMontantHT.value, isReliquat: true }
         ];
     }
 
     // ── Cas standard ──
+    // Montants réellement encaissés (reçus historiques inclus).
+    if (hasPaiementLignes.value) {
+        return [
+            ...lignesVersItems(paiementLignes.value),
+            ...lignesVersItems(paiementLignesLier.value),
+        ];
+    }
+
+    // Repli : détail du paiement (avant ventilation), montants encaissés.
+    if (paiementDescription.value.length || paiementDescriptionLier.value.length) {
+        return descriptionVersItems([
+            ...paiementDescription.value,
+            ...paiementDescriptionLier.value,
+        ]);
+    }
+
     const result = [];
     if (hasTriggerService && props.autre_facturation) {
         result.push({
@@ -278,10 +370,19 @@ const items = computed(() => {
         });
     }
     result.push(
-        ...tableauFusionne.map(item => ({
-            name: item.element_facturation,
-            amount: parseFloat(item?.montant || 0),
-        }))
+        ...tableauFusionne.flatMap(item => {
+            if (Array.isArray(item?.ventilation) && item.ventilation.length) {
+                return item.ventilation.map(ligne => ({
+                    name: `${ligne.libelle} (${ligne.code})`,
+                    amount: Number(ligne.montant_ttc) || 0,
+                }));
+            }
+
+            return [{
+                name: item.element_facturation,
+                amount: parseFloat(item?.montant || 0),
+            }];
+        })
     );
     return result;
 });
@@ -297,6 +398,9 @@ const totalHT = computed(() =>
 // - MODIFICATION : total HT + timbre (15 000 + 100 = 15 100 ou 25 000 + 100 = 25 100)
 // - Standard     : somme HT + timbre
 const totalTTC = computed(() => {
+    // Montant réellement encaissé (principal + dossier lié) : prioritaire.
+    if (paiementMontant.value !== null) return paiementMontant.value;
+
     if (isRelica) return relicaReliquat.value + 100;
     if (isPrimoEspece) return totalHT.value + 100;
     if (isModification) return totalHT.value + 100;

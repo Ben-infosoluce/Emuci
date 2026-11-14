@@ -209,11 +209,23 @@
                                         </h4>
 
                                         <div v-for="item in items" :key="item.id"
-                                            class="flex justify-between px-2 py-1 border-b">
-                                            <span>{{ item.element_facturation }}</span>
-                                            <span class="text-right font-medium text-green-700">
-                                                {{ formatMontant(item.montant) }} F CFA
-                                            </span>
+                                            class="px-2 py-1 border-b">
+                                            <div class="flex justify-between">
+                                                <span>{{ item.element_facturation }}</span>
+                                                <span class="text-right font-medium text-green-700">
+                                                    {{ formatMontant(montantLigne(item)) }} F CFA
+                                                </span>
+                                            </div>
+                                            <div v-if="item.ventilation?.length" class="pl-4 mt-1 space-y-0.5">
+                                                <div v-for="ligne in item.ventilation" :key="ligne.code"
+                                                    class="flex justify-between text-sm text-gray-500">
+                                                    <span>
+                                                        {{ ligne.libelle }}
+                                                        <span class="text-xs text-gray-400">({{ ligne.code }})</span>
+                                                    </span>
+                                                    <span>{{ formatMontant(ligne.montant_ttc) }} F</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -376,10 +388,22 @@
                                 <div class="space-y-2 pt-4">
                                     <h3 class="font-semibold text-gray-700">Éléments à facturer</h3>
 
-                                    <!-- Ligne : Montant total -->
-                                    <div class="flex justify-between px-2 py-2 border-b font-semibold">
+                                    <!-- Ventilation PRIM1 / PRIM2 / PRIM3 -->
+                                    <template v-if="primoDetailItem">
+                                        <div v-for="ligne in primoDetailItem.ventilation" :key="ligne.code"
+                                            class="flex justify-between px-2 py-1 border-b">
+                                            <span>
+                                                {{ ligne.libelle }}
+                                                <span class="text-xs text-gray-400">({{ ligne.code }})</span>
+                                            </span>
+                                            <span class="text-right font-medium text-green-700">
+                                                {{ formatMontant(ligne.montant_ttc) }} F CFA
+                                            </span>
+                                        </div>
+                                    </template>
+                                    <div v-else class="flex justify-between px-2 py-2 border-b font-semibold">
                                         <span>Montant total à encaisser</span>
-                                        <span class="text-green-700">{{ formatMontant(relicaPrixTotal) }} F CFA</span>
+                                        <span class="text-green-700">{{ formatMontant(primoPrixTotal) }} F CFA</span>
                                     </div>
                                 </div>
 
@@ -388,7 +412,7 @@
                                     <div class="flex justify-between">
                                         <span class="font-medium">MONTANT HT :</span>
                                         <span class="font-bold text-gray-700">
-                                            {{ formatMontant(relicaPrixTotal) }} F CFA
+                                            {{ formatMontant(primoPrixTotal) }} F CFA
                                         </span>
                                     </div>
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2">
@@ -397,7 +421,7 @@
                                     </div>
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2">
                                         <span class="font-medium">TOTAL TTC :</span>
-                                        <span class="font-bold">{{ formatMontant(relicaPrixTotal + 100) }} F CFA</span>
+                                        <span class="font-bold">{{ formatMontant(primoTotalTTC) }} F CFA</span>
                                     </div>
                                 </div>
                             </div>
@@ -632,10 +656,22 @@
                                         </p>
                                     </div>
 
-                                    <!-- Montant total -->
-                                    <div class="flex justify-between px-2 py-2 border-t border-b font-semibold">
+                                    <!-- Ventilation PRIM1 / PRIM2 / PRIM3 -->
+                                    <template v-if="primoDetailItem">
+                                        <div v-for="ligne in primoDetailItem.ventilation" :key="ligne.code"
+                                            class="flex justify-between px-2 py-1 border-b">
+                                            <span>
+                                                {{ ligne.libelle }}
+                                                <span class="text-xs text-gray-400">({{ ligne.code }})</span>
+                                            </span>
+                                            <span class="text-right font-medium text-green-700">
+                                                {{ formatMontant(ligne.montant_ttc) }} F CFA
+                                            </span>
+                                        </div>
+                                    </template>
+                                    <div v-else class="flex justify-between px-2 py-2 border-t border-b font-semibold">
                                         <span>Montant total ({{ relicaGenreLabel }})</span>
-                                        <span class="font-bold text-green-700">{{ formatMontant(relicaPrixTotal) }} F
+                                        <span class="font-bold text-green-700">{{ formatMontant(primoPrixTotal) }} F
                                             CFA</span>
                                     </div>
                                 </div>
@@ -643,7 +679,7 @@
                                 <div class="space-y-2 pt-2 mt-4">
                                     <div class="flex justify-between">
                                         <span class="font-medium">MONTANT HT :</span>
-                                        <span class="font-bold text-gray-700">{{ formatMontant(relicaPrixTotal)
+                                        <span class="font-bold text-gray-700">{{ formatMontant(primoPrixTotal)
                                             }}</span>
                                     </div>
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2">
@@ -652,7 +688,7 @@
                                     </div>
                                     <div class="flex justify-between font-bold text-green-800 border-t pt-2 text-xl">
                                         <span class="font-medium uppercase">Total à payer :</span>
-                                        <span class="font-bold">{{ formatMontant(relicaPrixTotal + 100) }}</span>
+                                        <span class="font-bold">{{ formatMontant(primoTotalTTC) }}</span>
                                     </div>
                                 </div>
                             </template>
@@ -667,11 +703,23 @@
                                             {{ getNomTypeServiceById(parseInt(idType)) }}
                                         </h4>
                                         <div v-for="item in items" :key="item.id"
-                                            class="flex justify-between px-2 py-1 border-b">
-                                            <span>{{ item.element_facturation }}</span>
-                                            <span class="text-right font-medium text-green-700">
-                                                {{ formatMontant(item.montant) }} F CFA
-                                            </span>
+                                            class="px-2 py-1 border-b">
+                                            <div class="flex justify-between">
+                                                <span>{{ item.element_facturation }}</span>
+                                                <span class="text-right font-medium text-green-700">
+                                                    {{ formatMontant(montantLigne(item)) }} F CFA
+                                                </span>
+                                            </div>
+                                            <div v-if="item.ventilation?.length" class="pl-4 mt-1 space-y-0.5">
+                                                <div v-for="ligne in item.ventilation" :key="ligne.code"
+                                                    class="flex justify-between text-sm text-gray-500">
+                                                    <span>
+                                                        {{ ligne.libelle }}
+                                                        <span class="text-xs text-gray-400">({{ ligne.code }})</span>
+                                                    </span>
+                                                    <span>{{ formatMontant(ligne.montant_ttc) }} F</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -713,7 +761,7 @@
                                                     <span class="font-medium">PRIX HT:</span>
                                                      <span class="font-bold">{{ formatMontant(
                                                         dossier.type === 'RELICA-PRIMO' ? relicaMontantHT :
-                                                            dossier.type === 'PRIMO-ESPECE' ? relicaPrixTotal :
+                                                            dossier.type === 'PRIMO-ESPECE' ? primoPrixTotal :
                                                                 dossier.type === 'MODIFICATION' ? modificationMontantHT :
                                                                     getPrixHT()
                                                     ) }} F</span>
@@ -727,7 +775,7 @@
                                                     <span class="font-extrabold text-2xl text-black">
                                                         {{ formatMontant(
                                                             dossier.type === 'RELICA-PRIMO' ? relicaMontantTTC :
-                                                                dossier.type === 'PRIMO-ESPECE' ? (relicaPrixTotal + 100) :
+                                                                dossier.type === 'PRIMO-ESPECE' ? primoTotalTTC :
                                                                     dossier.type === 'MODIFICATION' ? modificationMontantTTC :
                                                                         getMontantTotal()
                                                         ) }}
@@ -912,9 +960,16 @@ const groupedDetailTypeServices = computed(() => {
 })
 
 // Calcule le total brut HT
+const montantLigne = (item) => {
+    if (Array.isArray(item?.ventilation) && item.ventilation.length) {
+        return item.ventilation.reduce((sum, ligne) => sum + Number(ligne.montant_ttc || 0), 0);
+    }
+    return Number(item?.montant || 0);
+};
+
 const getPrixHT = () => {
     return tableauFusionne.reduce((total, item) => {
-        return total + parseInt(item.montant);
+        return total + montantLigne(item);
     }, 0);
 };
 
@@ -992,6 +1047,23 @@ const relicaReliquat = computed(() => {
 const relicaMontantHT = computed(() => relicaReliquat.value);
 const relicaMontantTTC = computed(() => relicaReliquat.value + 100);
 
+// ── PRIMO-ESPECE ventilé (PRIM1 / PRIM2 / PRIM3) ────────────────────────────
+// Depuis l'implémentation de la ventilation, le dossier PRIMO-ESPECE porte
+// directement le service PRIM1/2/3 dans `detail`. On utilise alors le catalogue
+// (3 lignes) ; l'ancien prix forfaitaire reste le fallback des dossiers historiques.
+const primoDetailItem = computed(() => {
+    return (props.detailTypeServices || []).find(item => Array.isArray(item?.ventilation) && item.ventilation.length) || null;
+});
+
+const primoPrixTotal = computed(() => {
+    if (primoDetailItem.value) {
+        return montantLigne(primoDetailItem.value);
+    }
+    return relicaPrixTotal.value;
+});
+
+const primoTotalTTC = computed(() => primoPrixTotal.value + 100);
+
 // ── MODIFICATION : prix selon statut plaque ───────────────────────────────────
 // status_pose_plaque = 1 → Plaque non posée → 15 000 F
 // status_pose_plaque = 2 → Plaque posée → 25 000 F
@@ -1027,10 +1099,14 @@ async function validerPaiement() {
     const nouveauStatut = 2;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    const isRelica = props.dossier?.type === 'RELICA-PRIMO' || props.dossier?.type === 'PRIMO-ESPECE';
+    const isRelicaPrimo = props.dossier?.type === 'RELICA-PRIMO';
+    const isPrimoEspece = props.dossier?.type === 'PRIMO-ESPECE';
+    const isRelica = isRelicaPrimo || isPrimoEspece;
     const isModification = props.dossier?.type === 'MODIFICATION';
+    const primoHasDetail = isPrimoEspece && (props.detailTypeServices || []).length > 0;
 
-    // Pour RELICA-PRIMO / PRIMO-ESPECE : détail = reliquat selon genre + site
+    // Pour RELICA-PRIMO (et PRIMO-ESPECE historique sans service PRIM1/2/3) :
+    // détail = reliquat selon genre + site.
     const relicaDetail = isRelica ? [{
         id: null,
         element_facturation: `Reliquat RELICA PRIMO — ${relicaGenreLabel.value} (${relicaPrefix.value})`,
@@ -1046,6 +1122,17 @@ async function validerPaiement() {
         id_type_services: null,
     }] : null;
 
+    const detailAPoster = isRelicaPrimo
+        ? relicaDetail
+        : (isPrimoEspece && !primoHasDetail)
+            ? relicaDetail
+            : (isModification ? modificationDetail : detailTypeServicesFormatted.value);
+
+    const montantAPoster = isRelicaPrimo
+        ? relicaMontantTTC.value
+        : (isPrimoEspece ? primoTotalTTC.value
+            : (isModification ? modificationMontantTTC.value : getMontantTotal()));
+
     try {
         const promise = axios.post(
             `/statut/paiement`,
@@ -1053,9 +1140,9 @@ async function validerPaiement() {
                 statut_paiement: nouveauStatut,
                 chrono: props.dossier.num_chrono,
                 chrono_lier: props.dossier_lier?.num_chrono,
-                detailTypeServices: isRelica ? relicaDetail : (isModification ? modificationDetail : detailTypeServicesFormatted.value),
+                detailTypeServices: detailAPoster,
                 detailTypeServices_lier: detailTypeServicesLierFormatted.value,
-                montant_total: isRelica ? relicaMontantTTC.value : (isModification ? modificationMontantTTC.value : getMontantTotal()),
+                montant_total: montantAPoster,
                 caisse_ouverture_id: store.caisseOpened.caisse_id,
                 id_site: props.dossier.id_site,
                 has_changement_plaque: hasTriggerService && !isRelica,

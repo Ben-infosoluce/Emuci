@@ -38,6 +38,7 @@ return [
         'url' => env('X3_URL'),
         'username' => env('X3_USERNAME'),
         'password' => env('X3_PASSWORD'),
+        'dry_run' => (bool) env('X3_DRY_RUN', false),
     ],
 
 ];

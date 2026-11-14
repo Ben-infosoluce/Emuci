@@ -62,7 +62,7 @@ class SendPaiementsToX3Job implements ShouldQueue
     public function handle(X3FactureService $x3)
     {
         // Récupération des paiements pour la date et la caisse spécifiées
-        $query = Paiement::with('dossier')
+        $query = Paiement::with(['dossier', 'lignes'])
             ->whereDate('created_at', $this->dateOperation);
 
         if ($this->caisseId) {
@@ -188,6 +188,63 @@ class SendPaiementsToX3Job implements ShouldQueue
                 ];
 
                 foreach ($paiementsDuDossier as $paiement) {
+                    /*
+                     |------------------------------------------------------------------
+                     | Ventilation enregistrée au moment du paiement
+                     |------------------------------------------------------------------
+                     | Si des lignes de ventilation existent, elles sont la source de
+                     | vérité : on les envoie telles quelles (3 lignes REI01_1..3, etc.)
+                     | et on n'applique pas l'ancienne logique PLQ / services_par_id.
+                     */
+                    $lignesVentilees = $paiement->relationLoaded('lignes')
+                        ? $paiement->lignes
+                        : $paiement->lignes()->get();
+
+                    if ($lignesVentilees->isNotEmpty()) {
+                        $vinVehicule = $paiement->dossier->vehicule->vin ?? $numFacture;
+
+                        // On arrondit à l'unité comme X3, puis on ajuste la dernière
+                        // ligne pour que le total de la facture corresponde exactement
+                        // au montant encaissé (les lignes historiques peuvent être
+                        // réparties au prorata avec des centimes).
+                        $paymentLines = [];
+                        foreach ($lignesVentilees as $ligneVentilee) {
+                            $paymentLines[] = [
+                                'itmref' => $ligneVentilee->article_code,
+                                'ht' => (int) round((float) $ligneVentilee->montant_ht),
+                                'ttc' => (int) round((float) $ligneVentilee->montant_ttc),
+                            ];
+                        }
+
+                        $targetTtc = (int) round((float) $paiement->montant - (float) ($paiement->timbre ?? 0));
+                        $targetHt = (int) round($targetTtc / 1.18);
+                        $lastIndex = count($paymentLines) - 1;
+
+                        if ($lastIndex >= 0) {
+                            $paymentLines[$lastIndex]['ttc'] += $targetTtc - array_sum(array_column($paymentLines, 'ttc'));
+                            $paymentLines[$lastIndex]['ht'] += $targetHt - array_sum(array_column($paymentLines, 'ht'));
+                        }
+
+                        foreach ($paymentLines as $line) {
+                            $totalHT += $line['ht'];
+                            $totalTTC += $line['ttc'];
+
+                            $lignesAEnvoyer[] = [
+                                'LIN' => $linCounter,
+                                'ITMREF' => $line['itmref'],
+                                'CHRONO' => $paiement->dossier->num_chrono,
+                                'VINVEHICULE' => $vinVehicule,
+                                'QTYUS' => 1,
+                                'NETPRIX' => $line['ht'],
+                                'MONTANTHTLN' => $line['ht'],
+                                'MONTANTTTCLN' => $line['ttc'],
+                            ];
+                            $linCounter += 1000;
+                        }
+
+                        continue;
+                    }
+
                     // 1. Récupérer le breakdown des montants depuis la description du paiement
                     $description = json_decode($paiement->description ?? '[]', true);
                     if (json_last_error() !== JSON_ERROR_NONE) {
