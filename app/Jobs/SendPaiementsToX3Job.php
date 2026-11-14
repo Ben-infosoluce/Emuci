@@ -62,7 +62,7 @@ class SendPaiementsToX3Job implements ShouldQueue
     public function handle(X3FactureService $x3)
     {
         // Récupération des paiements pour la date et la caisse spécifiées
-        $query = Paiement::with(['dossier', 'lignes'])
+        $query = Paiement::with(['dossier.r_dossier_vehicule', 'dossier.r_dossier_client', 'lignes'])
             ->whereDate('created_at', $this->dateOperation);
 
         if ($this->caisseId) {
@@ -158,7 +158,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                     throw new Exception("Dossier manquant ou introuvable pour la facture [NUM: $numFacture]");
                 }
                 Log::info('dossier', $dossier->toArray());
-                $client = $dossier->client;
+                $client = $dossier->r_dossier_client;
 
                 // ÉTAPE 1 : Préparation et calcul des lignes en mémoire
                 $lignesAEnvoyer = [];
@@ -201,7 +201,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                         : $paiement->lignes()->get();
 
                     if ($lignesVentilees->isNotEmpty()) {
-                        $vinVehicule = $paiement->dossier->vehicule->vin ?? $numFacture;
+                        $vinVehicule = $paiement->dossier->r_dossier_vehicule->vin ?? $numFacture;
 
                         // On arrondit à l'unité comme X3, puis on ajuste la dernière
                         // ligne pour que le total de la facture corresponde exactement
@@ -268,7 +268,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                             if ($serviceId == 46 || $serviceId == 47) {
                                 $detailService['montant'] = $paiement->montant - $paiement->timbre;
 
-                                $genre = strtoupper($paiement->dossier->vehicule->genre_vehicule ?? '');
+                                $genre = strtoupper($paiement->dossier->r_dossier_vehicule->genre_vehicule ?? '');
 
                                 $isRemorque = str_contains($genre, 'REMORQUE');
                                 $isMoto = str_contains($genre, 'MOTO');
@@ -356,7 +356,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                         ];
                     }
 
-                    $vinVehicule = $paiement->dossier->vehicule->vin ?? $numFacture;
+                    $vinVehicule = $paiement->dossier->r_dossier_vehicule->vin ?? $numFacture;
 
                     // 4. Préparation des lignes
                     foreach ($servicesAEnvoyer as $service) {
@@ -396,7 +396,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                     'NUM' => $numFacture,
                     'DATINV' => $this->dateOperation, // Format YYYY-MM-DD
                     'BPCINV' => 'C000016', // Code client
-                    'BPRNAM' => ($client ? $client->nom . ' ' . $client->prenom : 'Client'), // Nom client
+                    'BPRNAM' => trim(($client->nom ?? '') . ' ' . ($client->prenom ?? '')) ?: 'Client', // Nom client
                     'NUMREC' => $numrec, // Numéro de recette lié à la caisse
                     'TIMBRE' => $totalTimbre,
                     'TVA' => $tva,
