@@ -654,6 +654,27 @@ class PaiementController extends Controller
 
         $paiementLignes = $mapLignes($paiement);
 
+        // Reçus historiques : si les lignes n'ont pas encore été enregistrées
+        // (paiement antérieur à la ventilation), on les recalcule depuis la
+        // description et on les répartit sur le montant réellement encaissé.
+        // Le reçu affiche ainsi chaque article sur sa propre ligne, sans
+        // attendre l'exécution de `ventilation:reventiler`.
+        $ventilationService = app(VentilationService::class);
+
+        if (empty($paiementLignes) && $paiement) {
+            $description = json_decode($paiement->description ?? '[]', true);
+
+            $paiementLignes = $ventilationService->rescaleToCollected(
+                $ventilationService->historicalLines(
+                    is_array($description) ? $description : [],
+                    $dossier,
+                    $dossier->r_dossier_vehicule->genre_vehicule ?? null
+                ),
+                (float) $paiement->montant,
+                (float) $paiement->timbre
+            );
+        }
+
         // Paiement du dossier lié : même numéro de recette que le principal.
         $paiementLier = null;
         $paiementLignesLier = [];
@@ -673,6 +694,20 @@ class PaiementController extends Controller
             }
 
             $paiementLignesLier = $mapLignes($paiementLier);
+
+            if (empty($paiementLignesLier) && $paiementLier) {
+                $descriptionLier = json_decode($paiementLier->description ?? '[]', true);
+
+                $paiementLignesLier = $ventilationService->rescaleToCollected(
+                    $ventilationService->historicalLines(
+                        is_array($descriptionLier) ? $descriptionLier : [],
+                        $dossier_lier,
+                        $dossier_lier->r_dossier_vehicule->genre_vehicule ?? null
+                    ),
+                    (float) $paiementLier->montant,
+                    (float) $paiementLier->timbre
+                );
+            }
         }
 
         $paiementInfo = function ($paiement) {

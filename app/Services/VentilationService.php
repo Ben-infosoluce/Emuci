@@ -148,6 +148,134 @@ class VentilationService
     }
 
     /**
+     * Lignes théoriques d'un paiement historique (avant `paiement_lignes`).
+     *
+     * On repart de la description enregistrée à l'époque, puis on développe
+     * chaque service ventilé en ses articles de catalogue. Les anciens
+     * dossiers PRIMO-ESPECE (sentinelle 47) sont rattachés à PRIM1/2/3 selon
+     * le genre du véhicule.
+     *
+     * @param  array<int, mixed>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    public function historicalLines(array $items, object $dossier, ?string $genre = null): array
+    {
+        // PRIMO-ESPECE : la description historique est souvent synthétique
+        // (une seule ligne « Reliquat... »), on ventile donc par le catalogue.
+        if ((int) ($dossier->id_service ?? 0) === 6 || ($dossier->type ?? null) === 'PRIMO-ESPECE') {
+            $catalog = $this->primoCatalog($genre);
+
+            if ($catalog->isNotEmpty()) {
+                return $this->catalogToLines($catalog);
+            }
+        }
+
+        $lines = [];
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $detailId = is_numeric($item['id'] ?? null) ? (int) $item['id'] : null;
+            $catalog = $this->catalogForDetail($detailId, $dossier, $genre);
+
+            if ($catalog->isNotEmpty()) {
+                array_push($lines, ...$this->catalogToLines($catalog));
+                continue;
+            }
+
+            $label = (string) ($item['element_facturation'] ?? '');
+            $ttc = round((float) ($item['montant'] ?? 0), 2);
+
+            if ($ttc <= 0) {
+                continue;
+            }
+
+            $lines[] = [
+                'article_code' => $this->legacyCode($detailId, $dossier, $genre, $label),
+                'libelle' => $label !== '' ? $label : null,
+                'fait_generateur' => null,
+                'montant_ht' => round($ttc / 1.18, 2),
+                'montant_ttc' => $ttc,
+                'compte_x3' => null,
+                'parent_detail_type_service_id' => $detailId,
+            ];
+        }
+
+        if (!empty($lines)) {
+            return $lines;
+        }
+
+        // Description vide ou inexploitable : on se rabat sur le détail du dossier.
+        $detailIds = json_decode($dossier->detail ?? '[]', true);
+
+        if (!is_array($detailIds)) {
+            return [];
+        }
+
+        foreach ($detailIds as $detailId) {
+            if (!is_numeric($detailId)) {
+                continue;
+            }
+
+            $catalog = $this->catalogForDetail((int) $detailId, $dossier, $genre);
+
+            if ($catalog->isNotEmpty()) {
+                array_push($lines, ...$this->catalogToLines($catalog));
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Répartit le montant réellement encaissé sur les lignes théoriques.
+     *
+     * Option A : la somme des lignes TTC est toujours exactement
+     * `montant - timbre`, y compris pour les exceptions tarifaires.
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     * @return array<int, array<string, mixed>>
+     */
+    public function rescaleToCollected(array $lines, float $montant, float $timbre): array
+    {
+        $collected = round($montant - $timbre, 2);
+
+        if ($collected <= 0) {
+            return [];
+        }
+
+        $weight = array_sum(array_map(fn ($line) => (float) $line['montant_ttc'], $lines));
+
+        if ($weight <= 0) {
+            return [];
+        }
+
+        $factor = $collected / $weight;
+        $isCatalogExact = abs($factor - 1) < 0.000001;
+        $sum = 0.0;
+        $last = count($lines) - 1;
+
+        foreach ($lines as $index => &$line) {
+            if ($index === $last) {
+                $line['montant_ttc'] = round($collected - $sum, 2);
+            } else {
+                $line['montant_ttc'] = round((float) $line['montant_ttc'] * $factor, 2);
+                $sum += $line['montant_ttc'];
+            }
+
+            $line['montant_ht'] = $isCatalogExact && isset($line['source_ht'])
+                ? round((float) $line['source_ht'], 2)
+                : round($line['montant_ttc'] / 1.18, 2);
+
+            unset($line['source_ht']);
+        }
+
+        return array_values(array_filter($lines, fn ($line) => $line['montant_ttc'] > 0));
+    }
+
+    /**
      * Ajoute la ventilation du catalogue à une liste d'éléments destinée à l'UI
      * (caisse / reçu). Les éléments non ventilés sont retournés tels quels.
      */
@@ -200,6 +328,97 @@ class VentilationService
         }
 
         return self::LEGACY_ARTICLE_BY_DETAIL[$detailId] ?? 'ARTICLE01';
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function catalogToLines(Collection $catalog): array
+    {
+        return $catalog->map(function (BillingArticle $article) {
+            return [
+                'article_code' => $article->code,
+                'libelle' => $article->libelle,
+                'fait_generateur' => $article->fait_generateur,
+                'montant_ht' => round((float) $article->montant_ht, 2),
+                'montant_ttc' => round((float) $article->montant_ttc, 2),
+                'compte_x3' => $article->compte_x3,
+                'parent_detail_type_service_id' => $article->detail_type_service_id,
+                // Conservé uniquement pour restituer le HT exact quand le
+                // montant encaissé correspond au tarif du catalogue.
+                'source_ht' => (float) $article->montant_ht,
+            ];
+        })->all();
+    }
+
+    private function catalogForDetail(?int $detailId, object $dossier, ?string $genre): Collection
+    {
+        if (!$detailId) {
+            return collect();
+        }
+
+        // Anciens dossiers : 46 = Ré-immatriculation moto (service 2).
+        if ($detailId === 46 && (int) ($dossier->id_service ?? 0) === 2) {
+            return $this->catalogFor($this->serviceId('REI02'));
+        }
+
+        // Anciens dossiers : 47 = PRIMO-ESPECE.
+        if ($detailId === 47 && (int) ($dossier->id_service ?? 0) === 6) {
+            return $this->primoCatalog($genre);
+        }
+
+        return $this->catalogFor($detailId);
+    }
+
+    private function primoCatalog(?string $genre): Collection
+    {
+        $code = match ($this->genreCategory($genre)) {
+            'remorque' => 'PRIM3',
+            'moto' => 'PRIM2',
+            default => 'PRIM1',
+        };
+
+        return $this->catalogFor($this->serviceId($code));
+    }
+
+    private function legacyCode(?int $detailId, object $dossier, ?string $genre, string $label): string
+    {
+        $idService = (int) ($dossier->id_service ?? 0);
+
+        // RELICA-PRIMO (service 5) : la description contient une ligne
+        // synthétique (id null). L'ancien code X3 dépend du genre.
+        if ($idService === 5 || ($dossier->type ?? null) === 'RELICA-PRIMO') {
+            return $this->legacyArticleCode(46, $genre, $label);
+        }
+
+        // PRIMO-ESPECE sans catalogue : PREM01/02/03.
+        if ($idService === 6 || ($dossier->type ?? null) === 'PRIMO-ESPECE') {
+            return $this->legacyArticleCode(47, $genre, $label);
+        }
+
+        return $this->legacyArticleCode($detailId, $genre, $label);
+    }
+
+    private function serviceId(string $code): ?int
+    {
+        $id = DB::table('detail_type_services')->where('code', $code)->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
+    private function genreCategory(?string $genre): string
+    {
+        $genre = strtoupper((string) $genre);
+
+        if (str_contains($genre, 'REMORQUE')) {
+            return 'remorque';
+        }
+
+        if (str_contains($genre, 'MOTO')) {
+            return 'moto';
+        }
+
+        return 'auto';
     }
 
     private function detailIdFromItem(array $item): ?int

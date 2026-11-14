@@ -2,11 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\BillingArticle;
 use App\Services\VentilationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Re-ventile les paiements historiques sans modifier les montants encaissés.
@@ -85,7 +83,7 @@ class ReventilerPaiements extends Command
                     $description = json_decode($paiement->description ?? '[]', true);
                     $items = is_array($description) ? $description : [];
 
-                    $lines = $this->buildLines($items, $dossier, $genre, $ventilation);
+                    $lines = $ventilation->historicalLines($items, $dossier, $genre);
 
                     if (empty($lines)) {
                         $this->verboseSkip($dryRun, $paiement, 'aucune ligne identifiable');
@@ -93,7 +91,11 @@ class ReventilerPaiements extends Command
                         continue;
                     }
 
-                    $lines = $this->rescaleToCollected($lines, $paiement);
+                    $lines = $ventilation->rescaleToCollected(
+                        $lines,
+                        (float) $paiement->montant,
+                        (float) $paiement->timbre
+                    );
 
                     if (empty($lines)) {
                         $this->verboseSkip($dryRun, $paiement, 'montant encaissé nul (montant - timbre <= 0)');
@@ -152,192 +154,6 @@ class ReventilerPaiements extends Command
         return $errors > 0 ? self::FAILURE : self::SUCCESS;
     }
 
-    /**
-     * Construit les lignes "théoriques" (avant ajustement sur l'encaissé).
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function buildLines(array $items, object $dossier, ?string $genre, VentilationService $ventilation): array
-    {
-        // PRIMO-ESPECE : les anciens paiements ont une description synthétique.
-        // On ventile directement selon PRIM1 / PRIM2 / PRIM3.
-        if ((int) ($dossier->id_service ?? 0) === 6 || ($dossier->type ?? null) === 'PRIMO-ESPECE') {
-            $catalog = $this->primoCatalog($dossier, $genre, $ventilation);
-            if ($catalog->isNotEmpty()) {
-                return $this->catalogToLines($catalog);
-            }
-        }
-
-        $lines = [];
-
-        foreach ($items as $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-
-            $detailId = is_numeric($item['id'] ?? null) ? (int) $item['id'] : null;
-            $catalog = $this->catalogForDetail($detailId, $dossier, $genre, $ventilation);
-
-            if ($catalog->isNotEmpty()) {
-                array_push($lines, ...$this->catalogToLines($catalog));
-                continue;
-            }
-
-            $label = (string) ($item['element_facturation'] ?? '');
-            $ttc = round((float) ($item['montant'] ?? 0), 2);
-
-            if ($ttc <= 0) {
-                continue;
-            }
-
-            $lines[] = [
-                'article_code' => $this->legacyCode($detailId, $dossier, $genre, $label, $ventilation),
-                'libelle' => $label !== '' ? $label : null,
-                'fait_generateur' => null,
-                'montant_ht' => round($ttc / 1.18, 2),
-                'montant_ttc' => $ttc,
-                'compte_x3' => null,
-                'parent_detail_type_service_id' => $detailId,
-            ];
-        }
-
-        if (!empty($lines)) {
-            return $lines;
-        }
-
-        // Description vide : on se rabat sur le détail du dossier.
-        $detailIds = json_decode($dossier->detail ?? '[]', true);
-        if (!is_array($detailIds)) {
-            return [];
-        }
-
-        foreach ($detailIds as $detailId) {
-            if (!is_numeric($detailId)) {
-                continue;
-            }
-
-            $detailId = (int) $detailId;
-            $catalog = $this->catalogForDetail($detailId, $dossier, $genre, $ventilation);
-
-            if ($catalog->isNotEmpty()) {
-                array_push($lines, ...$this->catalogToLines($catalog));
-            }
-        }
-
-        return $lines;
-    }
-
-    /**
-     * Répartit l'encaissé réel sur les lignes théoriques (prorata).
-     */
-    private function rescaleToCollected(array $lines, object $paiement): array
-    {
-        $collected = round((float) $paiement->montant - (float) $paiement->timbre, 2);
-
-        if ($collected <= 0) {
-            return [];
-        }
-
-        $weight = array_sum(array_map(fn ($line) => (float) $line['montant_ttc'], $lines));
-
-        if ($weight <= 0) {
-            return [];
-        }
-
-        $factor = $collected / $weight;
-        $isCatalogExact = abs($factor - 1) < 0.000001;
-        $sum = 0.0;
-        $last = count($lines) - 1;
-
-        foreach ($lines as $index => &$line) {
-            if ($index === $last) {
-                $line['montant_ttc'] = round($collected - $sum, 2);
-            } else {
-                $line['montant_ttc'] = round((float) $line['montant_ttc'] * $factor, 2);
-                $sum += $line['montant_ttc'];
-            }
-
-            $line['montant_ht'] = $isCatalogExact && isset($line['source_ht'])
-                ? round((float) $line['source_ht'], 2)
-                : round($line['montant_ttc'] / 1.18, 2);
-
-            unset($line['source_ht']);
-        }
-
-        return array_values(array_filter($lines, fn ($line) => $line['montant_ttc'] > 0));
-    }
-
-    private function catalogToLines($catalog): array
-    {
-        return $catalog->map(function (BillingArticle $article) {
-            return [
-                'article_code' => $article->code,
-                'libelle' => $article->libelle,
-                'fait_generateur' => $article->fait_generateur,
-                'montant_ht' => round((float) $article->montant_ht, 2),
-                'montant_ttc' => round((float) $article->montant_ttc, 2),
-                'compte_x3' => $article->compte_x3,
-                'parent_detail_type_service_id' => $article->detail_type_service_id,
-                'source_ht' => (float) $article->montant_ht,
-            ];
-        })->all();
-    }
-
-    private function catalogForDetail(?int $detailId, object $dossier, ?string $genre, VentilationService $ventilation)
-    {
-        if (!$detailId) {
-            return collect();
-        }
-
-        // Anciens dossiers : 46 = Ré-immatriculation moto (service 2) ou RELICA (service 5).
-        if ($detailId === 46 && (int) ($dossier->id_service ?? 0) === 2) {
-            return $ventilation->catalogFor($this->serviceId('REI02'));
-        }
-
-        // Anciens dossiers : 47 = PRIMO-ESPECE.
-        if ($detailId === 47 && (int) ($dossier->id_service ?? 0) === 6) {
-            return $this->primoCatalog($dossier, $genre, $ventilation);
-        }
-
-        return $ventilation->catalogFor($detailId);
-    }
-
-    private function primoCatalog(object $dossier, ?string $genre, VentilationService $ventilation)
-    {
-        $code = match ($this->genreCategory($genre)) {
-            'remorque' => 'PRIM3',
-            'moto' => 'PRIM2',
-            default => 'PRIM1',
-        };
-
-        return $ventilation->catalogFor($this->serviceId($code));
-    }
-
-    private function legacyCode(?int $detailId, object $dossier, ?string $genre, string $label, VentilationService $ventilation): string
-    {
-        $idService = (int) ($dossier->id_service ?? 0);
-
-        // RELICA-PRIMO (service 5) : la description contient une ligne
-        // synthétique (id null). L'ancien code X3 est REL01/02/03 selon le genre.
-        if ($idService === 5 || ($dossier->type ?? null) === 'RELICA-PRIMO') {
-            return $ventilation->legacyArticleCode(46, $genre, $label);
-        }
-
-        // PRIMO-ESPECE sans catalogue (migration non exécutée) : PREM01/02/03.
-        if ($idService === 6 || ($dossier->type ?? null) === 'PRIMO-ESPECE') {
-            return $ventilation->legacyArticleCode(47, $genre, $label);
-        }
-
-        return $ventilation->legacyArticleCode($detailId, $genre, $label);
-    }
-
-    private function serviceId(string $code): ?int
-    {
-        $id = DB::table('detail_type_services')->where('code', $code)->value('id');
-
-        return $id ? (int) $id : null;
-    }
-
     private function verboseSkip(bool $dryRun, object $paiement, string $reason): void
     {
         if ($dryRun && $this->output->isVerbose()) {
@@ -350,20 +166,5 @@ class ReventilerPaiements extends Command
                 $paiement->timbre
             ));
         }
-    }
-
-    private function genreCategory(?string $genre): string
-    {
-        $genre = Str::upper((string) $genre);
-
-        if (Str::contains($genre, 'REMORQUE')) {
-            return 'remorque';
-        }
-
-        if (Str::contains($genre, 'MOTO')) {
-            return 'moto';
-        }
-
-        return 'auto';
     }
 }
