@@ -143,14 +143,38 @@ function generateStrongPassword($length = 8)
 
 function generateChronoNumber(string $service)
 {
-    $sites = [
-        'POST' => 'ABJ1',
-        'REIM' => 'ABJ',
-        'DUPL' => 'BKE',
-        'OPSP' => 'ABJ2',
-    ];
+    // Préfixe du chrono : on se base sur le site de l'utilisateur, et non plus
+    // sur le service. On privilégie un code_site alphabétique (ABJ, BKE, KGO),
+    // sinon on prend le début du nom du site en majuscules.
+    $site = null;
 
-    $codeSite = $sites[$service] ?? 'ABJ1';
+    if ($siteId = getIdSite()) {
+        $site = DB::table('sites')
+            ->where('id', $siteId)
+            ->first(['nom_site', 'code_site']);
+    }
+
+    $codeSite = null;
+
+    if ($site) {
+        $code = strtoupper(trim((string) ($site->code_site ?? '')));
+
+        if ($code !== '' && preg_match('/^[A-Z]{2,6}$/', $code)) {
+            $codeSite = $code;
+        } else {
+            $nom = preg_replace(
+                '/[^A-Z0-9]/',
+                '',
+                strtoupper(Str::ascii(trim((string) $site->nom_site)))
+            );
+
+            if ($nom !== '') {
+                $codeSite = substr($nom, 0, 3);
+            }
+        }
+    }
+
+    $codeSite = $codeSite ?: 'ABJ';
 
     $year = now()->format('y');
     $month = now()->format('m');
