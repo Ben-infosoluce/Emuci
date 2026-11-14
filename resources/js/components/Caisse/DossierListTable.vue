@@ -262,16 +262,16 @@ const exportToExcel = async () => {
 
         <!-- Modal : détail ventilé du dossier -->
         <Dialog v-model:open="detailOpen">
-            <DialogContent class="max-w-3xl">
+            <DialogContent class="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle class="flex items-center gap-2">
-                        <ListTree class="w-4 h-4" />
+                    <DialogTitle class="flex items-center gap-2 text-xl">
+                        <ListTree class="w-5 h-5" />
                         Détail ventilé
-                        <Badge variant="warning" class="uppercase tracking-tighter">
+                        <Badge variant="warning" class="text-sm uppercase tracking-tighter">
                             {{ selectedPaiement?.dossier?.num_chrono || '--------' }}
                         </Badge>
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription class="text-base">
                         {{ selectedPaiement?.dossier?.r_dossier_client?.nom }}
                         {{ selectedPaiement?.dossier?.r_dossier_client?.prenom }}
                         <span v-if="selectedPaiement?.dossier?.r_dossier_vehicule?.num_immatriculation"
@@ -285,33 +285,33 @@ const exportToExcel = async () => {
                     <Table>
                         <TableHeader class="bg-muted/50">
                             <TableRow>
-                                <TableHead>Article</TableHead>
-                                <TableHead>Libellé</TableHead>
-                                <TableHead>Fait générateur</TableHead>
-                                <TableHead class="text-right">HT</TableHead>
-                                <TableHead class="text-right pr-4">TTC</TableHead>
+                                <TableHead class="text-base">Article</TableHead>
+                                <TableHead class="text-base">Libellé</TableHead>
+                                <TableHead class="text-base">Fait générateur</TableHead>
+                                <TableHead class="text-base text-right">HT</TableHead>
+                                <TableHead class="text-base text-right pr-4">TTC</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             <TableRow v-for="(ligne, index) in detailLignes" :key="index">
                                 <TableCell>
-                                    <Badge variant="secondary" class="font-mono tracking-tighter">
+                                    <Badge variant="secondary" class="font-mono text-sm tracking-tighter">
                                         {{ ligne.article_code }}
                                     </Badge>
                                 </TableCell>
-                                <TableCell class="text-sm">{{ ligne.libelle || '—' }}</TableCell>
-                                <TableCell class="text-xs text-muted-foreground">
+                                <TableCell class="text-base">{{ ligne.libelle || '—' }}</TableCell>
+                                <TableCell class="text-sm text-muted-foreground">
                                     {{ ligne.fait_generateur || '—' }}
                                 </TableCell>
-                                <TableCell class="text-right font-mono text-sm">
+                                <TableCell class="text-right font-mono text-base">
                                     {{ Number(ligne.montant_ht || 0).toLocaleString() }} F
                                 </TableCell>
-                                <TableCell class="text-right font-mono text-sm pr-4">
+                                <TableCell class="text-right font-mono text-base pr-4">
                                     {{ Number(ligne.montant_ttc || 0).toLocaleString() }} F
                                 </TableCell>
                             </TableRow>
                             <TableRow v-if="!detailLignes.length">
-                                <TableCell colspan="5" class="h-24 text-center text-muted-foreground">
+                                <TableCell colspan="5" class="h-24 text-center text-base text-muted-foreground">
                                     Aucune ligne de ventilation pour ce paiement.
                                 </TableCell>
                             </TableRow>
@@ -319,7 +319,7 @@ const exportToExcel = async () => {
                     </Table>
                 </div>
 
-                <div class="flex flex-col gap-1 text-sm">
+                <div class="flex flex-col gap-1 text-base">
                     <div class="flex justify-between">
                         <span class="text-muted-foreground">Total HT</span>
                         <span class="font-mono">{{ detailTotalHt.toLocaleString() }} F</span>
@@ -332,7 +332,7 @@ const exportToExcel = async () => {
                         <span class="text-muted-foreground">Timbre</span>
                         <span class="font-mono text-orange-500">{{ detailTimbre.toLocaleString() }} F</span>
                     </div>
-                    <div class="flex justify-between border-t pt-2 font-semibold">
+                    <div class="flex justify-between border-t pt-2 text-lg font-semibold">
                         <span>Total encaissé</span>
                         <span class="font-mono">{{ detailTotal.toLocaleString() }} F</span>
                     </div>
