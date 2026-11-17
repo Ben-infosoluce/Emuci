@@ -142,7 +142,7 @@ class SendPaiementsToX3Job implements ShouldQueue
             }
 
             $facturesAtraiter[$targetNumFacture] = $facturesAtraiter[$targetNumFacture]->concat($paiementsDuDossier);
-            
+
             // On s'assure que le dossier d'en-tête soit le duplicata (s'il y en a un dans la fusion)
             if (!isset($factureHeaderDossiers[$targetNumFacture]) || ((int) ($headerDossier->id_service ?? 0) === 4)) {
                 $factureHeaderDossiers[$targetNumFacture] = $headerDossier;
@@ -165,7 +165,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                 $linCounter = 1000;
                 $totalHT = 0;
                 $totalTTC = 0;
-                
+
                 // Le montant total des timbres est la somme réelle des timbres de chaque paiement
                 $totalTimbre = $paiementsDuDossier->sum('timbre');
 
@@ -395,7 +395,7 @@ class SendPaiementsToX3Job implements ShouldQueue
                 $enteteData = [
                     'NUM' => $numFacture,
                     'DATINV' => $this->dateOperation, // Format YYYY-MM-DD
-                    'BPCINV' => 'C000016', // Code client
+                    'BPCINV' => 'C000018', // Code client
                     'BPRNAM' => trim(($client->nom ?? '') . ' ' . ($client->prenom ?? '')) ?: 'Client', // Nom client
                     'NUMREC' => $numrec, // Numéro de recette lié à la caisse
                     'TIMBRE' => $totalTimbre,
