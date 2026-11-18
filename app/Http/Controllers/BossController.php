@@ -420,7 +420,7 @@ class BossController extends Controller
         }
 
         // BASE QUERY (sans join)
-        $baseQuery = DB::table('paiements')
+        $baseQuery = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereBetween('paiements.created_at', [$startDate, $endDate]);
 
         // Montant par site
@@ -484,14 +484,14 @@ class BossController extends Controller
         $today = now()->toDateString();
         $yesterday = now()->subDay()->toDateString();
 
-        $todayStats = DB::table('paiements')
+        $todayStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereDate('created_at', $today)
             ->select(DB::raw('HOUR(created_at) as hour'), DB::raw('SUM(montant) as montant'))
             ->groupBy('hour')
             ->pluck('montant', 'hour')
             ->toArray();
 
-        $yesterdayStats = DB::table('paiements')
+        $yesterdayStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereDate('created_at', $yesterday)
             ->select(DB::raw('HOUR(created_at) as hour'), DB::raw('SUM(montant) as montant'))
             ->groupBy('hour')
@@ -511,14 +511,14 @@ class BossController extends Controller
         $previousWeekStart = now()->subWeek()->startOfWeek();
         $previousWeekEnd = now()->subWeek()->endOfWeek();
 
-        $currentWeekStats = DB::table('paiements')
+        $currentWeekStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereBetween('created_at', [$currentWeekStart, $currentWeekEnd])
             ->select(DB::raw('WEEKDAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
             ->groupBy('day')
             ->pluck('montant', 'day')
             ->toArray();
 
-        $previousWeekStats = DB::table('paiements')
+        $previousWeekStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereBetween('created_at', [$previousWeekStart, $previousWeekEnd])
             ->select(DB::raw('WEEKDAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
             ->groupBy('day')
@@ -534,7 +534,7 @@ class BossController extends Controller
         $currentYear = now()->year;
         $prevMonthObj = now()->subMonth();
 
-        $currentMonthStats = DB::table('paiements')
+        $currentMonthStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereYear('created_at', $currentYear)
             ->whereMonth('created_at', $currentMonth)
             ->select(DB::raw('DAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
@@ -542,7 +542,7 @@ class BossController extends Controller
             ->pluck('montant', 'day')
             ->toArray();
 
-        $previousMonthStats = DB::table('paiements')
+        $previousMonthStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereYear('created_at', $prevMonthObj->year)
             ->whereMonth('created_at', $prevMonthObj->month)
             ->select(DB::raw('DAY(created_at) as day'), DB::raw('SUM(montant) as montant'))
@@ -558,14 +558,14 @@ class BossController extends Controller
         $currentYear = now()->year;
         $previousYear = now()->subYear()->year;
 
-        $currentYearStats = DB::table('paiements')
+        $currentYearStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereYear('created_at', $currentYear)
             ->select(DB::raw('MONTH(created_at) as month'), DB::raw('SUM(montant) as montant'))
             ->groupBy('month')
             ->pluck('montant', 'month')
             ->toArray();
 
-        $previousYearStats = DB::table('paiements')
+        $previousYearStats = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereYear('created_at', $previousYear)
             ->select(DB::raw('MONTH(created_at) as month'), DB::raw('SUM(montant) as montant'))
             ->groupBy('month')
@@ -653,7 +653,7 @@ class BossController extends Controller
                 ->value('id');
         }
 
-        $baseQuery = DB::table('paiements')
+        $baseQuery = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); })
             ->whereBetween('paiements.created_at', [$startDate, $endDate])
             ->where('paiements.id_site', $idSite)
             ->when($idCaisse, fn($q) => $q->where('paiements.caisse_id', $idCaisse));
@@ -723,7 +723,7 @@ class BossController extends Controller
         $from = $request->input('from');
         $to = $request->input('to');
 
-        $query = DB::table('paiements');
+        $query = DB::table('paiements')->where(function ($q) { $q->whereNull('statut')->orWhere('statut', '<>', 2); });
 
         // Filtrage par période
         if ($range === 'day') {

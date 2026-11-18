@@ -7,13 +7,51 @@
                 <BoutonRetour />
                 </Link>
             </div>
-            <div class="text-right">
+            <div class="text-right flex items-center gap-4">
+                <Button v-if="paiement?.id && !paiementAnnule" variant="destructive" size="sm"
+                    @click="annulationOpen = true">
+                    <Ban class="w-4 h-4 mr-2" /> Annuler le paiement
+                </Button>
                 <div class="flex items-center space-x-2 cursor-pointer" @click="imprimer">
                     <Printer class="w-5 h-5" />
                     <span class="font-semibold">Imprimer</span>
                 </div>
             </div>
         </div>
+
+        <div v-if="paiementAnnule"
+            class="mb-4 max-w-3xl mx-auto rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+            <p class="font-bold uppercase tracking-wide">Paiement annulé</p>
+            <p v-if="paiement?.annule_at">Annulé le {{ formatDateTime(paiement.annule_at) }}</p>
+            <p v-if="paiement?.motif_annulation">Motif : {{ paiement.motif_annulation }}</p>
+            <p class="mt-1 text-xs text-red-600">
+                Ce paiement reste enregistré pour la traçabilité, mais il n'est plus transmis à Sage X3.
+            </p>
+        </div>
+
+        <AlertDialog v-model:open="annulationOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Annuler ce paiement ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Le paiement d'un montant de
+                        <strong>{{ Number(paiement?.montant || 0).toLocaleString() }} F</strong>
+                        sera marqué comme annulé. Il restera visible dans l'historique, mais ne sera plus
+                        envoyé à Sage X3 et ne sera plus compté dans les totaux de caisse.
+                        <Input v-model="motifAnnulation" class="mt-4" placeholder="Motif de l'annulation (facultatif)" />
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter class="flex gap-2">
+                    <AlertDialogCancel :disabled="annulationEnCours">Retour</AlertDialogCancel>
+                    <Button variant="destructive" :disabled="annulationEnCours" @click="confirmerAnnulation">
+                        Confirmer l'annulation
+                        <span v-if="annulationEnCours" class="ml-2 animate-spin">⏳</span>
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <Toaster richColors position="top-right" />
         <div class="flex items-center space-x-2">
         </div>
     </div>
@@ -155,11 +193,24 @@
 
 <script setup>
 import BoutonRetour from "/resources/js/components/BoutonRetour.vue";
-import { Printer, KeyRound, EyeOff, CheckCircle } from 'lucide-vue-next'
+import { Printer, KeyRound, EyeOff, CheckCircle, Ban } from 'lucide-vue-next'
 import { computed, ref } from 'vue';
 import dayjs from 'dayjs'
 import QrcodeVue from 'qrcode.vue';
 import { nextTick } from 'vue'
+import axios from 'axios';
+import { toast, Toaster } from 'vue-sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const props = defineProps({
     dossier: Object,
@@ -209,6 +260,41 @@ const paiementLignesLier = computed(() => props.paiementLignes_lier || []);
 const hasPaiementLignes = computed(() =>
     paiementLignes.value.length > 0 || paiementLignesLier.value.length > 0
 );
+
+// ── Annulation du paiement ──────────────────────────────────────────────────
+const annulationOpen = ref(false);
+const motifAnnulation = ref("");
+const annulationEnCours = ref(false);
+const paiementAnnule = computed(() => Number(props.paiement?.statut || 1) === 2);
+
+async function confirmerAnnulation() {
+    if (!props.paiement?.id || annulationEnCours.value) return;
+
+    annulationEnCours.value = true;
+
+    try {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+
+        await axios.post("/caisse/paiement/annuler", {
+            paiement_id: props.paiement.id,
+            motif: motifAnnulation.value || null,
+        }, {
+            headers: {
+                "X-CSRF-TOKEN": token,
+                Accept: "application/json",
+            },
+        });
+
+        toast.success("Paiement annulé avec succès.");
+        annulationOpen.value = false;
+
+        setTimeout(() => window.location.reload(), 600);
+    } catch (error) {
+        toast.error(error?.response?.data?.message || "Impossible d'annuler le paiement.");
+    } finally {
+        annulationEnCours.value = false;
+    }
+}
 
 const paiementMontant = computed(() => {
     if (!props.paiement) return null;

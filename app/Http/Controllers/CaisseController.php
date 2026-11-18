@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use App\Models\ControlleurCaisse;
+use App\Models\Paiement;
 use App\Services\VentilationService;
 use App\Support\ModificationFields;
 
@@ -769,5 +770,104 @@ class CaisseController extends Controller
         ]);
 
         return response()->json(['message' => 'Billetterie mise à jour avec succès.']);
+    }
+
+    /**
+     * Annule un paiement sans le supprimer : la ligne reste en base pour la
+     * traçabilité (statut = 2, date, utilisateur et motif d'annulation).
+     * Les paiements annulés ne sont plus envoyés à Sage X3.
+     */
+    public function annulerPaiement(Request $request)
+    {
+        $validated = $request->validate([
+            'paiement_id' => 'required|integer|exists:paiements,id',
+            'motif' => 'nullable|string|max:255',
+        ]);
+
+        $user = Auth::user();
+
+        if (!$user || !in_array((int) $user->id_role, [1, 2, 4, 5, 11], true)) {
+            return response()->json([
+                'message' => "Vous n'êtes pas autorisé à annuler un paiement.",
+            ], 403);
+        }
+
+        $paiement = Paiement::with('dossier')->find($validated['paiement_id']);
+
+        if (!$paiement) {
+            return response()->json(['message' => 'Paiement introuvable.'], 404);
+        }
+
+        if ((int) $paiement->statut === 2) {
+            return response()->json(['message' => 'Ce paiement est déjà annulé.'], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $paiement->update([
+                'statut' => 2,
+                'annule_at' => now(),
+                'annule_par' => $user->id,
+                'motif_annulation' => $validated['motif'] ?? null,
+            ]);
+
+            $this->rafraichirStatutPaiementDossier($paiement->dossier);
+
+            // Dossier lié (post-immatriculation / reliquat) : il fait partie de
+            // la même opération, on met donc aussi son statut à jour.
+            $dossier = $paiement->dossier;
+
+            if ($dossier) {
+                $dossiersLies = Dossier::query()
+                    ->where('id', $dossier->id_dossier_lier)
+                    ->orWhere('id_dossier_lier', $dossier->id)
+                    ->get();
+
+                foreach ($dossiersLies as $dossierLie) {
+                    $this->rafraichirStatutPaiementDossier($dossierLie);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Paiement annulé avec succès.',
+                'paiement' => $paiement->fresh(),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => "Impossible d'annuler le paiement.",
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Repasse un dossier en « non payé » lorsqu'il ne lui reste plus aucun
+     * paiement actif. Les paiements annulés restent visibles pour l'audit.
+     */
+    private function rafraichirStatutPaiementDossier(?Dossier $dossier): void
+    {
+        if (!$dossier) {
+            return;
+        }
+
+        $montantActif = (float) Paiement::query()
+            ->where('id_dossier', $dossier->id)
+            ->actifs()
+            ->sum('montant');
+
+        if ($montantActif > 0) {
+            return;
+        }
+
+        $dossier->update([
+            'statut_paiement' => 1,
+            'date_paiement' => null,
+            'paiement_validated_by' => null,
+        ]);
     }
 }

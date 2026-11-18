@@ -63,6 +63,7 @@ class SendPaiementsToX3Job implements ShouldQueue
     {
         // Récupération des paiements pour la date et la caisse spécifiées
         $query = Paiement::with(['dossier.r_dossier_vehicule', 'dossier.r_dossier_client', 'lignes'])
+            ->actifs()
             ->whereDate('created_at', $this->dateOperation);
 
         if ($this->caisseId) {

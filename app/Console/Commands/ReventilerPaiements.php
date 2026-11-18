@@ -31,6 +31,11 @@ class ReventilerPaiements extends Command
         $chunk = max(1, (int) $this->option('chunk'));
 
         $query = DB::table('paiements')
+            // Les paiements annulés ne partent plus vers Sage X3 : inutile de
+            // les ventiler.
+            ->where(function ($q) {
+                $q->whereNull('statut')->orWhere('statut', '<>', 2);
+            })
             ->whereNotExists(function ($sub) {
                 $sub->select(DB::raw(1))
                     ->from('paiement_lignes')

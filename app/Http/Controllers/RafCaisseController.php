@@ -230,6 +230,7 @@ class RafCaisseController extends Controller
         $touchees = $rafRows->pluck('caisse_id')->unique();
 
         $totauxPaiements = Paiement::query()
+            ->actifs()
             ->whereDate('created_at', $date)
             ->whereIn('caisse_id', $caisseIds)
             ->selectRaw('caisse_id, SUM(montant) as total, COUNT(*) as nb')
@@ -433,6 +434,7 @@ class RafCaisseController extends Controller
             foreach ($records as $record) {
                 // Total des paiements de la caisse pour la date : rien à envoyer à X3 si 0
                 $totalPaiements = (float) Paiement::query()
+                    ->actifs()
                     ->whereDate('created_at', $dateOperation)
                     ->where('caisse_id', $record->caisse_id)
                     ->sum('montant');
@@ -605,7 +607,8 @@ class RafCaisseController extends Controller
             }
 
             // Total des paiements de la caisse pour la date : rien à envoyer à X3 si 0
-            $totalPaiements = (float) Paiement::whereDate('created_at', $dateOperation)
+            $totalPaiements = (float) Paiement::actifs()
+                ->whereDate('created_at', $dateOperation)
                 ->where('caisse_id', $request->id_caisse)
                 ->sum('montant');
 
@@ -666,6 +669,7 @@ class RafCaisseController extends Controller
         $date = $request->query('date', now()->toDateString());
 
         $query = \App\Models\Paiement::query()
+            ->actifs()
             ->whereDate('created_at', $date);
 
         // Filtre par caisse si elle est choisie

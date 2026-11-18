@@ -3971,23 +3971,23 @@ class PdcController extends Controller
         $vehicule = $dossier->r_dossier_vehicule;
         $client = $dossier->r_dossier_client;
 
-        // Charger l’entreprise seulement si elle existe
-        $entreprise = $vehicule->entreprise_id
-            ? Entreprise::find($vehicule->entreprise_id)
-            : null;
+        // Charger l’entreprise seulement si elle existe. Le rattachement peut
+        // être porté par le véhicule ou, à défaut, par le client.
+        $entrepriseId = $vehicule?->entreprise_id ?: $client?->entreprise_id;
+        $entreprise = $entrepriseId ? Entreprise::find($entrepriseId) : null;
 
         // Structure des données envoyées au reçu
         $data = [
             'receipt' => [
-                'num_immatriculation' => $vehicule->num_immatriculation,
-                'vin' => $vehicule->vin,
+                'num_immatriculation' => $vehicule?->num_immatriculation,
+                'vin' => $vehicule?->vin,
                 'marqueVehicule' => [
-                    'id' => $vehicule->marque_id,
-                    'nom' => $vehicule->marque,
+                    'id' => $vehicule?->marque_id,
+                    'nom' => $vehicule?->marque,
                 ],
                 'modelVehicule' => [
-                    'id' => $vehicule->model_id,
-                    'nom' => $vehicule->modele,
+                    'id' => $vehicule?->model_id,
+                    'nom' => $vehicule?->modele,
                 ],
             ],
         ];

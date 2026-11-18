@@ -29,15 +29,13 @@
 
                     <p class="w-fit mx-auto">Date de la demande: <strong>{{ props.dossier.date_creation }}</strong></p>
 
-                    <p class="w-fit mx-auto">Nom du véhicule: <strong>{{ props.dossier.r_dossier_vehicule.marque
-                    }} {{ props.dossier.r_dossier_vehicule.modele }}</strong>
+                    <p class="w-fit mx-auto">Nom du véhicule: <strong>{{ props.dossier.r_dossier_vehicule?.marque
+                    }} {{ props.dossier.r_dossier_vehicule?.modele }}</strong>
                     </p>
 
                     <!-- <p class="w-fit mx-auto">N° d’immatriculation: <strong>{{
                         props.dossier.r_dossier_vehicule.num_immatriculation }}</strong></p> -->
-                    <p class="text-lg font-bold w-fit mx-auto">{{ props.dossier.r_dossier_client.nom }} {{
-                        props.dossier.r_dossier_client.prenom }}.
-                    </p>
+                    <p class="text-lg font-bold w-fit mx-auto">{{ clientNom }}.</p>
                 </div>
 
                 <div class="w-fit mx-auto bg-[#CA7600] text-white mt-6 rounded-lg"
@@ -112,12 +110,40 @@ import { Printer, KeyRound, EyeOff, CheckCircle } from 'lucide-vue-next'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import QrcodeVue from 'qrcode.vue';
-import { nextTick } from 'vue';
+import { computed, nextTick } from 'vue';
 
 // Props pour recevoir les données existantes
 const props = defineProps({
     dossier: Object,
-    dossier_lier: Object
+    dossier_lier: Object,
+    entreprise: Object,
+    client: Object,
+    vehicule: Object,
+    data: Object
+});
+
+/**
+ * Nom affiché sur le reçu.
+ *
+ * Pour une entreprise, le client du dossier est l'entreprise : on affiche le
+ * représentant légal (nom + prénom), avec repli sur la raison sociale. Pour une
+ * personne physique, on garde le nom et le prénom du client du dossier.
+ */
+const clientNom = computed(() => {
+    const entreprise = props.entreprise;
+
+    if (entreprise) {
+        const representant = [
+            entreprise.nom_representant_legal,
+            entreprise.prenom_representant_legal,
+        ].filter(Boolean).join(' ').trim();
+
+        return representant || entreprise.nom_entreprise || '—';
+    }
+
+    const client = props.dossier?.r_dossier_client || props.client;
+
+    return [client?.nom, client?.prenom].filter(Boolean).join(' ').trim() || '—';
 });
 
 console.log('dossier:', props.dossier);

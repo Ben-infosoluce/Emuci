@@ -10,6 +10,27 @@ class Paiement extends Model
     use HasFactory;
     protected $guarded = [];
 
+    protected $casts = [
+        'statut' => 'integer',
+        'annule_at' => 'datetime',
+    ];
+
+    /**
+     * Paiements actifs (non annulés). Les anciens enregistrements sans statut
+     * sont considérés comme actifs.
+     */
+    public function scopeActifs($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('statut')->orWhere('statut', '<>', 2);
+        });
+    }
+
+    public function estAnnule(): bool
+    {
+        return (int) $this->statut === 2;
+    }
+
     // 🔗 Relations
     public function dossier()
     {

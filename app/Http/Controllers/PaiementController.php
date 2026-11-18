@@ -723,6 +723,9 @@ class PaiementController extends Controller
                 'numrec' => $paiement->numrec,
                 'montant' => (float) $paiement->montant,
                 'timbre' => (float) $paiement->timbre,
+                'statut' => (int) ($paiement->statut ?? 1),
+                'annule_at' => $paiement->annule_at?->format('Y-m-d H:i:s'),
+                'motif_annulation' => $paiement->motif_annulation,
                 // Détail historique (avant ventilation) : sert de repli pour les
                 // reçus qui n'ont pas encore de paiement_lignes.
                 'description' => is_array($description) ? $description : [],
@@ -838,7 +841,7 @@ class PaiementController extends Controller
             ], 403);
         }
 
-        $query = Paiement::query();
+        $query = Paiement::query()->actifs();
 
         // Filtre par date
         if ($date) {

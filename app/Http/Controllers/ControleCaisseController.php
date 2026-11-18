@@ -181,7 +181,10 @@ class ControleCaisseController extends Controller
         $from = $request->input('from');
         $to = $request->input('to');
 
-        $query = DB::table('paiements');
+        $query = DB::table('paiements')
+            ->where(function ($q) {
+                $q->whereNull('statut')->orWhere('statut', '<>', 2);
+            });
 
         // Filtrage par période
         if ($range === 'day') {
