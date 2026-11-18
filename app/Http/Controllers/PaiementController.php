@@ -785,6 +785,8 @@ class PaiementController extends Controller
             'dossier' => $dossier,
             'detailTypeServices' => $detailTypeServices,
             'caissier' => $caissier,
+            'canAnnuler' => Auth::check()
+                && in_array((int) Auth::user()->id_role, [1, 2, 4, 5, 11], true),
 
             // --- Montants réellement encaissés ---
             'paiement' => $paiementInfo($paiement),

@@ -8,7 +8,7 @@
                 </Link>
             </div>
             <div class="text-right flex items-center gap-4">
-                <Button v-if="paiement?.id && !paiementAnnule" variant="destructive" size="sm"
+                <Button v-if="paiement?.id && !paiementAnnule && canAnnuler" variant="destructive" size="sm"
                     @click="annulationOpen = true">
                     <Ban class="w-4 h-4 mr-2" /> Annuler le paiement
                 </Button>
@@ -224,6 +224,7 @@ const props = defineProps({
     paiementLignes: { type: Array, default: () => [] },
     paiement_lier: Object,
     paiementLignes_lier: { type: Array, default: () => [] },
+    canAnnuler: { type: Boolean, default: false },
 });
 console.log('Props reçus dans Receipt.vue :', props.dossier);
 const zoneImpression = ref(null);
