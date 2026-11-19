@@ -104,8 +104,8 @@
         <div
             style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem;">
             <!-- <div><span style="font-weight: 600;">Client N° :</span> {{ props?.dossier?.id }} </div> -->
-            <div><span style="font-weight: 600;">Nom & Prénom :</span> {{ props?.dossier?.r_dossier_client?.nom }} {{
-                props?.dossier?.r_dossier_client?.prenom }}</div>
+            <div><span style="font-weight: 600;">{{ props?.dossier?.r_dossier_client ? 'Nom & Prénom :' : 'Entreprise :' }}</span>
+                {{ props?.dossier?.r_dossier_client ? `${props?.dossier?.r_dossier_client?.nom || ''} ${props?.dossier?.r_dossier_client?.prenom || ''}` : (props?.dossier?.r_dossier_vehicule?.r_vehicule_entreprise?.nom_entreprise || '') }}</div>
             <div><span style="font-weight: 600;">Date de Facturation :</span> {{
                 formatDateTime(props?.dossier?.date_paiement) }}</div>
             <div><span style="font-weight: 600;">N° Chassis :</span> {{ props?.dossier?.r_dossier_vehicule?.vin }}</div>
@@ -214,6 +214,7 @@ import {
 
 const props = defineProps({
     dossier: Object,
+    entreprise: Object,
     detailTypeServices: Object,
     caissier: Object,
     dossier_lier: Object,
@@ -515,25 +516,26 @@ function formatedDate(dateStr) {
 
     return `${day}${month}`;
 }
+const entreprise = props.entreprise || props.dossier?.r_dossier_vehicule?.r_vehicule_entreprise;
 const donneeClient = {
-    Client_Numero: props.dossier.id,
-    Numero_chrono: props.dossier.num_chrono,
-    civilite: props.dossier.r_dossier_client.civilite,
-    Nom: props.dossier.r_dossier_client.nom,
-    Prenom: props.dossier.r_dossier_client.prenom,
-    Adresse: props.dossier.r_dossier_client.adresse,
-    Telephone: props.dossier.r_dossier_client.telephone,
-    Date_de_Naissance: props.dossier.r_dossier_client.date_naissance,
-    ville_de_Naissance: props.dossier.r_dossier_client.ville_naissance,
-    email: props.dossier.r_dossier_client.email,
-    Statut_Paiement: props.dossier.statut === 1 ? 'Payé' : 'Non Payé',
-    Date_de_Facturation: props.dossier.date_paiement,
-    Caissier: props.dossier.paiement_validated_by,
-    Demandeur_Nom: props.dossier.demandeur_nom,
-    Demandeur_Prenom: props.dossier.demandeur_prenom,
-    Demandeur_Telephone: props.dossier.demandeur_telephone,
-    Demandeur_Piece_Type: props.dossier.demandeur_type_piece,
-    Demandeur_Piece_Numero: props.dossier.demandeur_numero_piece,
+    Client_Numero: props.dossier?.id,
+    Numero_chrono: props.dossier?.num_chrono,
+    civilite: props.dossier?.r_dossier_client?.civilite || '',
+    Nom: props.dossier?.r_dossier_client?.nom || entreprise?.nom_entreprise || '',
+    Prenom: props.dossier?.r_dossier_client?.prenom || '',
+    Adresse: props.dossier?.r_dossier_client?.adresse || entreprise?.prefecture || '',
+    Telephone: props.dossier?.r_dossier_client?.telephone || entreprise?.telephone_representant_legal || '',
+    Date_de_Naissance: props.dossier?.r_dossier_client?.date_naissance || '',
+    ville_de_Naissance: props.dossier?.r_dossier_client?.ville_naissance || '',
+    email: props.dossier?.r_dossier_client?.email || '',
+    Statut_Paiement: props.dossier?.statut === 1 ? 'Payé' : 'Non Payé',
+    Date_de_Facturation: props.dossier?.date_paiement,
+    Caissier: props.dossier?.paiement_validated_by,
+    Demandeur_Nom: props.dossier?.demandeur_nom,
+    Demandeur_Prenom: props.dossier?.demandeur_prenom,
+    Demandeur_Telephone: props.dossier?.demandeur_telephone,
+    Demandeur_Piece_Type: props.dossier?.demandeur_type_piece,
+    Demandeur_Piece_Numero: props.dossier?.demandeur_numero_piece,
 };
 
 async function imprimer() {

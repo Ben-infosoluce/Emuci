@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use App\Models\ControlleurCaisse;
 use App\Models\Paiement;
+use App\Models\Entreprise;
 use App\Services\VentilationService;
 use App\Support\ModificationFields;
 
@@ -97,7 +98,7 @@ class CaisseController extends Controller
     {
         // Charger le dossier principal
         $dossier = Dossier::with([
-            'r_dossier_vehicule',
+            'r_dossier_vehicule.r_vehicule_entreprise',
             'r_dossier_user',
             'r_dossier_client',
             'r_dossier_documents',
@@ -114,7 +115,7 @@ class CaisseController extends Controller
         $dossier_lier = null;
         if (!empty($dossier->id_dossier_lier)) {
             $dossier_lier = Dossier::with([
-                'r_dossier_vehicule',
+                'r_dossier_vehicule.r_vehicule_entreprise',
                 'r_dossier_user',
                 'r_dossier_client',
                 'r_dossier_services',
@@ -235,9 +236,22 @@ class CaisseController extends Controller
             $relicaPrimo = ReplicaPrimo::where('chrono', $dossier->num_chrono)->first();
         }
 
+        // ── Récupérer l'entreprise si le véhicule est lié à une entreprise ──
+        $entreprise = $dossier->r_dossier_vehicule?->r_vehicule_entreprise;
+        if (!$entreprise && !empty($dossier->r_dossier_vehicule?->entreprise_id)) {
+            $entreprise = Entreprise::find($dossier->r_dossier_vehicule->entreprise_id);
+        }
+        if (!$entreprise && $dossier_lier) {
+            $entreprise = $dossier_lier->r_dossier_vehicule?->r_vehicule_entreprise;
+            if (!$entreprise && !empty($dossier_lier->r_dossier_vehicule?->entreprise_id)) {
+                $entreprise = Entreprise::find($dossier_lier->r_dossier_vehicule->entreprise_id);
+            }
+        }
+
         return inertia('Caisse/components/createForm', [
             'chrono' => $vin,
             'dossier' => $dossier,
+            'entreprise' => $entreprise,
             'dossier_lier' => $dossier_lier,
             'detailTypeServices' => $detailTypeServices,
             'detailTypeServices_lier' => $detailTypeServices_lier,

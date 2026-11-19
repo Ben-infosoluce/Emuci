@@ -11,6 +11,7 @@ use App\Models\Paiement;
 use App\Models\Service;
 use App\Models\Vehicule;
 use App\Models\ReplicaPrimo;
+use App\Models\Entreprise;
 use App\Services\VentilationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
@@ -536,7 +537,7 @@ class PaiementController extends Controller
     {
         // 1️⃣ Récupérer le dossier principal
         $dossier = Dossier::with([
-            'r_dossier_vehicule',
+            'r_dossier_vehicule.r_vehicule_entreprise',
             'r_dossier_user',
             'r_dossier_client',
             'r_dossier_documents',
@@ -779,10 +780,15 @@ class PaiementController extends Controller
          | 6️⃣ Retour vers Inertia
          |--------------------------------------------------------------------------
          */
+        $entreprise = $dossier->r_dossier_vehicule?->r_vehicule_entreprise;
+        if (!$entreprise && !empty($dossier->r_dossier_vehicule?->entreprise_id)) {
+            $entreprise = Entreprise::find($dossier->r_dossier_vehicule->entreprise_id);
+        }
 
         return inertia('Caisse/components/Receipt', [
             'chrono' => $chrono,
             'dossier' => $dossier,
+            'entreprise' => $entreprise,
             'detailTypeServices' => $detailTypeServices,
             'caissier' => $caissier,
             'canAnnuler' => Auth::check()

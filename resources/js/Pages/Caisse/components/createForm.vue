@@ -133,60 +133,69 @@
                                 </div>
 
                                 <hr />
-                                <h3 class="mt-6">
-                                    informations du propriétaire :
-                                    <strong>{{
-                                        dossier.r_dossier_client.civilite
-                                    }}
-                                        , {{ dossier.r_dossier_client.nom }}
-                                        {{ dossier.r_dossier_client.prenom }}
-                                    </strong>
-                                </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6">
-                                    <p>
-                                        adresse :
-                                        {{ dossier.r_dossier_client.adresse }}
-                                    </p>
-                                    <p>
-                                        email :
-                                        {{ dossier.r_dossier_client.email }}
-                                    </p>
-                                    <p>
-                                        telephone :
-                                        {{ dossier.r_dossier_client.telephone }}
-                                    </p>
-                                    <p>
-                                        date naissance :
-                                        {{
-                                            dossier.r_dossier_client
-                                                .date_naissance
+                                <!-- CAS 1 : Entreprise (propriétaire = entreprise via entreprise_id du véhicule) -->
+                                <template v-if="entreprise || dossier.r_dossier_vehicule?.entreprise_id">
+                                    <h3 class="mt-6">
+                                        informations du propriétaire :
+                                        <strong class="text-[#ca7600]">{{ entreprise?.nom_entreprise || 'Chargement des données de l\'entreprise...' }}</strong>
+                                    </h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6">
+                                        <p><strong>Nom entreprise :</strong> {{ entreprise?.nom_entreprise }}</p>
+                                        <p><strong>Compte contribuable :</strong> {{ entreprise?.compte_contribuale }}</p>
+                                        <p><strong>Registre de commerce :</strong> {{ entreprise?.registre_commerce }}</p>
+                                        <p><strong>Nom représentant légal :</strong> {{ entreprise?.nom_representant_legal }}</p>
+                                        <p><strong>Prénom représentant légal :</strong> {{ entreprise?.prenom_representant_legal }}</p>
+                                        <p><strong>Téléphone représentant légal :</strong> {{ entreprise?.telephone_representant_legal }}</p>
+                                        <p><strong>Profession représentant légal :</strong> {{ entreprise?.profession_representant_legal }}</p>
+                                        <p><strong>Date de naissance représentant :</strong> {{
+                                            entreprise?.date_de_naissance_representant_legal
+                                        }}</p>
+                                        <p><strong>Préfecture :</strong> {{ entreprise?.prefecture }}</p>
+                                        <p><strong>Sous-préfecture :</strong> {{ entreprise?.sous_prefecture }}</p>
+                                        <p v-if="entreprise?.id"><strong>ID Entreprise :</strong> {{ entreprise?.id }}</p>
+                                    </div>
+                                </template>
+
+                                <!-- CAS 2 : Client physique -->
+                                <template v-else-if="dossier.r_dossier_client">
+                                    <h3 class="mt-6">
+                                        informations du propriétaire :
+                                        <strong>{{
+                                            dossier.r_dossier_client?.civilite
                                         }}
-                                    </p>
-                                    <p>
-                                        ville naissance :
-                                        {{
-                                            dossier.r_dossier_client
-                                                .ville_naissance
-                                        }}
-                                    </p>
-                                </div>
-                                <hr />
-                                <!-- Informations de l'entreprise -->
-                                <h3 class="mt-6" v-if="entreprise"> <strong> Informations de l'entreprise </strong>
-                                </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6" v-if="entreprise">
-                                    <p>Nom Entreprise : {{ entreprise?.nom_entreprise }}</p>
-                                    <p>Numéro de compte contribuale : {{ entreprise?.compte_contribuale }}</p>
-                                    <p>Registre de commerce : {{ entreprise?.registre_commerce }}</p>
-                                    <p>Nom du représentant légal : {{ entreprise?.nom_representant_legal }}</p>
-                                    <p>Téléphone du représentant légal : {{ entreprise?.telephone_representant_legal }}
-                                    </p>
-                                    <p>Profession représentant légal : {{ entreprise?.profession_representant_legal }}
-                                    </p>
-                                    <p>Date de naissance du représentant : {{
-                                        entreprise.date_de_naissance_representant_legal
-                                    }}</p>
-                                </div>
+                                            , {{ dossier.r_dossier_client?.nom }}
+                                            {{ dossier.r_dossier_client?.prenom }}
+                                        </strong>
+                                    </h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6">
+                                        <p>
+                                            adresse :
+                                            {{ dossier.r_dossier_client?.adresse }}
+                                        </p>
+                                        <p>
+                                            email :
+                                            {{ dossier.r_dossier_client?.email }}
+                                        </p>
+                                        <p>
+                                            telephone :
+                                            {{ dossier.r_dossier_client?.telephone }}
+                                        </p>
+                                        <p>
+                                            date naissance :
+                                            {{
+                                                dossier.r_dossier_client
+                                                    ?.date_naissance
+                                            }}
+                                        </p>
+                                        <p>
+                                            ville naissance :
+                                            {{
+                                                dossier.r_dossier_client
+                                                    ?.ville_naissance
+                                            }}
+                                        </p>
+                                    </div>
+                                </template>
                             </div>
                         </ScrollArea>
                     </Card>
@@ -851,6 +860,7 @@ const { isOpen } = storeToRefs(store);
 const props = defineProps({
     vin: String,
     dossier: Object,
+    entreprise: Object,
     dossier_lier: Object,
     detailTypeServices: Object,
     detailTypeServices_lier: Object,
@@ -905,10 +915,10 @@ const hasTriggerService = selectedDetailServices.some(item =>
 // Fonction : récupérer le nom du type de service par ID
 function getNomTypeServiceById(id) {
     const serviceTypes = [
-        ...props.dossier.r_dossier_services.r_service_types
+        ...(props.dossier?.r_dossier_services?.r_service_types || [])
     ]
 
-    if (props.dossier_lier) {
+    if (props.dossier_lier?.r_dossier_services?.r_service_types) {
         serviceTypes.push(...props.dossier_lier.r_dossier_services.r_service_types)
     }
 
@@ -1186,7 +1196,7 @@ async function validerPaiement() {
     }
 }
 console.log(props.dossier.status_pose_plaque);
-const entreprise = ref(null);
+const entreprise = ref(props.entreprise || props.dossier?.r_dossier_vehicule?.r_vehicule_entreprise || null);
 
 async function fetchEntreprise(id) {
     try {
@@ -1199,7 +1209,7 @@ async function fetchEntreprise(id) {
 }
 
 onMounted(() => {
-    if (props.dossier.r_dossier_vehicule.entreprise_id) {
+    if (!entreprise.value && props.dossier?.r_dossier_vehicule?.entreprise_id) {
         fetchEntreprise(props.dossier.r_dossier_vehicule.entreprise_id);
     }
 })
