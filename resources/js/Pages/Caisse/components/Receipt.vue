@@ -8,10 +8,10 @@
                 </Link>
             </div>
             <div class="text-right flex items-center gap-4">
-                <Button v-if="paiement?.id && !paiementAnnule && canAnnuler" variant="destructive" size="sm"
+                <!-- <Button v-if="paiement?.id && !paiementAnnule && canAnnuler" variant="destructive" size="sm"
                     @click="annulationOpen = true">
                     <Ban class="w-4 h-4 mr-2" /> Annuler le paiement
-                </Button>
+                </Button> -->
                 <div class="flex items-center space-x-2 cursor-pointer" @click="imprimer">
                     <Printer class="w-5 h-5" />
                     <span class="font-semibold">Imprimer</span>
@@ -38,7 +38,8 @@
                         <strong>{{ Number(paiement?.montant || 0).toLocaleString() }} F</strong>
                         sera marqué comme annulé. Il restera visible dans l'historique, mais ne sera plus
                         envoyé à Sage X3 et ne sera plus compté dans les totaux de caisse.
-                        <Input v-model="motifAnnulation" class="mt-4" placeholder="Motif de l'annulation (facultatif)" />
+                        <Input v-model="motifAnnulation" class="mt-4"
+                            placeholder="Motif de l'annulation (facultatif)" />
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter class="flex gap-2">
@@ -98,14 +99,18 @@
         <!-- Sous-titre MODIFICATION -->
         <p v-if="isModification"
             style="text-align: center; font-size: 0.7rem; color: #1d4ed8; font-weight: 600; margin-top: 0; margin-bottom: 1rem;">
-            Paiement - MODIFICATION ({{ props?.dossier?.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée' }})
+            Paiement - MODIFICATION ({{ props?.dossier?.status_pose_plaque == 1 ? 'Plaque non posée' : 'Plaque posée'
+            }})
         </p>
         <!-- Info Table -->
         <div
             style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.8rem; margin-bottom: 0.8rem;">
             <!-- <div><span style="font-weight: 600;">Client N° :</span> {{ props?.dossier?.id }} </div> -->
-            <div><span style="font-weight: 600;">{{ props?.dossier?.r_dossier_client ? 'Nom & Prénom :' : 'Entreprise :' }}</span>
-                {{ props?.dossier?.r_dossier_client ? `${props?.dossier?.r_dossier_client?.nom || ''} ${props?.dossier?.r_dossier_client?.prenom || ''}` : (props?.dossier?.r_dossier_vehicule?.r_vehicule_entreprise?.nom_entreprise || '') }}</div>
+            <div><span style="font-weight: 600;">{{ props?.dossier?.r_dossier_client ? 'Nom & Prénom :' : 'Entreprise :'
+                    }}</span>
+                {{ props?.dossier?.r_dossier_client ? `${props?.dossier?.r_dossier_client?.nom || ''}
+                ${props?.dossier?.r_dossier_client?.prenom || ''}` :
+                    (props?.dossier?.r_dossier_vehicule?.r_vehicule_entreprise?.nom_entreprise || '') }}</div>
             <div><span style="font-weight: 600;">Date de Facturation :</span> {{
                 formatDateTime(props?.dossier?.date_paiement) }}</div>
             <div><span style="font-weight: 600;">N° Chassis :</span> {{ props?.dossier?.r_dossier_vehicule?.vin }}</div>

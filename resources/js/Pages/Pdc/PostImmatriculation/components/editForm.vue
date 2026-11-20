@@ -241,7 +241,7 @@
                                         </FormField>
                                         <FormField v-slot="{ componentField }" name="firstname">
                                             <FormItem v-auto-animate>
-                                                <FormLabel>Nom*</FormLabel>
+                                                <FormLabel>Nom <span v-if="!isEntrepriseType()">*</span></FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="Konaté" v-bind="componentField"
                                                         autocomplete="firstname" v-model="form.firstname" />
@@ -252,7 +252,7 @@
                                         <!-- Prenom -->
                                         <FormField v-slot="{ componentField }" name="lastname">
                                             <FormItem v-auto-animate>
-                                                <FormLabel>Prénom*</FormLabel>
+                                                <FormLabel>Prénom <span v-if="!isEntrepriseType()">*</span></FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="Ben" v-bind="componentField"
                                                         autocomplete="lastname" v-model="form.lastname" />
@@ -265,7 +265,7 @@
                                         <FormField v-slot="{ componentField }" name="phone">
                                             <FormItem v-auto-animate>
                                                 <FormLabel>Numéro de
-                                                    téléphone*</FormLabel>
+                                                    téléphone <span v-if="!isEntrepriseType()">*</span></FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="0701020304" v-bind="componentField"
                                                         autocomplete="phone" v-model="form.phone" />
@@ -276,7 +276,7 @@
                                         <!-- adresse -->
                                         <FormField v-slot="{ componentField }" name="adresse">
                                             <FormItem v-auto-animate>
-                                                <FormLabel>Adresse*</FormLabel>
+                                                <FormLabel>Adresse <span v-if="!isEntrepriseType()">*</span></FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="Abidjan,Cocody" v-bind="componentField"
                                                         autocomplete="adresse" v-model="form.adresse" />
@@ -288,7 +288,7 @@
                                         <FormField v-slot="{ componentField }" name="DateNaissance">
                                             <FormItem v-auto-animate>
                                                 <FormLabel>Date de
-                                                    naissance*</FormLabel>
+                                                    naissance <span v-if="!isEntrepriseType()">*</span></FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="01-01-1984" v-bind="componentField"
                                                         autocomplete="DateNaissance" v-model="form.DateNaissance
@@ -303,7 +303,7 @@
                                         <FormField v-slot="{ componentField }" name="villeNaissance">
                                             <FormItem v-auto-animate>
                                                 <FormLabel>Ville de
-                                                    naissance*</FormLabel>
+                                                    naissance <span v-if="!isEntrepriseType()">*</span></FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="Bouaké" v-bind="componentField"
                                                         autocomplete="villeNaissance" v-model="form.villeNaissance
@@ -1334,16 +1334,60 @@ const ProfessionRepresantantError = ref("");
 const compteContribuableError = ref("");
 const DateNaissanceRepresantantError = ref("");
 
+// Helper pour déterminer s'il s'agit d'une entreprise
+const isEntrepriseType = () => {
+    const tp = form.value?.typePersonne || form.value?.type || data?.typePersonne || data?.type;
+    return tp && tp !== "Physique";
+};
+
+// Les informations client ne sont obligatoires que si personne physique ET mutation
+const isClientRequired = () => {
+    if (isEntrepriseType()) {
+        return false;
+    }
+    if (!mutation.value) {
+        return false;
+    }
+    return true;
+};
+
 // Schéma de validation avec Zod
 const formSchema = toTypedSchema(
     z.object({
-        firstname: z.string().min(3, "Le nom doit contenir au moins 3 caractères."),
-        lastname: z.string().min(3, "Le prénom doit contenir au moins 3 caractères."),
-        adresse: z.string().min(3, "L'adresse doit contenir au moins 3 caractères."),
-        phone: z.string().min(10, "Le numéro de téléphone doit contenir au moins 10 caractères."),
-        DateNaissance: z.string().min(10, "La date de naissance est obligatoire.")
-            .regex(/^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/, "Le format doit être jj-mm-aaaa (ex: 01-01-1984)."),
-        villeNaissance: z.string().min(3, "La ville de naissance est obligatoire."),
+        firstname: z.string().optional().nullable().superRefine((val, ctx) => {
+            if (isClientRequired() && (!val || val.trim().length < 3)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Le nom doit contenir au moins 3 caractères." });
+            }
+        }),
+        lastname: z.string().optional().nullable().superRefine((val, ctx) => {
+            if (isClientRequired() && (!val || val.trim().length < 3)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Le prénom doit contenir au moins 3 caractères." });
+            }
+        }),
+        adresse: z.string().optional().nullable().superRefine((val, ctx) => {
+            if (isClientRequired() && (!val || val.trim().length < 3)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "L'adresse doit contenir au moins 3 caractères." });
+            }
+        }),
+        phone: z.string().optional().nullable().superRefine((val, ctx) => {
+            if (isClientRequired() && (!val || val.trim().length < 10)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Le numéro de téléphone doit contenir au moins 10 caractères." });
+            }
+        }),
+        DateNaissance: z.string().optional().nullable().superRefine((val, ctx) => {
+            if (isClientRequired()) {
+                if (!val || val.trim().length < 10) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La date de naissance est obligatoire." });
+                } else if (!/^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[0-2])[-](19|20)\d{2}$/.test(val)) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Le format doit être jj-mm-aaaa (ex: 01-01-1984)." });
+                }
+            }
+        }),
+        villeNaissance: z.string().optional().nullable().superRefine((val, ctx) => {
+            if (isClientRequired() && (!val || val.trim().length < 3)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La ville de naissance est obligatoire." });
+            }
+        }),
         couleurVehicule: z.string().min(3, "La couleur du véhicule est obligatoire."),
         carrosserie: z.string().min(3, "La carrosserie est obligatoire."),
         typeTechnique: z.string().min(3, "Le type technique est obligatoire."),
@@ -1413,12 +1457,16 @@ const formDataSummary = computed(() => ({
 
 // Fonction de soumission du formulaire
 const onSubmit = handleSubmit((values) => {
+    const currentType = form.value.typePersonne || form.value.type;
+    form.value.type = currentType;
+    form.value.typePersonne = currentType;
+
     const errors = [];
-    if (!form.value.type) {
+    if (!currentType) {
         typeError.value = "Sélectionner le Type de personne";
         errors.push(typeError.value);
     }
-    if (form.value.type != "Physique") {
+    if (isEntrepriseType()) {
         if (!form.value.nomEntreprise) {
             nomEntrepriseError.value = "Entrez le nom de l'entreprise.";
             errors.push(nomEntrepriseError.value);
@@ -1449,8 +1497,15 @@ const onSubmit = handleSubmit((values) => {
 
 // Soumission finale au backend
 function submitFinal() {
+    const isEntreprise = isEntrepriseType();
     const data = {
         ...formDataSummary.value,
+        firstname: isEntreprise && (!form.value.firstname || form.value.firstname.trim() === '') ? '0' : (form.value.firstname || '0'),
+        lastname: isEntreprise && (!form.value.lastname || form.value.lastname.trim() === '') ? '0' : (form.value.lastname || '0'),
+        phone: isEntreprise && (!form.value.phone || form.value.phone.trim() === '') ? (form.value.numeroTelephone || '0') : (form.value.phone || '0'),
+        adresse: isEntreprise && (!form.value.adresse || form.value.adresse.trim() === '') ? (form.value.prefecture || '0') : (form.value.adresse || '0'),
+        DateNaissance: isEntreprise && (!form.value.DateNaissance || form.value.DateNaissance.trim() === '') ? (form.value.DateNaissanceRepresantant || '01-01-2000') : (form.value.DateNaissance || '01-01-2000'),
+        villeNaissance: isEntreprise && (!form.value.villeNaissance || form.value.villeNaissance.trim() === '') ? (form.value.sousPrefecture || '0') : (form.value.villeNaissance || '0'),
         // On privilégie les objets complets sélectionnés dans le formulaire,
         // sinon on retombe sur les données initiales (véhicules importés sans ids).
         marqueVehicule: selectedMarque.value || form.value.marqueVehicule || null,

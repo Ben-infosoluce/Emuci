@@ -1835,19 +1835,21 @@ class PdcController extends Controller
             $client = $vehicule->r_vehicule_client;
             $entreprise = $vehicule->r_vehicule_entreprise;
 
-            $client->update([
-                'nom' => $request->input('firstname'),
-                'prenom' => $request->input('lastname'),
-                'date_naissance' => $request->input('DateNaissance'),
-                'ville_naissance' => $request->input('villeNaissance'),
-                'adresse' => $request->input('adresse'),
-                'telephone' => $request->input('phone'),
-                'email' => $request->input('email'),
-                'civilite' => $request->input('sex'),
-                'district_client' => $request->input('districtClient'),
-                'prefecture_client' => $request->input('prefecture_client'),
-                'sous_prefecture_client' => $request->input('sousPrefectureClient'),
-            ]);
+            if ($client) {
+                $client->update([
+                    'nom' => $request->input('firstname'),
+                    'prenom' => $request->input('lastname'),
+                    'date_naissance' => $request->input('DateNaissance'),
+                    'ville_naissance' => $request->input('villeNaissance'),
+                    'adresse' => $request->input('adresse'),
+                    'telephone' => $request->input('phone'),
+                    'email' => $request->input('email'),
+                    'civilite' => $request->input('sex'),
+                    'district_client' => $request->input('districtClient'),
+                    'prefecture_client' => $request->input('prefecture_client'),
+                    'sous_prefecture_client' => $request->input('sousPrefectureClient'),
+                ]);
+            }
 
             $modificationsEntreprise = [];
 
@@ -2704,19 +2706,21 @@ class PdcController extends Controller
             $client = $vehicule->r_vehicule_client;
             $entreprise = $vehicule->r_vehicule_entreprise;
 
-            $client->update([
-                'nom' => $request->input('firstname'),
-                'prenom' => $request->input('lastname'),
-                'date_naissance' => $request->input('DateNaissance'),
-                'ville_naissance' => $request->input('villeNaissance'),
-                'adresse' => $request->input('adresse'),
-                'telephone' => $request->input('phone'),
-                'email' => $request->input('email'),
-                'civilite' => $request->input('sex'),
-                'district_client' => $request->input('districtClient'),
-                'prefecture_client' => $request->input('prefecture_client'),
-                'sous_prefecture_client' => $request->input('sousPrefectureClient'),
-            ]);
+            if ($client) {
+                $client->update([
+                    'nom' => $request->input('firstname'),
+                    'prenom' => $request->input('lastname'),
+                    'date_naissance' => $request->input('DateNaissance'),
+                    'ville_naissance' => $request->input('villeNaissance'),
+                    'adresse' => $request->input('adresse'),
+                    'telephone' => $request->input('phone'),
+                    'email' => $request->input('email'),
+                    'civilite' => $request->input('sex'),
+                    'district_client' => $request->input('districtClient'),
+                    'prefecture_client' => $request->input('prefecture_client'),
+                    'sous_prefecture_client' => $request->input('sousPrefectureClient'),
+                ]);
+            }
 
             $modificationsEntreprise = [];
 
@@ -3021,11 +3025,15 @@ class PdcController extends Controller
     {
         // dd($request->all());
         $typePersonne = $request->input('typePersonne') ?? $request->input('type');
+        $isEntreprise = ($typePersonne && $typePersonne != 'Physique');
 
         // Récupération des modèles
         $vehicule = Vehicule::findOrFail($vehiculeId);
         $client = $vehicule->r_vehicule_client;
         $entreprise = $vehicule->r_vehicule_entreprise;
+        if (!$entreprise && !empty($vehicule->entreprise_id)) {
+            $entreprise = Entreprise::find($vehicule->entreprise_id);
+        }
 
         // Préparer les données comme avant
         $donneesClient = [
@@ -3042,8 +3050,18 @@ class PdcController extends Controller
             'civilite' => $request->input('sex'),
         ];
 
+        if ($isEntreprise) {
+            // Pour une entreprise, les informations client ne sont pas obligatoires (repli sur '0' ou données entreprise)
+            $donneesClient['nom'] = $donneesClient['nom'] ?: ($request->input('nomEntreprise') ?: '0');
+            $donneesClient['prenom'] = $donneesClient['prenom'] ?: '0';
+            $donneesClient['telephone'] = $donneesClient['telephone'] ?: ($request->input('numeroTelephone') ?: '0');
+            $donneesClient['adresse'] = $donneesClient['adresse'] ?: ($request->input('prefecture') ?: '0');
+            $donneesClient['date_naissance'] = $donneesClient['date_naissance'] ?: ($request->input('dateNaissanceRepresantant', $request->input('DateNaissanceRepresantant')) ?: '01-01-2000');
+            $donneesClient['ville_naissance'] = $donneesClient['ville_naissance'] ?: ($request->input('sousPrefecture') ?: '0');
+        }
+
         $donneesEntreprise = null;
-        if ($typePersonne != 'Physique') {
+        if ($isEntreprise) {
             $donneesEntreprise = [
                 'id' => $entreprise?->id,
                 'nom_entreprise' => $request->input('nomEntreprise'),
@@ -3057,6 +3075,13 @@ class PdcController extends Controller
                 'date_de_naissance_representant_legal' => $request->input('dateNaissanceRepresantant', $request->input('DateNaissanceRepresantant')),
                 'profession_representant_legal' => $request->input('professionRepresantant', $request->input('ProfessionRepresantant')),
             ];
+
+            if (!$entreprise && $request->filled('nomEntreprise')) {
+                $entreprise = Entreprise::create(array_filter($donneesEntreprise));
+                $donneesEntreprise['id'] = $entreprise->id;
+            } elseif ($entreprise) {
+                $entreprise->update(array_filter($donneesEntreprise));
+            }
         }
 
         // Résolution de la marque et du modèle.
@@ -3088,21 +3113,32 @@ class PdcController extends Controller
         // Un véhicule importé peut ne pas encore avoir de client : on le crée
         // pour que le dossier soit exploitable lors de la validation.
         if (!$client) {
-            if (!$request->filled('firstname') || !$request->filled('lastname')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Le nom et le prénom du client sont obligatoires.',
-                ], 422);
-            }
+            if (!$isEntreprise) {
+                if (!$request->filled('firstname') || !$request->filled('lastname')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Le nom et le prénom du client sont obligatoires.',
+                    ], 422);
+                }
 
-            $client = Client::create(array_merge($donneesClient, [
-                'password' => generateStrongPassword(8),
-                'statut' => 1,
-                'validite' => now()->addMonths(3),
-            ]));
+                $client = Client::create(array_merge($donneesClient, [
+                    'password' => generateStrongPassword(8),
+                    'statut' => 1,
+                    'validite' => now()->addMonths(3),
+                ]));
+            } else {
+                // Pour une entreprise : informations du client non obligatoires
+                if ($request->filled('firstname') && $request->filled('lastname') && $request->input('firstname') !== '0') {
+                    $client = Client::create(array_merge($donneesClient, [
+                        'password' => generateStrongPassword(8),
+                        'statut' => 1,
+                        'validite' => now()->addMonths(3),
+                    ]));
+                }
+            }
         }
 
-        $donneesClient['id'] = $client->id;
+        $donneesClient['id'] = $client?->id;
 
         $donneesVehicule = [
             'id' => $vehicule->id,
@@ -3127,10 +3163,20 @@ class PdcController extends Controller
             'physique_morale' => $typePersonne,
             'model_id' => $modeleId,
             'marque_id' => $marqueId,
-            'entreprise_id' => $typePersonne != 'Physique' && $entreprise ? $entreprise->id : null,
-            'id_client' => $client->id,
+            'entreprise_id' => $isEntreprise && $entreprise ? $entreprise->id : $vehicule->entreprise_id,
+            'id_client' => $client?->id,
             'gage' => $request->input('gage') === 'gage' ? 'gage' : null,
         ];
+
+        // Mettre à jour les liaisons du véhicule si entreprise
+        if ($isEntreprise && $entreprise) {
+            $vehicule->entreprise_id = $entreprise->id;
+        }
+        $vehicule->physique_morale = $typePersonne;
+        if ($client) {
+            $vehicule->id_client = $client->id;
+        }
+        $vehicule->save();
 
         // Création du log
         $modification_log = ModificationLog::create([
@@ -3159,7 +3205,7 @@ class PdcController extends Controller
         $dossier = Dossier::create([
             'id_vehicule' => $vehicule->id,
             'id_user' => getConnectedUserId(),
-            'id_client' => $client->id,
+            'id_client' => $client?->id,
             'id_service' => 3, // post immatriculation
             'detail' => json_encode($detail, JSON_UNESCAPED_UNICODE),
             'id_site' => getIdSite(),

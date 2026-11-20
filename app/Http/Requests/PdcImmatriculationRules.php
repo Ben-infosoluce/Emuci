@@ -84,6 +84,12 @@ class PdcImmatriculationRules
 
         if ($typePersonne != 'Physique') {
             $rules = array_merge($rules, [
+                'firstname' => 'nullable|string',
+                'lastname' => 'nullable|string',
+                'DateNaissance' => 'nullable|string',
+                'adresse' => 'nullable|string',
+                'phone' => 'nullable|string',
+                'villeNaissance' => 'nullable|string',
                 'nomEntreprise' => 'required|string',
                 // 'registreCommerce' => 'required|string|unique:entreprises,registre_commerce',
                 'representantLegal' => 'required|string',
