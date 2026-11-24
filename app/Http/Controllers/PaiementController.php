@@ -145,6 +145,9 @@ class PaiementController extends Controller
                     'mode_paiement' => 'Cash',
                     'id_service' => $dossier_lier->id_service,
                     'id_vehicule' => $dossier_lier->id_vehicule,
+                    // Un seul droit de timbre (100 F) par encaissement, quel que
+                    // soit le nombre de dossiers/services combinés : il est porté
+                    // par le paiement principal.
                     'timbre' => 0,
                     'user_id' => Auth::id(),
                     'description' => json_encode($validated['detailTypeServices_lier']),
@@ -184,6 +187,7 @@ class PaiementController extends Controller
                 'mode_paiement' => 'Cash',
                 'id_service' => $dossier->id_service,
                 'id_vehicule' => $dossier->id_vehicule,
+                'timbre' => 100,
                 'user_id' => Auth::id(),
                 'description' => json_encode($detailServicesPrincipal),
                 'reference' => 'PAI' . strtoupper(uniqid()),
@@ -386,7 +390,9 @@ class PaiementController extends Controller
             }
 
             $montant_dossier_lier_taxe = 0;
-            $montant_dossier_lier_ttc = $montant_dossier_lier_ht + 100; // Ajout Timbre
+            // Pas de second timbre : le droit de timbre est unique (100 F) par
+            // encaissement, même lorsque le dossier est combiné à un dossier lié.
+            $montant_dossier_lier_ttc = $montant_dossier_lier_ht;
 
 
             /*
@@ -420,6 +426,9 @@ class PaiementController extends Controller
                     'mode_paiement' => 'Cash',
                     'id_service' => $dossier_lier->id_service,
                     'id_vehicule' => $dossier_lier->id_vehicule,
+                    // Timbre unique porté par le paiement principal : le dossier
+                    // lié (Post, etc.) ne doit pas être facturé une seconde fois.
+                    'timbre' => 0,
                     'user_id' => Auth::id(),
                     'description' => json_encode($validated['detailTypeServices_lier'] ?? []),
                     'reference' => 'PAI' . strtoupper(uniqid()),
@@ -464,6 +473,9 @@ class PaiementController extends Controller
                 'mode_paiement' => 'Cash',
                 'id_service' => $dossier->id_service,
                 'id_vehicule' => $dossier->id_vehicule,
+                // Droit de timbre unique de 100 F pour tout l'encaissement
+                // (dossier principal + dossier lié éventuel).
+                'timbre' => 100,
                 'user_id' => Auth::id(),
                 'description' => json_encode($detailServicesPrincipal), // Contient maintenant le changement de plaque
                 'reference' => 'PAI' . strtoupper(uniqid()),
