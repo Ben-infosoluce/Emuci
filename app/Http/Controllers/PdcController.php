@@ -4584,4 +4584,51 @@ class PdcController extends Controller
 
         return 'auto';
     }
+
+    /**
+     * API publique (sans authentification) : retourne les informations du dernier
+     * dossier de réimmatriculation (id_service = 2) payé (statut_paiement = 2)
+     * associé au VIN fourni.
+     */
+    public function getLastPaidReimatByVin(Request $request, ?string $vin = null)
+    {
+        $vin = trim((string) ($vin ?? $request->input('vin')));
+
+        if ($vin === '') {
+            return response()->json([
+                'success' => false,
+                'status' => 'VALIDATION_ERROR',
+                'message' => 'Le paramètre vin est obligatoire.',
+            ], 422);
+        }
+
+        $dossier = Dossier::with('r_dossier_vehicule')
+            ->where('id_service', 2)
+            ->where('statut_paiement', 2)
+            ->whereHas('r_dossier_vehicule', function ($query) use ($vin) {
+                $query->where('vin', $vin);
+            })
+            ->orderByDesc('date_paiement')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$dossier) {
+            return response()->json([
+                'success' => false,
+                'status' => 'NOT_FOUND',
+                'message' => 'Aucun dossier de réimmatriculation payé trouvé pour ce VIN.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'SUCCESS',
+            'message' => 'Dernier dossier de réimmatriculation payé trouvé.',
+            'data' => [
+                'vin' => $dossier->r_dossier_vehicule?->vin,
+                'num_chrono' => $dossier->num_chrono,
+                'date_paiement' => $dossier->date_paiement,
+            ],
+        ], 200);
+    }
 }

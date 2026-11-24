@@ -38,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/primo/espece/last-sync', [PdcController::class, 'getLastPrimoSync']);
 Route::post('/primo/espece/sync', [PdcController::class, 'syncPrimoEspeceExternal']);
 
+// Consultation publique du dernier dossier Réimat payé par VIN (sans authentification)
+Route::get('/reimat/paye/{vin?}', [PdcController::class, 'getLastPaidReimatByVin']);
+
 Route::get('/ping', function () {
     return response()->json([
         'success' => true,
